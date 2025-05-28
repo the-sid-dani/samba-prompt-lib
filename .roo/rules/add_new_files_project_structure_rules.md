@@ -1,0 +1,104 @@
+Below is an example of the “tree view” project structure for the SambaTV Internal Prompt Library. In this proposal we reuse the existing Next.js SaaS Starter Template while adding new authenticated routes and UI components for the Prompt Library features. Note that the auth and payment (Stripe) code remain untouched so that those integrations still work.
+
+----------------------------------------------------------------------------------------------------
+Project Structure Tree (with new Prompt Library pages/components highlighted)
+----------------------------------------------------------------------------------------------------
+app/
+├── app/
+│   ├── playground/                    // Task 4: Playground for prompt testing
+│   │   └── page.tsx                   // Playground view using shadcn/ui Inputs, Sliders, etc.
+│   │
+│   ├── prompt/                        // Task 3: Prompt Detail View 
+│   │   └── [id]/                      // Dynamic route for each prompt
+│   │         └── page.tsx             // Full prompt details, version history, copy-to-clipboard button 
+│   │
+│   ├── leaderboard/                   // Task 5: Leaderboard Component
+│   │   └── page.tsx                   // Leaderboard view listing ranked prompt cards with filters
+│   │
+│   ├── submit/                        // Task 7 (Future Consideration): Prompt submission form
+│   │   └── page.tsx                   // Submission page for new prompt contributions (optional / future)
+│   │
+│   ├── layout.tsx                     // (Dashboard) Layout wrapper – may be adjusted for new side nav etc.
+│   │
+│   └── page.tsx                       // Task 1 & 2: Overall landing page / Homepage (Explore Prompts)
+│         └─ Contains:
+│              • Updated Header integration (from components/app/Header.tsx) with SambaTV brand styling (bg-primary, text-primary-foreground)
+│              • A responsive container (shadcn/ui Card/Container) for the Explore view
+│              • Placeholder for PromptsList (see below)
+│
+├── actions/                           // Unchanged (handles auth, stripe, etc.)
+│   ├── auth.ts
+│   └── stripe.ts
+│
+├── api/                               // Unchanged API endpoints
+│   ├── auth/
+│   ├── (payment)/
+│   ├── profile/
+│   └── webhook/
+│
+├── success/                           // Unchanged success pages (eg post-payment success)
+│
+├── layout.tsx                         // Root layout with providers (unchanged)
+└── page.tsx                           // Public (unauthenticated) landing page (if used)
+
+components/
+├── app/                               // New + existing app-specific components
+│   ├── Header.tsx                     // Updated header component with SambaTV branding, Tailwind: bg-primary, text-primary-foreground, etc.
+│   ├── PromptsList.tsx                // Task 2: Renders list of prompt cards with a search_files input and filters
+│   ├── PromptDetail.tsx               // Task 3: Detailed view for a single prompt (displays full text, author info, version history)
+│   ├── Leaderboard.tsx                // Task 5: Leaderboard component listing ranked prompts with filtering controls
+│   └── Playground.tsx                 // Task 4: Playground interface (inputs for prompt text, parameters, Run button, etc.)
+│
+├── email/                             // Unchanged email templates
+├── stripe/                            // Unchanged Stripe integration components
+├── ui/                                // Unchanged base UI components from shadcn/ui
+├── user/                              // Unchanged user related components (sign-in, sign-out, profile dropdown, etc.)
+├── CheckoutButton.tsx                 // Unchanged (Stripe checkout functionality)
+├── Pricing.tsx                        // Unchanged pricing section component
+├── SessionProvider.tsx                // Unchanged auth session provider
+├── sign-in.tsx                        // Unchanged authentication component
+└── sign-out.tsx                       // Unchanged authentication component
+
+lib/
+├── hooks/                             // Unchanged custom React hooks
+├── auth.config.ts                     // Unchanged authentication configuration
+├── auth.ts                            // Unchanged authentication utilities
+├── authSendRequest.ts                 // Unchanged auth request helpers
+├── mail.ts                            // Unchanged email service config
+└── utils.ts                           // Unchanged general utilities
+
+types/
+├── database.types.ts                  // Unchanged database types (Supabase schema)
+├── next-auth.d.ts                     // Unchanged Next-Auth type extensions
+└── prompt.types.ts                    // (Optional) New type definitions for prompt data (title, description, stats, etc.)
+
+utils/
+├── supabase/
+│   ├── client.ts                      // Unchanged Supabase client configuration
+│   ├── front.ts                       // Unchanged frontend utilities for Supabase
+│   ├── server.ts                      // Unchanged server-side utilities
+│   └── user.ts                        // Unchanged user-related utilities
+└── stripe.ts                          // Unchanged Stripe utilities
+
+supabase/
+└── config.toml                        // Unchanged Supabase configuration
+
+public/                                // Unchanged static assets (images, fonts, etc.)
+
+.env.local                             // Unchanged environment variables file
+config.ts                              // Unchanged app configuration
+middleware.ts                          // Unchanged Next.js middleware (ensuring authentication on protected routes)
+[config files]                         // Unchanged additional configuration (next.config.ts, tailwind.config.ts, etc.)
+
+----------------------------------------------------------------------------------------------------
+Notes / Rationale:
+• The overall layout (app/app/page.tsx) is updated as Task 1. It now serves as the home shell with an updated Header (imported from components/app/Header.tsx) styled according to SambaTV brand guidelines.
+• The Explore / Homepage now includes a PromptsList component that renders a searchable list of prompt cards (Task 2).
+• The Prompt detail view is implemented under a new dynamic route (app/prompt/[id]) and relies on the PromptDetail.tsx component.
+• The new Playground view is added at app/playground/page.tsx and uses the Playground.tsx component to let users test prompts (Task 4).
+• The Leaderboard is available as its own authenticated route (app/leaderboard/page.tsx), using the Leaderboard.tsx component (Task 5).
+• Existing authentication (via components/SessionProvider.tsx, middleware.ts, etc.) is still in place so that users can sign in with their Enterprise Google account, and a small user profile dropdown in Header can be added for quick access.
+• Future prompt submission (Task 7) can be implemented under app/submit/ as needed.
+• All new UI components use shadcn/ui and Tailwind CSS classes (for instance: bg-primary, text-primary-foreground) to ensure consistency with SambaTV branding.
+
+This minimal yet comprehensive structure ensures that new pages and components live alongside the base SaaS starter code, maintaining integrations for authentication and payments while cleanly encapsulating the internal Prompt Library functionality.

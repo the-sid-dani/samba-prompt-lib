@@ -1,0 +1,127 @@
+# SambaTV Internal Prompt Library - Product Requirements Document
+
+## Project Overview
+Build an internal prompt library platform for SambaTV employees to discover, create, share, and test AI prompts. The platform will centralize prompt engineering practices and enhance productivity across departments.
+
+## Technology Stack
+- Framework: Next.js 15 with App Router
+- UI Components: shadcn/ui with Tailwind CSS
+- Authentication: NextAuth with SambaTV Enterprise Google OAuth
+- Database: Supabase (PostgreSQL)
+- AI Models: Gemini, Claude (via Anthropic), OpenRouter
+- Styling: Tailwind CSS with SambaTV brand colors
+
+## Core Features (Phase 1)
+
+### 1. Homepage / Explore Prompts
+- Display all prompts in a searchable, filterable grid/list view
+- Search functionality (by title, description, content, tags)
+- Filter options (by model, category, author, date, popularity)
+- Prompt cards showing: title, description snippet, author, usage stats, tags
+- Visual indicators for featured/verified prompts
+- Click prompt to view details
+
+### 2. Prompt Detail View
+- Full prompt content with syntax highlighting
+- Copy-to-clipboard functionality
+- Author information and avatar
+- Usage statistics (views, copies, forks)
+- Tags and categories
+- "Use in Playground" button
+- Fork prompt button
+- Improve prompt button
+- Version history
+- Comments/feedback section
+
+### 3. Prompt Management Actions
+- Copy Prompt: One-click copy to clipboard
+- Fork Prompt: Create a personal copy for modification
+- Improve Prompt: Submit improvement suggestions
+- Add New Prompt: Form to submit new prompts
+
+### 4. Add New Prompt Form
+- Title field
+- Description field
+- Full prompt content with markdown support
+- Tags selection (multi-select)
+- Target AI model selection
+- Category selection
+- Save as draft option
+- Publish button
+
+### 5. User Profile & Authentication
+- Google OAuth integration (SambaTV Enterprise)
+- User profile dropdown in header
+- View user's submitted prompts
+- View user's forked prompts
+- Saved/favorited prompts
+- Basic profile info from Google
+
+## Secondary Features (Phase 2)
+
+### 6. Playground for Testing
+- Prompt input area
+- System prompt field
+- Variable inputs for templates
+- Model selection (Gemini, Claude, OpenRouter models)
+- Generation parameters (temperature, max tokens, etc.)
+- Run button with loading states
+- Output display with formatting
+- Save playground sessions
+- Share playground configurations
+
+### 7. Leaderboard
+- Top prompts by usage
+- Top contributors
+- Trending prompts
+- Filter by time period (weekly, monthly, all-time)
+- Gamification badges
+
+### 8. Prompt Versioning
+- Track prompt modifications
+- Compare versions
+- Rollback capability
+- Fork history visualization
+
+## Database Schema Requirements
+
+### Tables Needed:
+1. prompts (already exists)
+2. users (integrate with NextAuth)
+3. prompt_versions
+4. prompt_forks
+5. prompt_improvements
+6. user_favorites
+7. prompt_comments
+8. prompt_votes
+9. playground_sessions
+10. categories
+11. tags
+
+## UI/UX Requirements
+- Responsive design for all screen sizes
+- SambaTV branding (logos, colors)
+- Clean, modern interface using shadcn/ui
+- Dark mode support
+- Accessibility compliant (WCAG AA)
+- Fast page loads and smooth interactions
+
+## Authentication Requirements
+- Mandatory login via SambaTV Google OAuth
+- Session management
+- Protected routes for authenticated users
+- Role-based access (future: admin roles)
+
+## Non-Functional Requirements
+- Performance: <3s page load times
+- Security: Secure data storage, OAuth 2.0
+- Scalability: Handle 1000+ prompts, 100+ concurrent users
+- Availability: 99.9% uptime target
+- Browser support: Chrome, Firefox, Safari, Edge (latest 2 versions)
+
+## Success Metrics
+- User adoption rate
+- Number of prompts created/shared
+- Prompt usage frequency
+- User engagement (copies, forks, improvements)
+- Time saved in prompt discovery

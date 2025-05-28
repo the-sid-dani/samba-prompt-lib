@@ -1,0 +1,156 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+@layer base {
+  :root {
+    /* SambaTV Brand Colors */
+    --primary: 0 100% 45%; /* #E60000 - SambaTV Red */
+    --primary-foreground: 0 0% 100%; /* #FFFFFF */
+    
+    /* Backgrounds and surfaces */
+    --background: 0 0% 100%; /* #FFFFFF */
+    --foreground: 0 0% 3.9%; /* #0A0A0A */
+    
+    /* Card styling */
+    --card: 0 0% 100%; /* #FFFFFF */
+    --card-foreground: 0 0% 3.9%; /* #0A0A0A */
+    
+    /* Neutral colors */
+    --muted: 0 0% 96.1%; /* #F5F5F5 */
+    --muted-foreground: 0 0% 45.1%; /* #737373 */
+    
+    /* Borders and inputs */
+    --border: 0 0% 89.8%; /* #E5E5E5 */
+    --input: 0 0% 89.8%; /* #E5E5E5 */
+    
+    /* Interactive elements */
+    --ring: 0 100% 45%; /* #E60000 - SambaTV Red */
+    
+    /* Status colors */
+    --destructive: 0 84.2% 60.2%; /* #F87171 */
+    --destructive-foreground: 0 0% 98%; /* #FAFAFA */
+    
+    /* Radius for rounded corners */
+    --radius: 0.5rem;
+    --popover: 0 0% 100%;
+    --popover-foreground: 0 0% 3.9%;
+    --secondary: 0 0% 96.1%;
+    --secondary-foreground: 0 0% 9%;
+    --accent: 0 0% 96.1%;
+    --accent-foreground: 0 0% 9%;
+    --chart-1: 12 76% 61%;
+    --chart-2: 173 58% 39%;
+    --chart-3: 197 37% 24%;
+    --chart-4: 43 74% 66%;
+    --chart-5: 27 87% 67%;
+  }
+  
+  .dark {
+    /* Dark mode colors */
+    --background: 0 0% 3.9%; /* #0A0A0A */
+    --foreground: 0 0% 98%; /* #FAFAFA */
+    
+    --card: 0 0% 3.9%; /* #262626 */
+    --card-foreground: 0 0% 98%; /* #FAFAFA */
+    
+    --muted: 0 0% 14.9%; /* #262626 */
+    --muted-foreground: 0 0% 63.9%; /* #A3A3A3 */
+    
+    --border: 0 0% 14.9%; /* #262626 */
+    --input: 0 0% 14.9%; /* #262626 */
+    
+    --primary: 0 100% 45%; /* #E60000 - SambaTV Red */
+    --primary-foreground: 0 0% 100%; /* #FFFFFF */
+    
+    --destructive: 0 62.8% 30.6%; /* #991B1B */
+    --destructive-foreground: 0 0% 98%; /* #FAFAFA */
+    --popover: 0 0% 3.9%;
+    --popover-foreground: 0 0% 98%;
+    --secondary: 0 0% 14.9%;
+    --secondary-foreground: 0 0% 98%;
+    --accent: 0 0% 14.9%;
+    --accent-foreground: 0 0% 98%;
+    --ring: 0 0% 83.1%;
+    --chart-1: 220 70% 50%;
+    --chart-2: 160 60% 45%;
+    --chart-3: 30 80% 55%;
+    --chart-4: 280 65% 60%;
+    --chart-5: 340 75% 55%;
+  }
+}
+
+@layer utilities {
+  /* Debugging utility classes */
+  .debug-red {
+    @apply border-2 border-red-500;
+  }
+  
+  .debug-blue {
+    @apply border-2 border-blue-500;
+  }
+  
+  .debug-green {
+    @apply border-2 border-green-500;
+  }
+}
+
+
+button:active,
+a[role="button"]:active {
+  transform: translateY(0);
+  box-shadow: 0 2px 4px rgba(80, 89, 254, 0.1);
+}
+
+/* Input and Textarea Focus Effects */
+input:focus,
+textarea:focus {
+  transition: all 0.2s ease;
+  box-shadow: 0 0 0 3px rgba(80, 89, 254, 0.1);
+  border-color: var(--primary);
+}
+
+/* Card Hover Effects */
+.card-hover {
+  transition: all 0.3s ease;
+}
+
+.card-hover:hover {
+  transform: translateY(-4px);
+  box-shadow: 0 12px 20px rgba(0, 0, 0, 0.1);
+}
+
+/* Link Hover Effects */
+.link-hover {
+  position: relative;
+  transition: color 0.2s ease;
+}
+
+.link-hover::after {
+  content: '';
+  position: absolute;
+  width: 100%;
+  height: 2px;
+  bottom: -2px;
+  left: 0;
+  background-color: var(--primary);
+  transform: scaleX(0);
+  transform-origin: bottom right;
+  transition: transform 0.3s ease;
+}
+
+.link-hover:hover::after {
+  transform: scaleX(1);
+  transform-origin: bottom left;
+}
+
+
+
+@layer base {
+  * {
+    @apply border-border;
+  }
+  body {
+    @apply bg-background text-foreground;
+  }
+}
