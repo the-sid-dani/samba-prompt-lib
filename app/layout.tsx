@@ -7,6 +7,7 @@ import { SessionProvider } from "next-auth/react"
 import { Toaster } from '@/components/ui/toaster';
 import FooterWrapper from "@/components/ui/FooterWrapper";
 import { ReactNode } from 'react';
+import StagewiseProvider from '@/components/dev/StagewiseProvider';
 
 export const metadata: Metadata = config.metadata;
 
@@ -22,6 +23,7 @@ export default function RootLayout({
           className="antialiased min-h-screen flex flex-col"
         >
           <Toaster />
+          <StagewiseProvider />
           <main className="flex-grow">
             {children}
           </main>

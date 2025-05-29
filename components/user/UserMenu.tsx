@@ -1,5 +1,6 @@
 "use client";
 import React, { useState } from 'react';
+import Link from 'next/link';
 import { ChevronDown, LogOut, User } from 'lucide-react';
 import { useSession, signOut } from 'next-auth/react';
 
@@ -40,14 +41,15 @@ export default function UserMenu() {
 						aria-orientation="vertical"
 						aria-labelledby="user-menu"
 					>
-						<a
-							href="/app/profile"
+						<Link
+							href="/profile"
 							className="flex items-center px-4 py-2 text-sm text-gray-700 hover:bg-gray-100"
 							role="menuitem"
+							onClick={() => setIsMenuOpen(false)}
 						>
 							<User className="mr-3 h-4 w-4" />
 							Profile
-						</a>
+						</Link>
 
 						<button
 							onClick={handleSignOut}

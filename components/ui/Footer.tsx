@@ -114,11 +114,6 @@ const Footer = () => {
 						<p className="text-sm text-gray-600">
 							© {new Date().getFullYear()} {config.appName}. All rights reserved.
 						</p>
-						<div className="mt-4 md:mt-0">
-							<p className="text-sm text-gray-600">
-								Made with ❤️ for the community
-							</p>
-						</div>
 					</div>
 				</div>
 			</div>
