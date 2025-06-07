@@ -3,6 +3,10 @@ import { auth } from "@/lib/auth";
 import { createSupabaseAdminClient } from "@/utils/supabase/server";
 import ProfilePage from "@/components/profile/ProfilePage";
 
+// Force dynamic rendering to ensure fresh stats
+export const dynamic = 'force-dynamic';
+export const revalidate = 0;
+
 export default async function Profile() {
   const session = await auth();
   

@@ -162,6 +162,9 @@ export function revalidateAfterVote(promptId: number, userId: string) {
 export function revalidateAfterFavorite(promptId: number, userId: string) {
   revalidateTag(CACHE_TAGS.prompt(promptId))
   revalidateTag(CACHE_TAGS.userFavorites(userId))
+  revalidateTag(CACHE_TAGS.prompts) // Update prompt lists to reflect new favorite counts
+  revalidatePath('/favorites') // Ensure favorites page is refreshed
+  revalidatePath('/') // Ensure home page is refreshed
 }
 
 /**

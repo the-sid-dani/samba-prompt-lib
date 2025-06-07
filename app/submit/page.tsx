@@ -3,11 +3,12 @@
 import { useState, useEffect } from 'react'
 import { useRouter } from 'next/navigation'
 import { useSession } from 'next-auth/react'
-import { useForm } from 'react-hook-form'
+import { useForm, useWatch } from 'react-hook-form'
 import { zodResolver } from '@hookform/resolvers/zod'
 import * as z from 'zod'
-import { Loader2, Save, Send } from 'lucide-react'
+import { Loader2, Save, Send, Zap, Plus, X } from 'lucide-react'
 
+import Navigation from '@/components/navigation/Navigation'
 import { Button } from '@/components/ui/button'
 import {
   Form,
@@ -31,12 +32,15 @@ import { Badge } from '@/components/ui/badge'
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card'
 import { Alert, AlertDescription } from '@/components/ui/alert'
 import { AlertCircle } from 'lucide-react'
+import { cn } from '@/lib/utils'
 
 import { MarkdownEditor } from '@/components/markdown-editor'
 import { useAsyncOperation } from '@/hooks/use-api-error'
-import { createPrompt, getCategories, fetchTags } from '@/app/actions/prompts'
+import { createPrompt, getCategories, fetchTags, createCategory } from '@/app/actions/prompts'
 import { useToast } from '@/hooks/use-toast'
 import { TagInput } from '@/components/tag-input'
+import { PromptExamplesEditor } from '@/components/prompt-examples-editor'
+import { PromptFormPreview } from '@/components/prompt-form-preview'
 import {
   AlertDialog,
   AlertDialogAction,
@@ -64,6 +68,11 @@ const formSchema = z.object({
   tags: z.array(z.string())
     .min(1, 'Please add at least one tag')
     .max(5, 'Maximum 5 tags allowed'),
+  examples: z.array(z.object({
+    input: z.string().min(1, 'Example input is required'),
+    output: z.string().min(1, 'Example output is required'),
+    description: z.string().optional()
+  })).optional().default([]),
 })
 
 type FormData = z.infer<typeof formSchema>
@@ -86,6 +95,9 @@ export default function SubmitPromptPage() {
   const [isDraft, setIsDraft] = useState(false)
   const [lastSaved, setLastSaved] = useState<Date | null>(null)
   const [showDiscardDialog, setShowDiscardDialog] = useState(false)
+  const [showNewCategoryInput, setShowNewCategoryInput] = useState(false)
+  const [newCategoryName, setNewCategoryName] = useState('')
+  const [isCreatingCategory, setIsCreatingCategory] = useState(false)
   
   // Debug log
   console.log('SubmitPromptPage rendered, session:', session, 'status:', status)
@@ -99,7 +111,15 @@ export default function SubmitPromptPage() {
       content: '',
       category_id: '',
       tags: [],
+      examples: [],
     },
+  })
+  
+  // Watch the content field for live preview
+  const watchedContent = useWatch({
+    control: form.control,
+    name: 'content',
+    defaultValue: ''
   })
   
   // Redirect if not authenticated
@@ -190,6 +210,49 @@ export default function SubmitPromptPage() {
     } catch (error) {
       console.error('Error fetching tag suggestions:', error)
       return []
+    }
+  }
+  
+  // Handle creating a new category
+  const handleCreateCategory = async () => {
+    if (!newCategoryName.trim()) {
+      toast({
+        title: 'Error',
+        description: 'Please enter a category name',
+        variant: 'destructive',
+      })
+      return
+    }
+    
+    setIsCreatingCategory(true)
+    
+    try {
+      const newCategory = await createCategory(newCategoryName.trim())
+      console.log('Created new category:', newCategory)
+      
+      // Add to categories list
+      setCategories(prev => [...prev, newCategory])
+      
+      // Select the new category
+      form.setValue('category_id', newCategory.id.toString())
+      
+      // Reset form
+      setNewCategoryName('')
+      setShowNewCategoryInput(false)
+      
+      toast({
+        title: 'Success',
+        description: `Created new category: ${newCategory.name}`,
+      })
+    } catch (error) {
+      console.error('Error creating category:', error)
+      toast({
+        title: 'Error',
+        description: error instanceof Error ? error.message : 'Failed to create category',
+        variant: 'destructive',
+      })
+    } finally {
+      setIsCreatingCategory(false)
     }
   }
   
@@ -292,24 +355,46 @@ export default function SubmitPromptPage() {
   
   return (
     <>
-      <div className="min-h-screen bg-background py-8">
-        <div className="max-w-2xl mx-auto px-4">
-          <Card>
-            <CardHeader>
-              <CardTitle className="text-2xl font-bold">Submit a New Prompt</CardTitle>
-              <CardDescription>
-                Share your prompt with the SambaTV community. All fields marked with * are required.
-              </CardDescription>
+      {/* Navigation */}
+      <Navigation showCreateButton={false} />
+      
+      <div className="min-h-screen bg-gradient-to-b from-background to-muted/20 py-4 md:py-8">
+        <div className="max-w-2xl mx-auto px-4 sm:px-6 lg:px-8">
+          {/* Header Section with Samba Branding */}
+          <div className="text-center mb-6 md:mb-8">
+            <div className="inline-flex items-center gap-2 mb-3 md:mb-4">
+              <h1 className="text-2xl md:text-3xl font-bold bg-gradient-to-r from-primary to-primary/70 bg-clip-text text-transparent">
+                Create Your Prompt
+              </h1>
+            </div>
+            <p className="text-sm md:text-base text-muted-foreground max-w-md mx-auto px-4">
+              Share your AI expertise with the SambaTV community. Your prompts help others unlock the power of AI.
+            </p>
+          </div>
+
+          <Card className="border-primary/10 shadow-lg">
+            <CardHeader className="bg-gradient-to-r from-primary/5 to-transparent border-b p-4 md:p-6">
+              <div className="flex items-center gap-3">
+                <div className="p-2 rounded-lg bg-primary/10">
+                  <Zap className="h-5 w-5 text-primary" />
+                </div>
+                <div>
+                  <CardTitle className="text-xl md:text-2xl font-bold">Submit a New Prompt</CardTitle>
+                  <CardDescription className="text-sm">
+                    All fields marked with * are required
+                  </CardDescription>
+                </div>
+              </div>
             </CardHeader>
-            <CardContent>
+            <CardContent className="p-4 md:p-6">
               {isDraft && (
-                <Alert className="mb-6">
-                  <AlertCircle className="h-4 w-4" />
-                  <AlertDescription>
+                <Alert className="mb-4 md:mb-6 border-primary/20 bg-primary/5">
+                  <AlertCircle className="h-4 w-4 text-primary" />
+                  <AlertDescription className="text-sm">
                     You have a saved draft. You can continue editing or{' '}
                     <Button
                       variant="link"
-                      className="h-auto p-0 text-destructive"
+                      className="h-auto p-0 text-destructive hover:text-destructive/80"
                       onClick={handleDiscardDraft}
                     >
                       discard it
@@ -325,17 +410,18 @@ export default function SubmitPromptPage() {
               )}
               
               <Form {...form}>
-                <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-6">
+                <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-6 md:space-y-8">
                   {/* Title Field */}
                   <FormField
                     control={form.control}
                     name="title"
                     render={({ field }) => (
                       <FormItem>
-                        <FormLabel>Title *</FormLabel>
+                        <FormLabel className="text-base font-semibold">Title *</FormLabel>
                         <FormControl>
                           <Input 
-                            placeholder="Enter a descriptive title for your prompt" 
+                            placeholder="e.g., 'SEO-Optimized Blog Post Generator'" 
+                            className="border-muted-foreground/20 focus:border-primary transition-colors"
                             {...field} 
                           />
                         </FormControl>
@@ -353,11 +439,11 @@ export default function SubmitPromptPage() {
                     name="description"
                     render={({ field }) => (
                       <FormItem>
-                        <FormLabel>Description *</FormLabel>
+                        <FormLabel className="text-base font-semibold">Description *</FormLabel>
                         <FormControl>
                           <Textarea 
-                            placeholder="Briefly describe what your prompt does and when to use it"
-                            className="resize-none"
+                            placeholder="Explain what your prompt does and when someone would use it..."
+                            className="resize-none border-muted-foreground/20 focus:border-primary transition-colors"
                             rows={3}
                             {...field} 
                           />
@@ -376,7 +462,7 @@ export default function SubmitPromptPage() {
                     name="content"
                     render={({ field }) => (
                       <FormItem>
-                        <FormLabel>Prompt Content *</FormLabel>
+                        <FormLabel className="text-base font-semibold">Prompt Content *</FormLabel>
                         <FormControl>
                           <MarkdownEditor
                             value={field.value}
@@ -395,29 +481,114 @@ export default function SubmitPromptPage() {
                     )}
                   />
                   
-                  {/* Category Field */}
+                  {/* Live Preview */}
+                  <PromptFormPreview 
+                    content={watchedContent}
+                    className="mb-6"
+                  />
+                  
+                  {/* Category Field - Now with clickable badges */}
                   <FormField
                     control={form.control}
                     name="category_id"
                     render={({ field }) => (
                       <FormItem>
-                        <FormLabel>Category *</FormLabel>
-                        <Select onValueChange={field.onChange} defaultValue={field.value}>
-                          <FormControl>
-                            <SelectTrigger>
-                              <SelectValue placeholder="Select a category" />
-                            </SelectTrigger>
-                          </FormControl>
-                          <SelectContent>
-                            {categories.map((category) => (
-                              <SelectItem key={category.id} value={category.id.toString()}>
-                                {category.name}
-                              </SelectItem>
-                            ))}
-                          </SelectContent>
-                        </Select>
+                        <FormLabel className="text-base font-semibold">Category *</FormLabel>
+                        <FormControl>
+                          <div className="space-y-3">
+                            <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-2 md:gap-3">
+                              {categories.map((category) => (
+                                <button
+                                  key={category.id}
+                                  type="button"
+                                  onClick={() => field.onChange(category.id.toString())}
+                                  className={cn(
+                                    "relative flex items-center justify-center min-h-[44px] px-4 py-3 rounded-lg border-2 transition-all duration-200",
+                                    "hover:border-primary/50 hover:bg-primary/5",
+                                    "focus:outline-none focus:ring-2 focus:ring-primary focus:ring-offset-2",
+                                    field.value === category.id.toString()
+                                      ? "border-primary bg-primary/10 text-primary font-medium"
+                                      : "border-muted-foreground/20 text-muted-foreground"
+                                  )}
+                                >
+                                  <span className="text-sm md:text-base">{category.name}</span>
+                                  {field.value === category.id.toString() && (
+                                    <div className="absolute top-1 right-1 w-2 h-2 rounded-full bg-primary animate-pulse" />
+                                  )}
+                                </button>
+                              ))}
+                              
+                              {/* Add New Category Button */}
+                              {!showNewCategoryInput && (
+                                <button
+                                  type="button"
+                                  onClick={() => setShowNewCategoryInput(true)}
+                                  className={cn(
+                                    "relative flex items-center justify-center min-h-[44px] px-4 py-3 rounded-lg border-2 border-dashed transition-all duration-200",
+                                    "border-muted-foreground/20 text-muted-foreground hover:border-primary/50 hover:bg-primary/5",
+                                    "focus:outline-none focus:ring-2 focus:ring-primary focus:ring-offset-2"
+                                  )}
+                                >
+                                  <Plus className="h-4 w-4 mr-2" />
+                                  <span className="text-sm md:text-base">Add New</span>
+                                </button>
+                              )}
+                            </div>
+                            
+                            {/* New Category Input */}
+                            {showNewCategoryInput && (
+                              <div className="flex flex-col sm:flex-row gap-2">
+                                <Input
+                                  type="text"
+                                  placeholder="Enter new category name..."
+                                  value={newCategoryName}
+                                  onChange={(e) => setNewCategoryName(e.target.value)}
+                                  onKeyDown={(e) => {
+                                    if (e.key === 'Enter') {
+                                      e.preventDefault()
+                                      handleCreateCategory()
+                                    } else if (e.key === 'Escape') {
+                                      setShowNewCategoryInput(false)
+                                      setNewCategoryName('')
+                                    }
+                                  }}
+                                  className="flex-1 border-muted-foreground/20 focus:border-primary"
+                                  disabled={isCreatingCategory}
+                                  autoFocus
+                                />
+                                <div className="flex gap-2">
+                                  <Button
+                                    type="button"
+                                    onClick={handleCreateCategory}
+                                    disabled={isCreatingCategory || !newCategoryName.trim()}
+                                    size="default"
+                                    className="bg-primary hover:bg-primary/90 flex-1 sm:flex-none"
+                                  >
+                                    {isCreatingCategory ? (
+                                      <Loader2 className="h-4 w-4 animate-spin" />
+                                    ) : (
+                                      'Add'
+                                    )}
+                                  </Button>
+                                  <Button
+                                    type="button"
+                                    onClick={() => {
+                                      setShowNewCategoryInput(false)
+                                      setNewCategoryName('')
+                                    }}
+                                    variant="outline"
+                                    size="default"
+                                    disabled={isCreatingCategory}
+                                  >
+                                    <X className="h-4 w-4" />
+                                  </Button>
+                                </div>
+                              </div>
+                            )}
+                          </div>
+                        </FormControl>
                         <FormDescription>
-                          Choose the most appropriate category for your prompt
+                          Choose the most appropriate category for your prompt or create a new one
                         </FormDescription>
                         <FormMessage />
                       </FormItem>
@@ -430,7 +601,7 @@ export default function SubmitPromptPage() {
                     name="tags"
                     render={({ field }) => (
                       <FormItem>
-                        <FormLabel>Tags *</FormLabel>
+                        <FormLabel className="text-base font-semibold">Tags *</FormLabel>
                         <FormControl>
                           <TagInput
                             value={field.value}
@@ -449,13 +620,31 @@ export default function SubmitPromptPage() {
                     )}
                   />
                   
-                  {/* Form Actions */}
-                  <div className="flex justify-between gap-4 pt-4">
+                  {/* Examples Field */}
+                  <FormField
+                    control={form.control}
+                    name="examples"
+                    render={({ field }) => (
+                      <FormItem>
+                        <FormControl>
+                          <PromptExamplesEditor
+                            examples={field.value}
+                            onChange={field.onChange}
+                          />
+                        </FormControl>
+                        <FormMessage />
+                      </FormItem>
+                    )}
+                  />
+                  
+                  {/* Form Actions with improved styling */}
+                  <div className="flex flex-col sm:flex-row justify-between gap-3 sm:gap-4 pt-6 border-t">
                     <Button
                       type="button"
                       variant="outline"
                       onClick={handleSaveDraft}
                       disabled={!form.formState.isDirty || isSubmitting}
+                      className="hover:bg-muted w-full sm:w-auto"
                     >
                       <Save className="mr-2 h-4 w-4" />
                       Save as Draft
@@ -464,7 +653,7 @@ export default function SubmitPromptPage() {
                     <Button
                       type="submit"
                       disabled={isSubmitting}
-                      className="bg-primary text-primary-foreground"
+                      className="bg-primary hover:bg-primary/90 text-primary-foreground shadow-lg hover:shadow-xl transition-all duration-200 w-full sm:w-auto"
                     >
                       {isSubmitting ? (
                         <>
@@ -483,6 +672,11 @@ export default function SubmitPromptPage() {
               </Form>
             </CardContent>
           </Card>
+          
+          {/* Help text section */}
+          <div className="mt-6 md:mt-8 text-center text-sm text-muted-foreground px-4">
+            <p>Need help? Check out our <a href="/guide" className="text-primary hover:underline">prompt writing guide</a></p>
+          </div>
         </div>
       </div>
       

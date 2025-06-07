@@ -95,6 +95,70 @@
   }
 }
 
+/* Accessibility: Enhanced Focus Styles */
+@layer base {
+  /* Remove default focus outline and apply custom styles */
+  *:focus {
+    @apply outline-none;
+  }
+
+  /* Enhanced focus styles for keyboard navigation */
+  *:focus-visible {
+    @apply outline-2 outline-offset-2 outline-primary;
+  }
+
+  /* Specific focus styles for different elements */
+  button:focus-visible,
+  a:focus-visible,
+  [role="button"]:focus-visible {
+    @apply ring-2 ring-primary ring-offset-2 ring-offset-background;
+  }
+
+  input:focus-visible,
+  textarea:focus-visible,
+  select:focus-visible {
+    @apply border-primary ring-2 ring-primary ring-offset-2 ring-offset-background;
+  }
+
+  /* Focus styles for cards and interactive containers */
+  .card:focus-visible,
+  [tabindex="0"]:focus-visible {
+    @apply ring-2 ring-primary ring-offset-2 ring-offset-background;
+  }
+
+  /* Skip to content link */
+  .skip-link {
+    @apply absolute left-[-999px] z-50 bg-primary text-primary-foreground px-4 py-2 rounded;
+  }
+
+  .skip-link:focus {
+    @apply left-4 top-4;
+  }
+}
+
+/* Ensure sufficient color contrast */
+@layer utilities {
+  /* High contrast mode support */
+  @media (prefers-contrast: high) {
+    .text-muted-foreground {
+      @apply text-foreground;
+    }
+    
+    .border {
+      @apply border-foreground;
+    }
+  }
+
+  /* Reduced motion support */
+  @media (prefers-reduced-motion: reduce) {
+    * {
+      animation-duration: 0.01ms !important;
+      animation-iteration-count: 1 !important;
+      transition-duration: 0.01ms !important;
+      scroll-behavior: auto !important;
+    }
+  }
+}
 
 button:active,
 a[role="button"]:active {
@@ -120,6 +184,49 @@ textarea:focus {
   box-shadow: 0 12px 20px rgba(0, 0, 0, 0.1);
 }
 
+/* Touch-specific enhancements */
+@media (hover: none) and (pointer: coarse) {
+  /* Touch feedback for cards */
+  .card-hover:active {
+    transform: scale(0.98);
+    transition: transform 0.1s ease;
+  }
+  
+  /* Remove hover effects on touch devices */
+  .card-hover:hover {
+    transform: none;
+  }
+}
+
+/* Touch-friendly tap highlight */
+@layer utilities {
+  /* Custom tap highlight for interactive elements */
+  .tap-highlight {
+    -webkit-tap-highlight-color: rgba(230, 0, 0, 0.1);
+    position: relative;
+  }
+  
+  .tap-highlight::after {
+    content: '';
+    position: absolute;
+    inset: -4px;
+    border-radius: inherit;
+    opacity: 0;
+    background-color: currentColor;
+    transition: opacity 0.2s ease;
+  }
+  
+  .tap-highlight:active::after {
+    opacity: 0.1;
+  }
+  
+  /* Touch-friendly button press effect */
+  .touch-scale:active {
+    transform: scale(0.95);
+    transition: transform 0.1s ease;
+  }
+}
+
 /* Link Hover Effects */
 .link-hover {
   position: relative;
@@ -143,8 +250,6 @@ textarea:focus {
   transform: scaleX(1);
   transform-origin: bottom left;
 }
-
-
 
 @layer base {
   * {

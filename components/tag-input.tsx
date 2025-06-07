@@ -111,21 +111,22 @@ export function TagInput({
     <div className="space-y-2">
       {/* Selected tags */}
       {value.length > 0 && (
-        <div className="flex flex-wrap gap-2 mb-2">
+        <div className="flex flex-wrap gap-2 mb-3">
           {value.map((tag) => (
             <Badge
               key={tag}
               variant="secondary"
-              className="pl-2 pr-1 py-1 flex items-center gap-1"
+              className="pl-3 pr-1 py-1.5 md:py-1 flex items-center gap-1.5 text-sm md:text-xs"
             >
               <span>{tag}</span>
               <button
                 type="button"
                 onClick={() => removeTag(tag)}
-                className="ml-1 rounded-full outline-none ring-offset-background focus:ring-2 focus:ring-ring focus:ring-offset-2"
+                className="ml-1 p-0.5 rounded-full outline-none ring-offset-background focus:ring-2 focus:ring-ring focus:ring-offset-2 hover:bg-muted transition-colors"
                 disabled={disabled}
+                aria-label={`Remove ${tag} tag`}
               >
-                <X className="h-3 w-3 hover:text-destructive" />
+                <X className="h-4 w-4 md:h-3 md:w-3 hover:text-destructive" />
               </button>
             </Badge>
           ))}
@@ -143,14 +144,14 @@ export function TagInput({
             onFocus={() => setShowSuggestions(true)}
             placeholder={placeholder}
             disabled={disabled || value.length >= maxTags}
-            className="h-9"
+            className="h-11 md:h-9 px-4 md:px-3 text-base md:text-sm"
           />
           
           {showSuggestions && inputValue && (
             <div className="absolute top-full left-0 right-0 z-10 mt-1 max-h-60 overflow-auto rounded-md border bg-popover text-popover-foreground shadow-md">
               <CommandGroup>
                 {isLoading ? (
-                  <div className="px-2 py-1.5 text-sm text-muted-foreground">
+                  <div className="px-3 py-2 text-sm text-muted-foreground">
                     Loading suggestions...
                   </div>
                 ) : filteredSuggestions.length > 0 ? (
@@ -159,13 +160,13 @@ export function TagInput({
                       key={suggestion}
                       value={suggestion}
                       onSelect={() => addTag(suggestion)}
-                      className="cursor-pointer"
+                      className="cursor-pointer py-2.5 md:py-1.5 px-3 md:px-2 text-base md:text-sm"
                     >
                       {suggestion}
                     </CommandItem>
                   ))
                 ) : (
-                  <CommandEmpty className="px-2 py-1.5 text-sm">
+                  <CommandEmpty className="px-3 py-2 text-sm">
                     Press Enter to add "{inputValue}"
                   </CommandEmpty>
                 )}
@@ -176,7 +177,7 @@ export function TagInput({
       </div>
       
       {/* Helper text */}
-      <p className="text-xs text-muted-foreground">
+      <p className="text-sm md:text-xs text-muted-foreground">
         {value.length}/{maxTags} tags. {value.length < maxTags && 'Type and press Enter to add tags.'}
       </p>
     </div>

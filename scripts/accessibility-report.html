@@ -1,0 +1,601 @@
+
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Accessibility Audit Report - SambaTV Prompt Web App</title>
+    <style>
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+            max-width: 1200px;
+            margin: 0 auto;
+            padding: 20px;
+            background: #f5f5f5;
+            color: #333;
+        }
+        .header {
+            background: white;
+            padding: 30px;
+            border-radius: 8px;
+            margin-bottom: 30px;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+        }
+        .summary {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+            gap: 20px;
+            margin-bottom: 30px;
+        }
+        .summary-card {
+            background: white;
+            padding: 20px;
+            border-radius: 8px;
+            text-align: center;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+        }
+        .summary-card h3 {
+            margin: 0 0 10px 0;
+            color: #666;
+            font-size: 14px;
+            text-transform: uppercase;
+        }
+        .summary-card .number {
+            font-size: 36px;
+            font-weight: bold;
+            margin: 0;
+        }
+        .critical { color: #d32f2f; }
+        .serious { color: #f57c00; }
+        .moderate { color: #fbc02d; }
+        .minor { color: #689f38; }
+        .success { color: #388e3c; }
+        .page-result {
+            background: white;
+            padding: 20px;
+            margin-bottom: 20px;
+            border-radius: 8px;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+        }
+        .violation {
+            margin: 15px 0;
+            padding: 15px;
+            background: #f5f5f5;
+            border-left: 4px solid;
+            border-radius: 4px;
+        }
+        .violation.critical { border-color: #d32f2f; }
+        .violation.serious { border-color: #f57c00; }
+        .violation.moderate { border-color: #fbc02d; }
+        .violation.minor { border-color: #689f38; }
+        .targets {
+            margin-top: 10px;
+            font-family: monospace;
+            font-size: 12px;
+            background: #e8e8e8;
+            padding: 10px;
+            border-radius: 4px;
+            overflow-x: auto;
+        }
+        .common-issues {
+            background: white;
+            padding: 20px;
+            border-radius: 8px;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+            margin-bottom: 30px;
+        }
+        a {
+            color: #1976d2;
+            text-decoration: none;
+        }
+        a:hover {
+            text-decoration: underline;
+        }
+    </style>
+</head>
+<body>
+    <div class="header">
+        <h1>Accessibility Audit Report</h1>
+        <p>SambaTV Prompt Web App - 5/31/2025, 12:25:34 PM</p>
+    </div>
+
+    <div class="summary">
+        <div class="summary-card">
+            <h3>Total Violations</h3>
+            <p class="number serious">
+                35
+            </p>
+        </div>
+        <div class="summary-card">
+            <h3>Critical Issues</h3>
+            <p class="number critical">9</p>
+        </div>
+        <div class="summary-card">
+            <h3>Serious Issues</h3>
+            <p class="number serious">22</p>
+        </div>
+        <div class="summary-card">
+            <h3>Moderate Issues</h3>
+            <p class="number moderate">4</p>
+        </div>
+        <div class="summary-card">
+            <h3>Minor Issues</h3>
+            <p class="number minor">0</p>
+        </div>
+        <div class="summary-card">
+            <h3>Passed Tests</h3>
+            <p class="number success">251</p>
+        </div>
+    </div>
+
+    
+    <div class="common-issues">
+        <h2>Most Common Issues</h2>
+        <ol>
+            <li><strong>aria-command-name</strong> - Found on 6 page(s)</li><li><strong>button-name</strong> - Found on 6 page(s)</li><li><strong>link-name</strong> - Found on 6 page(s)</li><li><strong>nested-interactive</strong> - Found on 6 page(s)</li><li><strong>color-contrast</strong> - Found on 4 page(s)</li>
+        </ol>
+    </div>
+    
+
+    <h2>Page-by-Page Results</h2>
+    
+        <div class="page-result">
+            <h3>Home page (PromptExplorer)</h3>
+            <p><strong>URL:</strong> /</p>
+            <p><strong>Violations:</strong> 7 | 
+               <strong>Passes:</strong> 43</p>
+            
+            
+                <h4>Violations:</h4>
+                
+                    <div class="violation serious">
+                        <strong>SERIOUS: ARIA commands must have an accessible name</strong>
+                        <p>Ensure every ARIA button, link and menuitem has an accessible name</p>
+                        <p><a href="https://dequeuniversity.com/rules/axe/4.10/aria-command-name?application=axe-puppeteer" target="_blank">Learn more →</a></p>
+                        <div class="targets">
+                            <strong>Affected elements (1):</strong><br>
+                            .pointer-events-none
+                            
+                        </div>
+                    </div>
+                
+                    <div class="violation critical">
+                        <strong>CRITICAL: ARIA attributes must conform to valid values</strong>
+                        <p>Ensure all ARIA attributes have valid values</p>
+                        <p><a href="https://dequeuniversity.com/rules/axe/4.10/aria-valid-attr-value?application=axe-puppeteer" target="_blank">Learn more →</a></p>
+                        <div class="targets">
+                            <strong>Affected elements (1):</strong><br>
+                            #radix-\:Rmrsd7\:-trigger-popular
+                            
+                        </div>
+                    </div>
+                
+                    <div class="violation critical">
+                        <strong>CRITICAL: Buttons must have discernible text</strong>
+                        <p>Ensure buttons have discernible text</p>
+                        <p><a href="https://dequeuniversity.com/rules/axe/4.10/button-name?application=axe-puppeteer" target="_blank">Learn more →</a></p>
+                        <div class="targets">
+                            <strong>Affected elements (5):</strong><br>
+                            a[href$="prompt/5"] > .rounded-xl.bg-card.text-card-foreground > .pt-0.p-6 > .mt-3.pt-3.border-t > div:nth-child(2) > .\[\&_svg\]\:pointer-events-none.\[\&_svg\]\:size-4[title=""]<br>a[href$="prompt/3"] > .rounded-xl.bg-card.text-card-foreground > .pt-0.p-6 > .mt-3.pt-3.border-t > div:nth-child(2) > .\[\&_svg\]\:pointer-events-none.\[\&_svg\]\:size-4[title=""]<br>a[href$="prompt/1"] > .rounded-xl.bg-card.text-card-foreground > .pt-0.p-6 > .mt-3.pt-3.border-t > div:nth-child(2) > .\[\&_svg\]\:pointer-events-none.\[\&_svg\]\:size-4[title=""]
+                            <br>...
+                        </div>
+                    </div>
+                
+                    <div class="violation serious">
+                        <strong>SERIOUS: Elements must meet minimum color contrast ratio thresholds</strong>
+                        <p>Ensure the contrast between foreground and background colors meets WCAG 2 AA minimum contrast ratio thresholds</p>
+                        <p><a href="https://dequeuniversity.com/rules/axe/4.10/color-contrast?application=axe-puppeteer" target="_blank">Learn more →</a></p>
+                        <div class="targets">
+                            <strong>Affected elements (2):</strong><br>
+                            #radix-\:Rmrsd7\:-trigger-trending<br>#radix-\:Rmrsd7\:-trigger-newest
+                            
+                        </div>
+                    </div>
+                
+                    <div class="violation moderate">
+                        <strong>MODERATE: Heading levels should only increase by one</strong>
+                        <p>Ensure the order of headings is semantically correct</p>
+                        <p><a href="https://dequeuniversity.com/rules/axe/4.10/heading-order?application=axe-puppeteer" target="_blank">Learn more →</a></p>
+                        <div class="targets">
+                            <strong>Affected elements (1):</strong><br>
+                            .sm\:mb-6.mb-4:nth-child(1) > .sm\:mb-3.mb-2
+                            
+                        </div>
+                    </div>
+                
+                    <div class="violation serious">
+                        <strong>SERIOUS: Links must have discernible text</strong>
+                        <p>Ensure links have discernible text</p>
+                        <p><a href="https://dequeuniversity.com/rules/axe/4.10/link-name?application=axe-puppeteer" target="_blank">Learn more →</a></p>
+                        <div class="targets">
+                            <strong>Affected elements (3):</strong><br>
+                            a[href$="github.com"]<br>a[href$="twitter.com"]<br>a[href$="linkedin.com"]
+                            
+                        </div>
+                    </div>
+                
+                    <div class="violation serious">
+                        <strong>SERIOUS: Interactive controls must not be nested</strong>
+                        <p>Ensure interactive controls are not nested as they are not always announced by screen readers or can cause focus problems for assistive technologies</p>
+                        <p><a href="https://dequeuniversity.com/rules/axe/4.10/nested-interactive?application=axe-puppeteer" target="_blank">Learn more →</a></p>
+                        <div class="targets">
+                            <strong>Affected elements (1):</strong><br>
+                            .h-fit
+                            
+                        </div>
+                    </div>
+                
+            
+        </div>
+    
+        <div class="page-result">
+            <h3>Submit prompt form</h3>
+            <p><strong>URL:</strong> /submit</p>
+            <p><strong>Violations:</strong> 7 | 
+               <strong>Passes:</strong> 43</p>
+            
+            
+                <h4>Violations:</h4>
+                
+                    <div class="violation serious">
+                        <strong>SERIOUS: ARIA commands must have an accessible name</strong>
+                        <p>Ensure every ARIA button, link and menuitem has an accessible name</p>
+                        <p><a href="https://dequeuniversity.com/rules/axe/4.10/aria-command-name?application=axe-puppeteer" target="_blank">Learn more →</a></p>
+                        <div class="targets">
+                            <strong>Affected elements (1):</strong><br>
+                            .pointer-events-none
+                            
+                        </div>
+                    </div>
+                
+                    <div class="violation critical">
+                        <strong>CRITICAL: ARIA attributes must conform to valid values</strong>
+                        <p>Ensure all ARIA attributes have valid values</p>
+                        <p><a href="https://dequeuniversity.com/rules/axe/4.10/aria-valid-attr-value?application=axe-puppeteer" target="_blank">Learn more →</a></p>
+                        <div class="targets">
+                            <strong>Affected elements (1):</strong><br>
+                            #radix-\:r3\:-trigger-popular
+                            
+                        </div>
+                    </div>
+                
+                    <div class="violation critical">
+                        <strong>CRITICAL: Buttons must have discernible text</strong>
+                        <p>Ensure buttons have discernible text</p>
+                        <p><a href="https://dequeuniversity.com/rules/axe/4.10/button-name?application=axe-puppeteer" target="_blank">Learn more →</a></p>
+                        <div class="targets">
+                            <strong>Affected elements (5):</strong><br>
+                            a[href$="prompt/5"] > .rounded-xl.bg-card.text-card-foreground > .pt-0.p-6 > .mt-3.pt-3.border-t > div:nth-child(2) > .\[\&_svg\]\:pointer-events-none.\[\&_svg\]\:size-4[title=""]<br>a[href$="prompt/3"] > .rounded-xl.bg-card.text-card-foreground > .pt-0.p-6 > .mt-3.pt-3.border-t > div:nth-child(2) > .\[\&_svg\]\:pointer-events-none.\[\&_svg\]\:size-4[title=""]<br>a[href$="prompt/1"] > .rounded-xl.bg-card.text-card-foreground > .pt-0.p-6 > .mt-3.pt-3.border-t > div:nth-child(2) > .\[\&_svg\]\:pointer-events-none.\[\&_svg\]\:size-4[title=""]
+                            <br>...
+                        </div>
+                    </div>
+                
+                    <div class="violation serious">
+                        <strong>SERIOUS: Elements must meet minimum color contrast ratio thresholds</strong>
+                        <p>Ensure the contrast between foreground and background colors meets WCAG 2 AA minimum contrast ratio thresholds</p>
+                        <p><a href="https://dequeuniversity.com/rules/axe/4.10/color-contrast?application=axe-puppeteer" target="_blank">Learn more →</a></p>
+                        <div class="targets">
+                            <strong>Affected elements (2):</strong><br>
+                            #radix-\:r3\:-trigger-trending<br>#radix-\:r3\:-trigger-newest
+                            
+                        </div>
+                    </div>
+                
+                    <div class="violation moderate">
+                        <strong>MODERATE: Heading levels should only increase by one</strong>
+                        <p>Ensure the order of headings is semantically correct</p>
+                        <p><a href="https://dequeuniversity.com/rules/axe/4.10/heading-order?application=axe-puppeteer" target="_blank">Learn more →</a></p>
+                        <div class="targets">
+                            <strong>Affected elements (1):</strong><br>
+                            .sm\:mb-6.mb-4:nth-child(1) > .sm\:mb-3.mb-2
+                            
+                        </div>
+                    </div>
+                
+                    <div class="violation serious">
+                        <strong>SERIOUS: Links must have discernible text</strong>
+                        <p>Ensure links have discernible text</p>
+                        <p><a href="https://dequeuniversity.com/rules/axe/4.10/link-name?application=axe-puppeteer" target="_blank">Learn more →</a></p>
+                        <div class="targets">
+                            <strong>Affected elements (3):</strong><br>
+                            a[href$="github.com"]<br>a[href$="twitter.com"]<br>a[href$="linkedin.com"]
+                            
+                        </div>
+                    </div>
+                
+                    <div class="violation serious">
+                        <strong>SERIOUS: Interactive controls must not be nested</strong>
+                        <p>Ensure interactive controls are not nested as they are not always announced by screen readers or can cause focus problems for assistive technologies</p>
+                        <p><a href="https://dequeuniversity.com/rules/axe/4.10/nested-interactive?application=axe-puppeteer" target="_blank">Learn more →</a></p>
+                        <div class="targets">
+                            <strong>Affected elements (1):</strong><br>
+                            .h-fit
+                            
+                        </div>
+                    </div>
+                
+            
+        </div>
+    
+        <div class="page-result">
+            <h3>User profile page</h3>
+            <p><strong>URL:</strong> /profile</p>
+            <p><strong>Violations:</strong> 7 | 
+               <strong>Passes:</strong> 43</p>
+            
+            
+                <h4>Violations:</h4>
+                
+                    <div class="violation serious">
+                        <strong>SERIOUS: ARIA commands must have an accessible name</strong>
+                        <p>Ensure every ARIA button, link and menuitem has an accessible name</p>
+                        <p><a href="https://dequeuniversity.com/rules/axe/4.10/aria-command-name?application=axe-puppeteer" target="_blank">Learn more →</a></p>
+                        <div class="targets">
+                            <strong>Affected elements (1):</strong><br>
+                            .pointer-events-none
+                            
+                        </div>
+                    </div>
+                
+                    <div class="violation critical">
+                        <strong>CRITICAL: ARIA attributes must conform to valid values</strong>
+                        <p>Ensure all ARIA attributes have valid values</p>
+                        <p><a href="https://dequeuniversity.com/rules/axe/4.10/aria-valid-attr-value?application=axe-puppeteer" target="_blank">Learn more →</a></p>
+                        <div class="targets">
+                            <strong>Affected elements (1):</strong><br>
+                            #radix-\:Rmrsd7\:-trigger-popular
+                            
+                        </div>
+                    </div>
+                
+                    <div class="violation critical">
+                        <strong>CRITICAL: Buttons must have discernible text</strong>
+                        <p>Ensure buttons have discernible text</p>
+                        <p><a href="https://dequeuniversity.com/rules/axe/4.10/button-name?application=axe-puppeteer" target="_blank">Learn more →</a></p>
+                        <div class="targets">
+                            <strong>Affected elements (5):</strong><br>
+                            a[href$="prompt/5"] > .rounded-xl.bg-card.text-card-foreground > .pt-0.p-6 > .mt-3.pt-3.border-t > div:nth-child(2) > .\[\&_svg\]\:pointer-events-none.\[\&_svg\]\:size-4[title=""]<br>a[href$="prompt/3"] > .rounded-xl.bg-card.text-card-foreground > .pt-0.p-6 > .mt-3.pt-3.border-t > div:nth-child(2) > .\[\&_svg\]\:pointer-events-none.\[\&_svg\]\:size-4[title=""]<br>a[href$="prompt/1"] > .rounded-xl.bg-card.text-card-foreground > .pt-0.p-6 > .mt-3.pt-3.border-t > div:nth-child(2) > .\[\&_svg\]\:pointer-events-none.\[\&_svg\]\:size-4[title=""]
+                            <br>...
+                        </div>
+                    </div>
+                
+                    <div class="violation serious">
+                        <strong>SERIOUS: Elements must meet minimum color contrast ratio thresholds</strong>
+                        <p>Ensure the contrast between foreground and background colors meets WCAG 2 AA minimum contrast ratio thresholds</p>
+                        <p><a href="https://dequeuniversity.com/rules/axe/4.10/color-contrast?application=axe-puppeteer" target="_blank">Learn more →</a></p>
+                        <div class="targets">
+                            <strong>Affected elements (2):</strong><br>
+                            #radix-\:Rmrsd7\:-trigger-trending<br>#radix-\:Rmrsd7\:-trigger-newest
+                            
+                        </div>
+                    </div>
+                
+                    <div class="violation moderate">
+                        <strong>MODERATE: Heading levels should only increase by one</strong>
+                        <p>Ensure the order of headings is semantically correct</p>
+                        <p><a href="https://dequeuniversity.com/rules/axe/4.10/heading-order?application=axe-puppeteer" target="_blank">Learn more →</a></p>
+                        <div class="targets">
+                            <strong>Affected elements (1):</strong><br>
+                            .sm\:mb-6.mb-4:nth-child(1) > .sm\:mb-3.mb-2
+                            
+                        </div>
+                    </div>
+                
+                    <div class="violation serious">
+                        <strong>SERIOUS: Links must have discernible text</strong>
+                        <p>Ensure links have discernible text</p>
+                        <p><a href="https://dequeuniversity.com/rules/axe/4.10/link-name?application=axe-puppeteer" target="_blank">Learn more →</a></p>
+                        <div class="targets">
+                            <strong>Affected elements (3):</strong><br>
+                            a[href$="github.com"]<br>a[href$="twitter.com"]<br>a[href$="linkedin.com"]
+                            
+                        </div>
+                    </div>
+                
+                    <div class="violation serious">
+                        <strong>SERIOUS: Interactive controls must not be nested</strong>
+                        <p>Ensure interactive controls are not nested as they are not always announced by screen readers or can cause focus problems for assistive technologies</p>
+                        <p><a href="https://dequeuniversity.com/rules/axe/4.10/nested-interactive?application=axe-puppeteer" target="_blank">Learn more →</a></p>
+                        <div class="targets">
+                            <strong>Affected elements (1):</strong><br>
+                            .h-fit
+                            
+                        </div>
+                    </div>
+                
+            
+        </div>
+    
+        <div class="page-result">
+            <h3>Prompt detail page</h3>
+            <p><strong>URL:</strong> /prompt/1</p>
+            <p><strong>Violations:</strong> 6 | 
+               <strong>Passes:</strong> 44</p>
+            
+            
+                <h4>Violations:</h4>
+                
+                    <div class="violation serious">
+                        <strong>SERIOUS: ARIA commands must have an accessible name</strong>
+                        <p>Ensure every ARIA button, link and menuitem has an accessible name</p>
+                        <p><a href="https://dequeuniversity.com/rules/axe/4.10/aria-command-name?application=axe-puppeteer" target="_blank">Learn more →</a></p>
+                        <div class="targets">
+                            <strong>Affected elements (1):</strong><br>
+                            .pointer-events-none
+                            
+                        </div>
+                    </div>
+                
+                    <div class="violation critical">
+                        <strong>CRITICAL: Buttons must have discernible text</strong>
+                        <p>Ensure buttons have discernible text</p>
+                        <p><a href="https://dequeuniversity.com/rules/axe/4.10/button-name?application=axe-puppeteer" target="_blank">Learn more →</a></p>
+                        <div class="targets">
+                            <strong>Affected elements (2):</strong><br>
+                            .size-6<br>#headlessui-menu-button-P0-3
+                            
+                        </div>
+                    </div>
+                
+                    <div class="violation serious">
+                        <strong>SERIOUS: Elements must meet minimum color contrast ratio thresholds</strong>
+                        <p>Ensure the contrast between foreground and background colors meets WCAG 2 AA minimum contrast ratio thresholds</p>
+                        <p><a href="https://dequeuniversity.com/rules/axe/4.10/color-contrast?application=axe-puppeteer" target="_blank">Learn more →</a></p>
+                        <div class="targets">
+                            <strong>Affected elements (2):</strong><br>
+                            #radix-\:R5jttsd7\:-trigger-comments > .sm\:inline.hidden<br>#radix-\:R5jttsd7\:-trigger-versions
+                            
+                        </div>
+                    </div>
+                
+                    <div class="violation moderate">
+                        <strong>MODERATE: Heading levels should only increase by one</strong>
+                        <p>Ensure the order of headings is semantically correct</p>
+                        <p><a href="https://dequeuniversity.com/rules/axe/4.10/heading-order?application=axe-puppeteer" target="_blank">Learn more →</a></p>
+                        <div class="targets">
+                            <strong>Affected elements (1):</strong><br>
+                            .space-y-4:nth-child(1) > h3
+                            
+                        </div>
+                    </div>
+                
+                    <div class="violation serious">
+                        <strong>SERIOUS: Links must have discernible text</strong>
+                        <p>Ensure links have discernible text</p>
+                        <p><a href="https://dequeuniversity.com/rules/axe/4.10/link-name?application=axe-puppeteer" target="_blank">Learn more →</a></p>
+                        <div class="targets">
+                            <strong>Affected elements (3):</strong><br>
+                            a[href$="github.com"]<br>a[href$="twitter.com"]<br>a[href$="linkedin.com"]
+                            
+                        </div>
+                    </div>
+                
+                    <div class="violation serious">
+                        <strong>SERIOUS: Interactive controls must not be nested</strong>
+                        <p>Ensure interactive controls are not nested as they are not always announced by screen readers or can cause focus problems for assistive technologies</p>
+                        <p><a href="https://dequeuniversity.com/rules/axe/4.10/nested-interactive?application=axe-puppeteer" target="_blank">Learn more →</a></p>
+                        <div class="targets">
+                            <strong>Affected elements (1):</strong><br>
+                            .h-fit
+                            
+                        </div>
+                    </div>
+                
+            
+        </div>
+    
+        <div class="page-result">
+            <h3>Prompt playground</h3>
+            <p><strong>URL:</strong> /playground</p>
+            <p><strong>Violations:</strong> 4 | 
+               <strong>Passes:</strong> 39</p>
+            
+            
+                <h4>Violations:</h4>
+                
+                    <div class="violation serious">
+                        <strong>SERIOUS: ARIA commands must have an accessible name</strong>
+                        <p>Ensure every ARIA button, link and menuitem has an accessible name</p>
+                        <p><a href="https://dequeuniversity.com/rules/axe/4.10/aria-command-name?application=axe-puppeteer" target="_blank">Learn more →</a></p>
+                        <div class="targets">
+                            <strong>Affected elements (1):</strong><br>
+                            .pointer-events-none
+                            
+                        </div>
+                    </div>
+                
+                    <div class="violation critical">
+                        <strong>CRITICAL: Buttons must have discernible text</strong>
+                        <p>Ensure buttons have discernible text</p>
+                        <p><a href="https://dequeuniversity.com/rules/axe/4.10/button-name?application=axe-puppeteer" target="_blank">Learn more →</a></p>
+                        <div class="targets">
+                            <strong>Affected elements (2):</strong><br>
+                            .size-6<br>#headlessui-menu-button-P0-3
+                            
+                        </div>
+                    </div>
+                
+                    <div class="violation serious">
+                        <strong>SERIOUS: Links must have discernible text</strong>
+                        <p>Ensure links have discernible text</p>
+                        <p><a href="https://dequeuniversity.com/rules/axe/4.10/link-name?application=axe-puppeteer" target="_blank">Learn more →</a></p>
+                        <div class="targets">
+                            <strong>Affected elements (3):</strong><br>
+                            a[href$="github.com"]<br>a[href$="twitter.com"]<br>a[href$="linkedin.com"]
+                            
+                        </div>
+                    </div>
+                
+                    <div class="violation serious">
+                        <strong>SERIOUS: Interactive controls must not be nested</strong>
+                        <p>Ensure interactive controls are not nested as they are not always announced by screen readers or can cause focus problems for assistive technologies</p>
+                        <p><a href="https://dequeuniversity.com/rules/axe/4.10/nested-interactive?application=axe-puppeteer" target="_blank">Learn more →</a></p>
+                        <div class="targets">
+                            <strong>Affected elements (1):</strong><br>
+                            .h-fit
+                            
+                        </div>
+                    </div>
+                
+            
+        </div>
+    
+        <div class="page-result">
+            <h3>Leaderboard page</h3>
+            <p><strong>URL:</strong> /leaderboard</p>
+            <p><strong>Violations:</strong> 4 | 
+               <strong>Passes:</strong> 39</p>
+            
+            
+                <h4>Violations:</h4>
+                
+                    <div class="violation serious">
+                        <strong>SERIOUS: ARIA commands must have an accessible name</strong>
+                        <p>Ensure every ARIA button, link and menuitem has an accessible name</p>
+                        <p><a href="https://dequeuniversity.com/rules/axe/4.10/aria-command-name?application=axe-puppeteer" target="_blank">Learn more →</a></p>
+                        <div class="targets">
+                            <strong>Affected elements (1):</strong><br>
+                            .pointer-events-none
+                            
+                        </div>
+                    </div>
+                
+                    <div class="violation critical">
+                        <strong>CRITICAL: Buttons must have discernible text</strong>
+                        <p>Ensure buttons have discernible text</p>
+                        <p><a href="https://dequeuniversity.com/rules/axe/4.10/button-name?application=axe-puppeteer" target="_blank">Learn more →</a></p>
+                        <div class="targets">
+                            <strong>Affected elements (2):</strong><br>
+                            .size-6<br>#headlessui-menu-button-P0-3
+                            
+                        </div>
+                    </div>
+                
+                    <div class="violation serious">
+                        <strong>SERIOUS: Links must have discernible text</strong>
+                        <p>Ensure links have discernible text</p>
+                        <p><a href="https://dequeuniversity.com/rules/axe/4.10/link-name?application=axe-puppeteer" target="_blank">Learn more →</a></p>
+                        <div class="targets">
+                            <strong>Affected elements (3):</strong><br>
+                            a[href$="github.com"]<br>a[href$="twitter.com"]<br>a[href$="linkedin.com"]
+                            
+                        </div>
+                    </div>
+                
+                    <div class="violation serious">
+                        <strong>SERIOUS: Interactive controls must not be nested</strong>
+                        <p>Ensure interactive controls are not nested as they are not always announced by screen readers or can cause focus problems for assistive technologies</p>
+                        <p><a href="https://dequeuniversity.com/rules/axe/4.10/nested-interactive?application=axe-puppeteer" target="_blank">Learn more →</a></p>
+                        <div class="targets">
+                            <strong>Affected elements (1):</strong><br>
+                            .h-fit
+                            
+                        </div>
+                    </div>
+                
+            
+        </div>
+    
+</body>
+</html>
+  

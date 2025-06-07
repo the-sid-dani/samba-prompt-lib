@@ -5,10 +5,11 @@ import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle }
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { ToggleGroup, ToggleGroupItem } from '@/components/ui/toggle-group';
-import { Grid3X3, List, Star, Copy, GitFork, ChevronLeft, ChevronRight } from 'lucide-react';
+import { Grid3X3, List, Heart, Copy, GitFork, ChevronLeft, ChevronRight } from 'lucide-react';
 import Link from 'next/link';
 import { formatDistanceToNow } from 'date-fns';
 import { PaginatedResponse } from '@/app/actions/profile';
+import { ProfilePromptsSkeleton } from './ProfilePromptsSkeleton';
 
 interface ProfilePromptsTabProps {
   userId: string;
@@ -74,77 +75,36 @@ export default function ProfilePromptsTab({
   };
 
   const renderPromptCard = (prompt: any) => (
-    <Card key={prompt.id} className="hover:shadow-lg transition-shadow">
-      <CardHeader>
-        <div className="flex items-start justify-between">
-          <div className="flex-1">
-            <Link href={`/prompt/${prompt.id}`}>
-              <CardTitle className="text-lg hover:text-primary cursor-pointer line-clamp-2">
+    <Link key={prompt.id} href={`/prompt/${prompt.id}`} className="block">
+      <Card className="h-full hover:shadow-lg transition-shadow cursor-pointer card-hover tap-highlight">
+        <CardHeader>
+          <div className="flex items-start justify-between">
+            <div className="flex-1">
+              <CardTitle className="text-lg line-clamp-2">
                 {prompt.title}
               </CardTitle>
-            </Link>
-            {prompt.categories && (
-              <Badge variant="secondary" className="mt-2">
-                {prompt.categories.name}
-              </Badge>
-            )}
+              {prompt.categories && (
+                <Badge variant="secondary" className="mt-2">
+                  {prompt.categories.name}
+                </Badge>
+              )}
+            </div>
           </div>
-        </div>
-      </CardHeader>
-      <CardContent>
-        <CardDescription className="line-clamp-2">
-          {prompt.description}
-        </CardDescription>
-        {showAuthor && prompt.profiles && (
-          <p className="text-sm text-gray-600 mt-2">
-            by {prompt.profiles.name || prompt.profiles.username || 'Anonymous'}
-          </p>
-        )}
-      </CardContent>
-      <CardFooter className="flex items-center justify-between text-sm text-gray-600">
-        <div className="flex items-center gap-4">
-          <span className="flex items-center gap-1">
-            <Star className="w-4 h-4" />
-            {prompt.user_favorites?.length || 0}
-          </span>
-          <span className="flex items-center gap-1">
-            <GitFork className="w-4 h-4" />
-            {prompt.prompt_forks?.length || 0}
-          </span>
-          <span className="flex items-center gap-1">
-            <Copy className="w-4 h-4" />
-            {prompt.uses || 0}
-          </span>
-        </div>
-        <span className="text-xs">
-          {formatDistanceToNow(new Date(prompt.created_at), { addSuffix: true })}
-        </span>
-      </CardFooter>
-    </Card>
-  );
-
-  const renderPromptListItem = (prompt: any) => (
-    <Card key={prompt.id} className="hover:shadow-md transition-shadow">
-      <CardContent className="flex items-center justify-between p-4">
-        <div className="flex-1">
-          <Link href={`/prompt/${prompt.id}`}>
-            <h3 className="font-medium hover:text-primary cursor-pointer">
-              {prompt.title}
-            </h3>
-          </Link>
-          <p className="text-sm text-gray-600 mt-1 line-clamp-1">
+        </CardHeader>
+        <CardContent>
+          <CardDescription className="line-clamp-2">
             {prompt.description}
-          </p>
+          </CardDescription>
           {showAuthor && prompt.profiles && (
-            <p className="text-xs text-gray-500 mt-1">
+            <p className="text-sm text-gray-600 mt-2">
               by {prompt.profiles.name || prompt.profiles.username || 'Anonymous'}
             </p>
           )}
-        </div>
-        <div className="flex items-center gap-6 ml-4">
-          <div className="flex items-center gap-4 text-sm text-gray-600">
+        </CardContent>
+        <CardFooter className="flex items-center justify-between text-sm text-gray-600">
+          <div className="flex items-center gap-4">
             <span className="flex items-center gap-1">
-              <Star className="w-4 h-4" />
+              <Heart className="w-4 h-4" />
               {prompt.user_favorites?.length || 0}
             </span>
             <span className="flex items-center gap-1">
@@ -156,14 +116,55 @@ export default function ProfilePromptsTab({
               {prompt.uses || 0}
             </span>
           </div>
-          {prompt.categories && (
-            <Badge variant="secondary">
-              {prompt.categories.name}
-            </Badge>
-          )}
-        </div>
-      </CardContent>
-    </Card>
+          <span className="text-xs">
+            {formatDistanceToNow(new Date(prompt.created_at), { addSuffix: true })}
+          </span>
+        </CardFooter>
+      </Card>
+    </Link>
+  );
+
+  const renderPromptListItem = (prompt: any) => (
+    <Link key={prompt.id} href={`/prompt/${prompt.id}`} className="block">
+      <Card className="hover:shadow-md transition-shadow cursor-pointer tap-highlight touch-scale">
+        <CardContent className="flex items-center justify-between p-4">
+          <div className="flex-1">
+            <h3 className="font-medium">
+              {prompt.title}
+            </h3>
+            <p className="text-sm text-gray-600 mt-1 line-clamp-1">
+              {prompt.description}
+            </p>
+            {showAuthor && prompt.profiles && (
+              <p className="text-xs text-gray-500 mt-1">
+                by {prompt.profiles.name || prompt.profiles.username || 'Anonymous'}
+              </p>
+            )}
+          </div>
+          <div className="flex items-center gap-6 ml-4">
+            <div className="flex items-center gap-4 text-sm text-gray-600">
+              <span className="flex items-center gap-1">
+                <Heart className="w-4 h-4" />
+                {prompt.user_favorites?.length || 0}
+              </span>
+              <span className="flex items-center gap-1">
+                <GitFork className="w-4 h-4" />
+                {prompt.prompt_forks?.length || 0}
+              </span>
+              <span className="flex items-center gap-1">
+                <Copy className="w-4 h-4" />
+                {prompt.uses || 0}
+              </span>
+            </div>
+            {prompt.categories && (
+              <Badge variant="secondary">
+                {prompt.categories.name}
+              </Badge>
+            )}
+          </div>
+        </CardContent>
+      </Card>
+    </Link>
   );
 
   if (loading) {
@@ -174,13 +175,7 @@ export default function ProfilePromptsTab({
           <CardDescription>{description}</CardDescription>
         </CardHeader>
         <CardContent>
-          <div className="space-y-4">
-            {[...Array(3)].map((_, i) => (
-              <div key={i} className="animate-pulse">
-                <div className="h-24 bg-gray-200 rounded"></div>
-              </div>
-            ))}
-          </div>
+          <ProfilePromptsSkeleton viewMode={viewMode} count={6} />
         </CardContent>
       </Card>
     );

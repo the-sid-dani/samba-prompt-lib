@@ -49,6 +49,18 @@ type PromptWithRelations = PromptWithCategory & {
     name: string | null
     username: string | null
   } | null
+  forked_from?: {
+    id: number
+    title: string
+    user_id: string
+    profiles: {
+      id: string
+      username: string | null
+      name: string | null
+      email: string | null
+      avatar_url: string | null
+    }
+  }
 }
 
 // Input schemas
@@ -58,6 +70,11 @@ const createPromptSchema = z.object({
   content: z.string().min(1),
   category_id: z.number().nullable().optional(),
   tags: z.array(z.string()).optional().default([]),
+  examples: z.array(z.object({
+    input: z.string(),
+    output: z.string(),
+    description: z.string().optional()
+  })).optional().default([]),
 })
 
 const updatePromptSchema = z.object({
@@ -66,6 +83,11 @@ const updatePromptSchema = z.object({
   content: z.string().min(1).optional(),
   category_id: z.number().nullable().optional(),
   tags: z.array(z.string()).optional(),
+  examples: z.array(z.object({
+    input: z.string(),
+    output: z.string(),
+    description: z.string().optional()
+  })).optional(),
 })
 
 const fetchPromptsSchema = z.object({
@@ -116,6 +138,62 @@ export const getCategories = unstable_cache(
     revalidate: CACHE_TIMES.static,
   }
 )
+
+// Create a new category
+export async function createCategory(name: string, description?: string) {
+  try {
+    const session = await auth()
+    if (!session?.user?.id) {
+      throw new Error('Unauthorized: Must be logged in to create categories')
+    }
+    
+    const supabase = createSupabaseAdminClient()
+    
+    // Check if category already exists
+    const { data: existing } = await supabase
+      .from('categories')
+      .select('id')
+      .ilike('name', name)
+      .single()
+    
+    if (existing) {
+      throw new Error('Category already exists')
+    }
+    
+    // Get the next display order
+    const { data: maxOrder } = await supabase
+      .from('categories')
+      .select('display_order')
+      .order('display_order', { ascending: false })
+      .limit(1)
+      .single()
+    
+    const nextOrder = (maxOrder?.display_order || 0) + 1
+    
+    // Create the category
+    const { data: category, error } = await supabase
+      .from('categories')
+      .insert({
+        name,
+        description: description || `${name} related prompts`,
+        display_order: nextOrder
+      })
+      .select()
+      .single()
+    
+    if (error) {
+      throw new Error(`Failed to create category: ${error.message}`)
+    }
+    
+    // Revalidate categories cache
+    revalidateTag(CACHE_TAGS.categories)
+    
+    return category
+  } catch (error) {
+    console.error('Error in createCategory:', error)
+    throw error
+  }
+}
 
 // Fetch prompts with filtering and pagination
 export async function fetchPrompts(input?: Partial<z.infer<typeof fetchPromptsSchema>>) {
@@ -193,11 +271,18 @@ export async function fetchPrompts(input?: Partial<z.infer<typeof fetchPromptsSc
           // Create a map for quick lookup
           const profileMap = new Map(profiles?.map(p => [p.id, p]) || [])
           
-          // Enrich prompts with profile data
-          const enrichedPrompts = prompts.map(prompt => ({
-            ...prompt,
-            profiles: profileMap.get(prompt.user_id) || null
-          }))
+          // Enrich prompts with profile data and favorite status
+          const enrichedPrompts = prompts.map(prompt => {
+            const userFavorites = (prompt.user_favorites || []) as Array<{ user_id: string }>
+            const isFavorited = params.user_id ? userFavorites.some(fav => fav.user_id === params.user_id) : false
+            
+            return {
+              ...prompt,
+              profiles: profileMap.get(prompt.user_id) || null,
+              isFavorited,
+              favoriteCount: userFavorites.length
+            }
+          })
           
           const totalPages = Math.ceil((count || 0) / params.limit)
           
@@ -267,7 +352,21 @@ export async function fetchPromptById(id: number, userId?: string): Promise<Prom
           user_favorites(user_id),
           prompt_votes(vote_type, user_id),
           prompt_forks!prompt_forks_original_prompt_id_fkey(id),
-          prompt_versions(*)
+          prompt_versions(*),
+          forked_from:prompt_forks!prompt_forks_forked_prompt_id_fkey(
+            original_prompt:original_prompt_id(
+              id,
+              title,
+              user_id,
+              profiles:user_id(
+                id,
+                username,
+                name,
+                email,
+                avatar_url
+              )
+            )
+          )
         `)
         .eq('id', id)
         .single()
@@ -309,6 +408,9 @@ export async function fetchPromptById(id: number, userId?: string): Promise<Prom
         ? promptVotes.find(vote => vote.user_id === userId)?.vote_type as 'up' | 'down' | undefined
         : undefined
       
+      // Extract fork origin info
+      const forkedFrom = (promptData as any).forked_from?.[0]?.original_prompt;
+      
       // Construct the return object
       const result: PromptWithRelations = {
         id: promptData.id,
@@ -334,6 +436,7 @@ export async function fetchPromptById(id: number, userId?: string): Promise<Prom
         isFavorited,
         userVote: userVote || null,
         profiles: profileData,
+        forked_from: forkedFrom,
       }
       
       return result
@@ -368,7 +471,21 @@ export async function fetchPromptById(id: number, userId?: string): Promise<Prom
             user_favorites(user_id),
             prompt_votes(vote_type, user_id),
             prompt_forks!prompt_forks_original_prompt_id_fkey(id),
-            prompt_versions(*)
+            prompt_versions(*),
+            forked_from:prompt_forks!prompt_forks_forked_prompt_id_fkey(
+              original_prompt:original_prompt_id(
+                id,
+                title,
+                user_id,
+                profiles:user_id(
+                  id,
+                  username,
+                  name,
+                  email,
+                  avatar_url
+                )
+              )
+            )
           `)
           .eq('id', promptId)
           .single()
@@ -410,6 +527,9 @@ export async function fetchPromptById(id: number, userId?: string): Promise<Prom
           ? promptVotes.find(vote => vote.user_id === currentUserId)?.vote_type as 'up' | 'down' | undefined
           : undefined
         
+        // Extract fork origin info
+        const forkedFrom = (promptData as any).forked_from?.[0]?.original_prompt;
+        
         // Construct the return object
         const result: PromptWithRelations = {
           id: promptData.id,
@@ -435,6 +555,7 @@ export async function fetchPromptById(id: number, userId?: string): Promise<Prom
           isFavorited,
           userVote: userVote || null,
           profiles: profileData,
+          forked_from: forkedFrom,
         }
         
         return result
@@ -997,11 +1118,12 @@ export async function forkPrompt(promptId: number) {
     
     // Create the forked prompt
     const forkedPromptData: PromptInsert = {
-      title: `${originalPrompt.title} (Fork)`,
+      title: originalPrompt.title, // Keep the same title
       description: originalPrompt.description,
       content: originalPrompt.content,
       category_id: originalPrompt.category_id,
       tags: originalPrompt.tags || [],
+      examples: originalPrompt.examples || [],
       user_id: userId,
       featured: false, // Forked prompts start as non-featured
       uses: 0, // Reset uses counter
@@ -1312,5 +1434,47 @@ export async function fetchUserImprovements(userId?: string) {
   } catch (error) {
     console.error('Error in fetchUserImprovements:', error)
     throw error
+  }
+}
+
+// Fetch all forks of a prompt
+export async function fetchPromptForks(promptId: number) {
+  try {
+    const supabase = await createClient();
+    
+    // Get all forks of this prompt with their details
+    const { data: forks, error } = await supabase
+      .from('prompt_forks')
+      .select(`
+        id,
+        created_at,
+        forked_prompt:forked_prompt_id (
+          id,
+          title,
+          description,
+          uses,
+          votes,
+          created_at,
+          profiles:user_id (
+            id,
+            username,
+            name,
+            email,
+            avatar_url
+          )
+        )
+      `)
+      .eq('original_prompt_id', promptId)
+      .order('created_at', { ascending: false });
+
+    if (error) {
+      console.error('Error fetching prompt forks:', error);
+      throw error;
+    }
+
+    return forks || [];
+  } catch (error) {
+    console.error('Error in fetchPromptForks:', error);
+    throw error;
   }
 } 

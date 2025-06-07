@@ -53,11 +53,11 @@ export function ForkButton({
       
       toast({
         title: 'Prompt forked successfully!',
-        description: 'You can now edit your forked version.',
+        description: 'Your forked version has been created.',
       })
       
-      // Redirect to the forked prompt edit page
-      router.push(`/prompt/${result.id}/edit`)
+      // Redirect to the forked prompt detail page
+      router.push(`/prompt/${result.id}`)
     }
     
     setShowConfirmDialog(false)

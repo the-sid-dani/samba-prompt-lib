@@ -166,6 +166,7 @@ export async function fetchUserFavorites(
   const promptIds = favorites?.map(f => f.prompt_id) || [];
   
   if (promptIds.length === 0) {
+    console.log(`[fetchUserFavorites] No prompt IDs found for user ${userId}`);
     return {
       data: [],
       pagination: {
@@ -186,8 +187,7 @@ export async function fetchUserFavorites(
       categories(*),
       user_favorites(user_id),
       prompt_votes(vote_type, user_id),
-      prompt_forks!prompt_forks_original_prompt_id_fkey(id),
-      profiles:user_id(id, name, username, email, avatar_url)
+      prompt_forks!prompt_forks_original_prompt_id_fkey(id)
     `)
     .in('id', promptIds);
   
@@ -205,10 +205,36 @@ export async function fetchUserFavorites(
     };
   }
   
+  // Fetch profile data for all prompts
+  let enrichedPrompts = data || [];
+  if (data && data.length > 0) {
+    const userIds = [...new Set(data.map(p => p.user_id))].filter(Boolean);
+    
+    const { data: profiles } = await supabase
+      .from('profiles')
+      .select('id, email, name, username, avatar_url')
+      .in('id', userIds);
+    
+    // Create a map for quick lookup
+    const profileMap = new Map(profiles?.map(p => [p.id, p]) || []);
+    
+    // Enrich prompts with profile data
+    enrichedPrompts = data.map(prompt => ({
+      ...prompt,
+      profiles: profileMap.get(prompt.user_id) || null
+    }));
+  }
+  
+  // Sort the prompts to match the order from favorites
+  const promptMap = new Map(enrichedPrompts.map(p => [p.id, p]));
+  const sortedData = promptIds
+    .map(id => promptMap.get(id))
+    .filter(Boolean);
+  
   const totalPages = Math.ceil((count || 0) / limit);
   
   return {
-    data: data || [],
+    data: sortedData,
     pagination: {
       page,
       limit,
@@ -271,4 +297,37 @@ export async function fetchUserActivity(
       hasMore: page < totalPages,
     },
   };
+}
+
+export async function updateUserProfile(
+  userId: string,
+  updates: {
+    name?: string | null
+    username?: string | null
+    avatar_url?: string | null
+  }
+) {
+  const supabase = await createSupabaseAdminClient();
+
+  // Clean the username to ensure it's valid (alphanumeric and underscores only)
+  if (updates.username) {
+    updates.username = updates.username.toLowerCase().replace(/[^a-z0-9_]/g, '')
+  }
+
+  const { data, error } = await supabase
+    .from('profiles')
+    .update({
+      ...updates,
+      updated_at: new Date().toISOString()
+    })
+    .eq('id', userId)
+    .select()
+    .single()
+
+  if (error) {
+    console.error('Error updating profile:', error)
+    throw new Error(error.message)
+  }
+
+  return data
 } 

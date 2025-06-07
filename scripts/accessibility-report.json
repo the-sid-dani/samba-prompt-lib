@@ -1,0 +1,659 @@
+{
+  "timestamp": "2025-05-31T19:25:34.967Z",
+  "summary": {
+    "totalViolations": 35,
+    "totalPasses": 251,
+    "totalIncomplete": 4,
+    "totalInapplicable": 282,
+    "criticalIssues": 9,
+    "seriousIssues": 22,
+    "moderateIssues": 4,
+    "minorIssues": 0
+  },
+  "pageResults": [
+    {
+      "page": "home",
+      "url": "/",
+      "description": "Home page (PromptExplorer)",
+      "violations": 7,
+      "passes": 43,
+      "incomplete": 1,
+      "inapplicable": 46,
+      "violationDetails": [
+        {
+          "id": "aria-command-name",
+          "impact": "serious",
+          "description": "Ensure every ARIA button, link and menuitem has an accessible name",
+          "help": "ARIA commands must have an accessible name",
+          "helpUrl": "https://dequeuniversity.com/rules/axe/4.10/aria-command-name?application=axe-puppeteer",
+          "nodes": 1,
+          "targets": [
+            [
+              ".pointer-events-none"
+            ]
+          ]
+        },
+        {
+          "id": "aria-valid-attr-value",
+          "impact": "critical",
+          "description": "Ensure all ARIA attributes have valid values",
+          "help": "ARIA attributes must conform to valid values",
+          "helpUrl": "https://dequeuniversity.com/rules/axe/4.10/aria-valid-attr-value?application=axe-puppeteer",
+          "nodes": 1,
+          "targets": [
+            [
+              "#radix-\\:Rmrsd7\\:-trigger-popular"
+            ]
+          ]
+        },
+        {
+          "id": "button-name",
+          "impact": "critical",
+          "description": "Ensure buttons have discernible text",
+          "help": "Buttons must have discernible text",
+          "helpUrl": "https://dequeuniversity.com/rules/axe/4.10/button-name?application=axe-puppeteer",
+          "nodes": 5,
+          "targets": [
+            [
+              "a[href$=\"prompt/5\"] > .rounded-xl.bg-card.text-card-foreground > .pt-0.p-6 > .mt-3.pt-3.border-t > div:nth-child(2) > .\\[\\&_svg\\]\\:pointer-events-none.\\[\\&_svg\\]\\:size-4[title=\"\"]"
+            ],
+            [
+              "a[href$=\"prompt/3\"] > .rounded-xl.bg-card.text-card-foreground > .pt-0.p-6 > .mt-3.pt-3.border-t > div:nth-child(2) > .\\[\\&_svg\\]\\:pointer-events-none.\\[\\&_svg\\]\\:size-4[title=\"\"]"
+            ],
+            [
+              "a[href$=\"prompt/1\"] > .rounded-xl.bg-card.text-card-foreground > .pt-0.p-6 > .mt-3.pt-3.border-t > div:nth-child(2) > .\\[\\&_svg\\]\\:pointer-events-none.\\[\\&_svg\\]\\:size-4[title=\"\"]"
+            ],
+            [
+              ".size-6"
+            ],
+            [
+              "#headlessui-menu-button-P0-3"
+            ]
+          ]
+        },
+        {
+          "id": "color-contrast",
+          "impact": "serious",
+          "description": "Ensure the contrast between foreground and background colors meets WCAG 2 AA minimum contrast ratio thresholds",
+          "help": "Elements must meet minimum color contrast ratio thresholds",
+          "helpUrl": "https://dequeuniversity.com/rules/axe/4.10/color-contrast?application=axe-puppeteer",
+          "nodes": 2,
+          "targets": [
+            [
+              "#radix-\\:Rmrsd7\\:-trigger-trending"
+            ],
+            [
+              "#radix-\\:Rmrsd7\\:-trigger-newest"
+            ]
+          ]
+        },
+        {
+          "id": "heading-order",
+          "impact": "moderate",
+          "description": "Ensure the order of headings is semantically correct",
+          "help": "Heading levels should only increase by one",
+          "helpUrl": "https://dequeuniversity.com/rules/axe/4.10/heading-order?application=axe-puppeteer",
+          "nodes": 1,
+          "targets": [
+            [
+              ".sm\\:mb-6.mb-4:nth-child(1) > .sm\\:mb-3.mb-2"
+            ]
+          ]
+        },
+        {
+          "id": "link-name",
+          "impact": "serious",
+          "description": "Ensure links have discernible text",
+          "help": "Links must have discernible text",
+          "helpUrl": "https://dequeuniversity.com/rules/axe/4.10/link-name?application=axe-puppeteer",
+          "nodes": 3,
+          "targets": [
+            [
+              "a[href$=\"github.com\"]"
+            ],
+            [
+              "a[href$=\"twitter.com\"]"
+            ],
+            [
+              "a[href$=\"linkedin.com\"]"
+            ]
+          ]
+        },
+        {
+          "id": "nested-interactive",
+          "impact": "serious",
+          "description": "Ensure interactive controls are not nested as they are not always announced by screen readers or can cause focus problems for assistive technologies",
+          "help": "Interactive controls must not be nested",
+          "helpUrl": "https://dequeuniversity.com/rules/axe/4.10/nested-interactive?application=axe-puppeteer",
+          "nodes": 1,
+          "targets": [
+            [
+              ".h-fit"
+            ]
+          ]
+        }
+      ]
+    },
+    {
+      "page": "submit",
+      "url": "/submit",
+      "description": "Submit prompt form",
+      "violations": 7,
+      "passes": 43,
+      "incomplete": 1,
+      "inapplicable": 46,
+      "violationDetails": [
+        {
+          "id": "aria-command-name",
+          "impact": "serious",
+          "description": "Ensure every ARIA button, link and menuitem has an accessible name",
+          "help": "ARIA commands must have an accessible name",
+          "helpUrl": "https://dequeuniversity.com/rules/axe/4.10/aria-command-name?application=axe-puppeteer",
+          "nodes": 1,
+          "targets": [
+            [
+              ".pointer-events-none"
+            ]
+          ]
+        },
+        {
+          "id": "aria-valid-attr-value",
+          "impact": "critical",
+          "description": "Ensure all ARIA attributes have valid values",
+          "help": "ARIA attributes must conform to valid values",
+          "helpUrl": "https://dequeuniversity.com/rules/axe/4.10/aria-valid-attr-value?application=axe-puppeteer",
+          "nodes": 1,
+          "targets": [
+            [
+              "#radix-\\:r3\\:-trigger-popular"
+            ]
+          ]
+        },
+        {
+          "id": "button-name",
+          "impact": "critical",
+          "description": "Ensure buttons have discernible text",
+          "help": "Buttons must have discernible text",
+          "helpUrl": "https://dequeuniversity.com/rules/axe/4.10/button-name?application=axe-puppeteer",
+          "nodes": 5,
+          "targets": [
+            [
+              "a[href$=\"prompt/5\"] > .rounded-xl.bg-card.text-card-foreground > .pt-0.p-6 > .mt-3.pt-3.border-t > div:nth-child(2) > .\\[\\&_svg\\]\\:pointer-events-none.\\[\\&_svg\\]\\:size-4[title=\"\"]"
+            ],
+            [
+              "a[href$=\"prompt/3\"] > .rounded-xl.bg-card.text-card-foreground > .pt-0.p-6 > .mt-3.pt-3.border-t > div:nth-child(2) > .\\[\\&_svg\\]\\:pointer-events-none.\\[\\&_svg\\]\\:size-4[title=\"\"]"
+            ],
+            [
+              "a[href$=\"prompt/1\"] > .rounded-xl.bg-card.text-card-foreground > .pt-0.p-6 > .mt-3.pt-3.border-t > div:nth-child(2) > .\\[\\&_svg\\]\\:pointer-events-none.\\[\\&_svg\\]\\:size-4[title=\"\"]"
+            ],
+            [
+              ".size-6"
+            ],
+            [
+              "#headlessui-menu-button-P0-3"
+            ]
+          ]
+        },
+        {
+          "id": "color-contrast",
+          "impact": "serious",
+          "description": "Ensure the contrast between foreground and background colors meets WCAG 2 AA minimum contrast ratio thresholds",
+          "help": "Elements must meet minimum color contrast ratio thresholds",
+          "helpUrl": "https://dequeuniversity.com/rules/axe/4.10/color-contrast?application=axe-puppeteer",
+          "nodes": 2,
+          "targets": [
+            [
+              "#radix-\\:r3\\:-trigger-trending"
+            ],
+            [
+              "#radix-\\:r3\\:-trigger-newest"
+            ]
+          ]
+        },
+        {
+          "id": "heading-order",
+          "impact": "moderate",
+          "description": "Ensure the order of headings is semantically correct",
+          "help": "Heading levels should only increase by one",
+          "helpUrl": "https://dequeuniversity.com/rules/axe/4.10/heading-order?application=axe-puppeteer",
+          "nodes": 1,
+          "targets": [
+            [
+              ".sm\\:mb-6.mb-4:nth-child(1) > .sm\\:mb-3.mb-2"
+            ]
+          ]
+        },
+        {
+          "id": "link-name",
+          "impact": "serious",
+          "description": "Ensure links have discernible text",
+          "help": "Links must have discernible text",
+          "helpUrl": "https://dequeuniversity.com/rules/axe/4.10/link-name?application=axe-puppeteer",
+          "nodes": 3,
+          "targets": [
+            [
+              "a[href$=\"github.com\"]"
+            ],
+            [
+              "a[href$=\"twitter.com\"]"
+            ],
+            [
+              "a[href$=\"linkedin.com\"]"
+            ]
+          ]
+        },
+        {
+          "id": "nested-interactive",
+          "impact": "serious",
+          "description": "Ensure interactive controls are not nested as they are not always announced by screen readers or can cause focus problems for assistive technologies",
+          "help": "Interactive controls must not be nested",
+          "helpUrl": "https://dequeuniversity.com/rules/axe/4.10/nested-interactive?application=axe-puppeteer",
+          "nodes": 1,
+          "targets": [
+            [
+              ".h-fit"
+            ]
+          ]
+        }
+      ]
+    },
+    {
+      "page": "profile",
+      "url": "/profile",
+      "description": "User profile page",
+      "violations": 7,
+      "passes": 43,
+      "incomplete": 1,
+      "inapplicable": 46,
+      "violationDetails": [
+        {
+          "id": "aria-command-name",
+          "impact": "serious",
+          "description": "Ensure every ARIA button, link and menuitem has an accessible name",
+          "help": "ARIA commands must have an accessible name",
+          "helpUrl": "https://dequeuniversity.com/rules/axe/4.10/aria-command-name?application=axe-puppeteer",
+          "nodes": 1,
+          "targets": [
+            [
+              ".pointer-events-none"
+            ]
+          ]
+        },
+        {
+          "id": "aria-valid-attr-value",
+          "impact": "critical",
+          "description": "Ensure all ARIA attributes have valid values",
+          "help": "ARIA attributes must conform to valid values",
+          "helpUrl": "https://dequeuniversity.com/rules/axe/4.10/aria-valid-attr-value?application=axe-puppeteer",
+          "nodes": 1,
+          "targets": [
+            [
+              "#radix-\\:Rmrsd7\\:-trigger-popular"
+            ]
+          ]
+        },
+        {
+          "id": "button-name",
+          "impact": "critical",
+          "description": "Ensure buttons have discernible text",
+          "help": "Buttons must have discernible text",
+          "helpUrl": "https://dequeuniversity.com/rules/axe/4.10/button-name?application=axe-puppeteer",
+          "nodes": 5,
+          "targets": [
+            [
+              "a[href$=\"prompt/5\"] > .rounded-xl.bg-card.text-card-foreground > .pt-0.p-6 > .mt-3.pt-3.border-t > div:nth-child(2) > .\\[\\&_svg\\]\\:pointer-events-none.\\[\\&_svg\\]\\:size-4[title=\"\"]"
+            ],
+            [
+              "a[href$=\"prompt/3\"] > .rounded-xl.bg-card.text-card-foreground > .pt-0.p-6 > .mt-3.pt-3.border-t > div:nth-child(2) > .\\[\\&_svg\\]\\:pointer-events-none.\\[\\&_svg\\]\\:size-4[title=\"\"]"
+            ],
+            [
+              "a[href$=\"prompt/1\"] > .rounded-xl.bg-card.text-card-foreground > .pt-0.p-6 > .mt-3.pt-3.border-t > div:nth-child(2) > .\\[\\&_svg\\]\\:pointer-events-none.\\[\\&_svg\\]\\:size-4[title=\"\"]"
+            ],
+            [
+              ".size-6"
+            ],
+            [
+              "#headlessui-menu-button-P0-3"
+            ]
+          ]
+        },
+        {
+          "id": "color-contrast",
+          "impact": "serious",
+          "description": "Ensure the contrast between foreground and background colors meets WCAG 2 AA minimum contrast ratio thresholds",
+          "help": "Elements must meet minimum color contrast ratio thresholds",
+          "helpUrl": "https://dequeuniversity.com/rules/axe/4.10/color-contrast?application=axe-puppeteer",
+          "nodes": 2,
+          "targets": [
+            [
+              "#radix-\\:Rmrsd7\\:-trigger-trending"
+            ],
+            [
+              "#radix-\\:Rmrsd7\\:-trigger-newest"
+            ]
+          ]
+        },
+        {
+          "id": "heading-order",
+          "impact": "moderate",
+          "description": "Ensure the order of headings is semantically correct",
+          "help": "Heading levels should only increase by one",
+          "helpUrl": "https://dequeuniversity.com/rules/axe/4.10/heading-order?application=axe-puppeteer",
+          "nodes": 1,
+          "targets": [
+            [
+              ".sm\\:mb-6.mb-4:nth-child(1) > .sm\\:mb-3.mb-2"
+            ]
+          ]
+        },
+        {
+          "id": "link-name",
+          "impact": "serious",
+          "description": "Ensure links have discernible text",
+          "help": "Links must have discernible text",
+          "helpUrl": "https://dequeuniversity.com/rules/axe/4.10/link-name?application=axe-puppeteer",
+          "nodes": 3,
+          "targets": [
+            [
+              "a[href$=\"github.com\"]"
+            ],
+            [
+              "a[href$=\"twitter.com\"]"
+            ],
+            [
+              "a[href$=\"linkedin.com\"]"
+            ]
+          ]
+        },
+        {
+          "id": "nested-interactive",
+          "impact": "serious",
+          "description": "Ensure interactive controls are not nested as they are not always announced by screen readers or can cause focus problems for assistive technologies",
+          "help": "Interactive controls must not be nested",
+          "helpUrl": "https://dequeuniversity.com/rules/axe/4.10/nested-interactive?application=axe-puppeteer",
+          "nodes": 1,
+          "targets": [
+            [
+              ".h-fit"
+            ]
+          ]
+        }
+      ]
+    },
+    {
+      "page": "prompt-detail",
+      "url": "/prompt/1",
+      "description": "Prompt detail page",
+      "violations": 6,
+      "passes": 44,
+      "incomplete": 1,
+      "inapplicable": 44,
+      "violationDetails": [
+        {
+          "id": "aria-command-name",
+          "impact": "serious",
+          "description": "Ensure every ARIA button, link and menuitem has an accessible name",
+          "help": "ARIA commands must have an accessible name",
+          "helpUrl": "https://dequeuniversity.com/rules/axe/4.10/aria-command-name?application=axe-puppeteer",
+          "nodes": 1,
+          "targets": [
+            [
+              ".pointer-events-none"
+            ]
+          ]
+        },
+        {
+          "id": "button-name",
+          "impact": "critical",
+          "description": "Ensure buttons have discernible text",
+          "help": "Buttons must have discernible text",
+          "helpUrl": "https://dequeuniversity.com/rules/axe/4.10/button-name?application=axe-puppeteer",
+          "nodes": 2,
+          "targets": [
+            [
+              ".size-6"
+            ],
+            [
+              "#headlessui-menu-button-P0-3"
+            ]
+          ]
+        },
+        {
+          "id": "color-contrast",
+          "impact": "serious",
+          "description": "Ensure the contrast between foreground and background colors meets WCAG 2 AA minimum contrast ratio thresholds",
+          "help": "Elements must meet minimum color contrast ratio thresholds",
+          "helpUrl": "https://dequeuniversity.com/rules/axe/4.10/color-contrast?application=axe-puppeteer",
+          "nodes": 2,
+          "targets": [
+            [
+              "#radix-\\:R5jttsd7\\:-trigger-comments > .sm\\:inline.hidden"
+            ],
+            [
+              "#radix-\\:R5jttsd7\\:-trigger-versions"
+            ]
+          ]
+        },
+        {
+          "id": "heading-order",
+          "impact": "moderate",
+          "description": "Ensure the order of headings is semantically correct",
+          "help": "Heading levels should only increase by one",
+          "helpUrl": "https://dequeuniversity.com/rules/axe/4.10/heading-order?application=axe-puppeteer",
+          "nodes": 1,
+          "targets": [
+            [
+              ".space-y-4:nth-child(1) > h3"
+            ]
+          ]
+        },
+        {
+          "id": "link-name",
+          "impact": "serious",
+          "description": "Ensure links have discernible text",
+          "help": "Links must have discernible text",
+          "helpUrl": "https://dequeuniversity.com/rules/axe/4.10/link-name?application=axe-puppeteer",
+          "nodes": 3,
+          "targets": [
+            [
+              "a[href$=\"github.com\"]"
+            ],
+            [
+              "a[href$=\"twitter.com\"]"
+            ],
+            [
+              "a[href$=\"linkedin.com\"]"
+            ]
+          ]
+        },
+        {
+          "id": "nested-interactive",
+          "impact": "serious",
+          "description": "Ensure interactive controls are not nested as they are not always announced by screen readers or can cause focus problems for assistive technologies",
+          "help": "Interactive controls must not be nested",
+          "helpUrl": "https://dequeuniversity.com/rules/axe/4.10/nested-interactive?application=axe-puppeteer",
+          "nodes": 1,
+          "targets": [
+            [
+              ".h-fit"
+            ]
+          ]
+        }
+      ]
+    },
+    {
+      "page": "playground",
+      "url": "/playground",
+      "description": "Prompt playground",
+      "violations": 4,
+      "passes": 39,
+      "incomplete": 0,
+      "inapplicable": 50,
+      "violationDetails": [
+        {
+          "id": "aria-command-name",
+          "impact": "serious",
+          "description": "Ensure every ARIA button, link and menuitem has an accessible name",
+          "help": "ARIA commands must have an accessible name",
+          "helpUrl": "https://dequeuniversity.com/rules/axe/4.10/aria-command-name?application=axe-puppeteer",
+          "nodes": 1,
+          "targets": [
+            [
+              ".pointer-events-none"
+            ]
+          ]
+        },
+        {
+          "id": "button-name",
+          "impact": "critical",
+          "description": "Ensure buttons have discernible text",
+          "help": "Buttons must have discernible text",
+          "helpUrl": "https://dequeuniversity.com/rules/axe/4.10/button-name?application=axe-puppeteer",
+          "nodes": 2,
+          "targets": [
+            [
+              ".size-6"
+            ],
+            [
+              "#headlessui-menu-button-P0-3"
+            ]
+          ]
+        },
+        {
+          "id": "link-name",
+          "impact": "serious",
+          "description": "Ensure links have discernible text",
+          "help": "Links must have discernible text",
+          "helpUrl": "https://dequeuniversity.com/rules/axe/4.10/link-name?application=axe-puppeteer",
+          "nodes": 3,
+          "targets": [
+            [
+              "a[href$=\"github.com\"]"
+            ],
+            [
+              "a[href$=\"twitter.com\"]"
+            ],
+            [
+              "a[href$=\"linkedin.com\"]"
+            ]
+          ]
+        },
+        {
+          "id": "nested-interactive",
+          "impact": "serious",
+          "description": "Ensure interactive controls are not nested as they are not always announced by screen readers or can cause focus problems for assistive technologies",
+          "help": "Interactive controls must not be nested",
+          "helpUrl": "https://dequeuniversity.com/rules/axe/4.10/nested-interactive?application=axe-puppeteer",
+          "nodes": 1,
+          "targets": [
+            [
+              ".h-fit"
+            ]
+          ]
+        }
+      ]
+    },
+    {
+      "page": "leaderboard",
+      "url": "/leaderboard",
+      "description": "Leaderboard page",
+      "violations": 4,
+      "passes": 39,
+      "incomplete": 0,
+      "inapplicable": 50,
+      "violationDetails": [
+        {
+          "id": "aria-command-name",
+          "impact": "serious",
+          "description": "Ensure every ARIA button, link and menuitem has an accessible name",
+          "help": "ARIA commands must have an accessible name",
+          "helpUrl": "https://dequeuniversity.com/rules/axe/4.10/aria-command-name?application=axe-puppeteer",
+          "nodes": 1,
+          "targets": [
+            [
+              ".pointer-events-none"
+            ]
+          ]
+        },
+        {
+          "id": "button-name",
+          "impact": "critical",
+          "description": "Ensure buttons have discernible text",
+          "help": "Buttons must have discernible text",
+          "helpUrl": "https://dequeuniversity.com/rules/axe/4.10/button-name?application=axe-puppeteer",
+          "nodes": 2,
+          "targets": [
+            [
+              ".size-6"
+            ],
+            [
+              "#headlessui-menu-button-P0-3"
+            ]
+          ]
+        },
+        {
+          "id": "link-name",
+          "impact": "serious",
+          "description": "Ensure links have discernible text",
+          "help": "Links must have discernible text",
+          "helpUrl": "https://dequeuniversity.com/rules/axe/4.10/link-name?application=axe-puppeteer",
+          "nodes": 3,
+          "targets": [
+            [
+              "a[href$=\"github.com\"]"
+            ],
+            [
+              "a[href$=\"twitter.com\"]"
+            ],
+            [
+              "a[href$=\"linkedin.com\"]"
+            ]
+          ]
+        },
+        {
+          "id": "nested-interactive",
+          "impact": "serious",
+          "description": "Ensure interactive controls are not nested as they are not always announced by screen readers or can cause focus problems for assistive technologies",
+          "help": "Interactive controls must not be nested",
+          "helpUrl": "https://dequeuniversity.com/rules/axe/4.10/nested-interactive?application=axe-puppeteer",
+          "nodes": 1,
+          "targets": [
+            [
+              ".h-fit"
+            ]
+          ]
+        }
+      ]
+    }
+  ],
+  "commonIssues": [
+    {
+      "id": "aria-command-name",
+      "count": 6
+    },
+    {
+      "id": "button-name",
+      "count": 6
+    },
+    {
+      "id": "link-name",
+      "count": 6
+    },
+    {
+      "id": "nested-interactive",
+      "count": 6
+    },
+    {
+      "id": "color-contrast",
+      "count": 4
+    },
+    {
+      "id": "heading-order",
+      "count": 4
+    },
+    {
+      "id": "aria-valid-attr-value",
+      "count": 3
+    }
+  ]
+}

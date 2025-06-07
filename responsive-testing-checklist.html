@@ -1,0 +1,218 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Responsive Testing Checklist - SambaTVPromptWebApp</title>
+    <style>
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+            max-width: 1200px;
+            margin: 0 auto;
+            padding: 20px;
+            background: #f5f5f5;
+        }
+        .container {
+            background: white;
+            padding: 30px;
+            border-radius: 8px;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+        }
+        .section {
+            margin-bottom: 30px;
+            border: 1px solid #e0e0e0;
+            border-radius: 8px;
+            padding: 20px;
+        }
+        .section-header {
+            font-size: 18px;
+            font-weight: bold;
+            margin-bottom: 15px;
+            color: #2563eb;
+        }
+        .checklist-item {
+            display: flex;
+            align-items: center;
+            margin-bottom: 10px;
+        }
+        .checklist-item input[type="checkbox"] {
+            margin-right: 10px;
+            width: 18px;
+            height: 18px;
+        }
+        .notes {
+            margin-top: 15px;
+        }
+        .notes textarea {
+            width: 100%;
+            min-height: 80px;
+            padding: 10px;
+            border: 1px solid #ddd;
+            border-radius: 4px;
+        }
+        .stats {
+            position: fixed;
+            top: 20px;
+            right: 20px;
+            background: white;
+            padding: 15px;
+            border-radius: 8px;
+            box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>Responsive Testing Checklist</h1>
+        <p>Testing Date: <span id="date"></span></p>
+        
+        <div class="stats">
+            <h3>Progress</h3>
+            <p>Completed: <span id="completed">0</span> / <span id="total">0</span></p>
+        </div>
+
+        <div class="section">
+            <div class="section-header">📱 Mobile Testing (320px - 414px)</div>
+            
+            <h4>Home Page</h4>
+            <div class="checklist-item">
+                <input type="checkbox" id="m1">
+                <label for="m1">Navigation menu works correctly</label>
+            </div>
+            <div class="checklist-item">
+                <input type="checkbox" id="m2">
+                <label for="m2">Search bar is accessible</label>
+            </div>
+            <div class="checklist-item">
+                <input type="checkbox" id="m3">
+                <label for="m3">Category filters are scrollable</label>
+            </div>
+            <div class="checklist-item">
+                <input type="checkbox" id="m4">
+                <label for="m4">Prompt cards display correctly</label>
+            </div>
+            
+            <h4>Submit Page</h4>
+            <div class="checklist-item">
+                <input type="checkbox" id="m5">
+                <label for="m5">Form fields are properly sized</label>
+            </div>
+            <div class="checklist-item">
+                <input type="checkbox" id="m6">
+                <label for="m6">Markdown editor is usable</label>
+            </div>
+            
+            <h4>Profile Page</h4>
+            <div class="checklist-item">
+                <input type="checkbox" id="m7">
+                <label for="m7">Profile info displays correctly</label>
+            </div>
+            <div class="checklist-item">
+                <input type="checkbox" id="m8">
+                <label for="m8">Tab navigation works</label>
+            </div>
+            
+            <div class="notes">
+                <h4>Mobile Issues Found:</h4>
+                <textarea placeholder="List any issues found during mobile testing..."></textarea>
+            </div>
+        </div>
+
+        <div class="section">
+            <div class="section-header">💻 Tablet Testing (768px - 1024px)</div>
+            
+            <div class="checklist-item">
+                <input type="checkbox" id="t1">
+                <label for="t1">Layout transitions smoothly from mobile</label>
+            </div>
+            <div class="checklist-item">
+                <input type="checkbox" id="t2">
+                <label for="t2">Navigation adapts properly</label>
+            </div>
+            <div class="checklist-item">
+                <input type="checkbox" id="t3">
+                <label for="t3">Forms utilize available space</label>
+            </div>
+            
+            <div class="notes">
+                <h4>Tablet Issues Found:</h4>
+                <textarea placeholder="List any issues found during tablet testing..."></textarea>
+            </div>
+        </div>
+
+        <div class="section">
+            <div class="section-header">🖥️ Desktop Testing (1280px+)</div>
+            
+            <div class="checklist-item">
+                <input type="checkbox" id="d1">
+                <label for="d1">Content has appropriate max-width</label>
+            </div>
+            <div class="checklist-item">
+                <input type="checkbox" id="d2">
+                <label for="d2">Hover states work correctly</label>
+            </div>
+            <div class="checklist-item">
+                <input type="checkbox" id="d3">
+                <label for="d3">No layout shifts</label>
+            </div>
+            
+            <div class="notes">
+                <h4>Desktop Issues Found:</h4>
+                <textarea placeholder="List any issues found during desktop testing..."></textarea>
+            </div>
+        </div>
+
+        <div class="section">
+            <div class="section-header">♿ Accessibility Testing</div>
+            
+            <div class="checklist-item">
+                <input type="checkbox" id="a1">
+                <label for="a1">Keyboard navigation works</label>
+            </div>
+            <div class="checklist-item">
+                <input type="checkbox" id="a2">
+                <label for="a2">Focus indicators visible</label>
+            </div>
+            <div class="checklist-item">
+                <input type="checkbox" id="a3">
+                <label for="a3">ARIA labels present</label>
+            </div>
+            
+            <div class="notes">
+                <h4>Accessibility Issues Found:</h4>
+                <textarea placeholder="List any accessibility issues found..."></textarea>
+            </div>
+        </div>
+
+        <div class="section">
+            <div class="section-header">📋 Summary</div>
+            <div class="notes">
+                <h4>Critical Issues:</h4>
+                <textarea placeholder="List critical issues that need immediate attention..."></textarea>
+                
+                <h4>Recommendations:</h4>
+                <textarea placeholder="Suggestions for improvements..."></textarea>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        document.getElementById('date').textContent = new Date().toLocaleDateString();
+        
+        function updateProgress() {
+            const checkboxes = document.querySelectorAll('input[type="checkbox"]');
+            const total = checkboxes.length;
+            const completed = Array.from(checkboxes).filter(cb => cb.checked).length;
+            
+            document.getElementById('total').textContent = total;
+            document.getElementById('completed').textContent = completed;
+        }
+        
+        document.querySelectorAll('input[type="checkbox"]').forEach(cb => {
+            cb.addEventListener('change', updateProgress);
+        });
+        
+        updateProgress();
+    </script>
+</body>
+</html> 

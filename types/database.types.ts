@@ -119,6 +119,7 @@ export type Database = {
           content: string
           created_at: string
           description: string
+          examples: Json
           featured: boolean
           id: number
           tags: string[]
@@ -133,6 +134,7 @@ export type Database = {
           content: string
           created_at?: string
           description: string
+          examples?: Json
           featured?: boolean
           id?: never
           tags?: string[]
@@ -147,6 +149,7 @@ export type Database = {
           content?: string
           created_at?: string
           description?: string
+          examples?: Json
           featured?: boolean
           id?: never
           tags?: string[]

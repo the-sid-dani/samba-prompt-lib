@@ -1,7 +1,7 @@
 "use client";
 
 import { useState, useEffect } from "react";
-import { Search, Plus, TrendingUp, Star, Eye, Copy, Sparkles, GitFork } from "lucide-react";
+import { Search, Plus, TrendingUp, Star, Heart, Eye, Copy, Sparkles, GitFork, Tag } from "lucide-react";
 import Link from "next/link";
 import Image from "next/image";
 import { Button } from "@/components/ui/button";
@@ -12,7 +12,10 @@ import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import Navigation from '@/components/navigation/Navigation';
 import config from "@/config";
 import { PromptCopyButton } from "@/components/prompt-copy-button";
+import { FavoriteButton } from "@/components/favorite-button";
 import SignIn from "@/components/sign-in";
+import { LazyLoad } from "@/components/ui/lazy-load";
+import { useDebounce } from "@/lib/mobile-performance";
 
 interface PromptExplorerProps {
   user: any;
@@ -22,8 +25,12 @@ interface PromptExplorerProps {
 
 export default function PromptExplorer({ user, prompts: propsPrompts, categories: propsCategories }: PromptExplorerProps) {
   const [selectedCategory, setSelectedCategory] = useState("all");
+  const [selectedTags, setSelectedTags] = useState<string[]>([]);
   const [searchQuery, setSearchQuery] = useState("");
   const [sortBy, setSortBy] = useState("popular");
+  
+  // Debounce search for better performance
+  const debouncedSearchQuery = useDebounce(searchQuery, 300);
   
   // Use real data from props
   const displayPrompts = propsPrompts || [];
@@ -31,7 +38,24 @@ export default function PromptExplorer({ user, prompts: propsPrompts, categories
     [{ id: "all", name: "All" }, ...propsCategories.map(cat => ({ id: cat.id.toString(), name: cat.name }))] 
     : [{ id: "all", name: "All" }];
   
+  // Extract unique tags from all prompts
+  const allTags = Array.from(
+    new Set(
+      displayPrompts
+        .flatMap(prompt => prompt.tags || [])
+        .filter((tag): tag is string => typeof tag === 'string')
+    )
+  ).sort();
+  
   const [filteredPrompts, setFilteredPrompts] = useState(displayPrompts);
+
+  const toggleTag = (tag: string) => {
+    setSelectedTags(prev => 
+      prev.includes(tag) 
+        ? prev.filter(t => t !== tag)
+        : [...prev, tag]
+    );
+  };
 
   useEffect(() => {
     let filtered = displayPrompts;
@@ -44,13 +68,21 @@ export default function PromptExplorer({ user, prompts: propsPrompts, categories
       });
     }
 
-    // Filter by search query
-    if (searchQuery) {
+    // Filter by selected tags
+    if (selectedTags.length > 0) {
+      filtered = filtered.filter(prompt => {
+        if (!prompt.tags || !Array.isArray(prompt.tags)) return false;
+        return selectedTags.some(tag => prompt.tags.includes(tag));
+      });
+    }
+
+    // Filter by search query (use debounced value)
+    if (debouncedSearchQuery) {
       filtered = filtered.filter(prompt => 
-        prompt.title.toLowerCase().includes(searchQuery.toLowerCase()) ||
-        prompt.description.toLowerCase().includes(searchQuery.toLowerCase()) ||
+        prompt.title.toLowerCase().includes(debouncedSearchQuery.toLowerCase()) ||
+        prompt.description.toLowerCase().includes(debouncedSearchQuery.toLowerCase()) ||
         (prompt.tags && Array.isArray(prompt.tags) && 
-         prompt.tags.some((tag: string) => tag.toLowerCase().includes(searchQuery.toLowerCase())))
+         prompt.tags.some((tag: string) => tag.toLowerCase().includes(debouncedSearchQuery.toLowerCase())))
       );
     }
 
@@ -72,7 +104,7 @@ export default function PromptExplorer({ user, prompts: propsPrompts, categories
     }
 
     setFilteredPrompts(filtered);
-  }, [selectedCategory, searchQuery, sortBy, displayPrompts]);
+  }, [selectedCategory, selectedTags, debouncedSearchQuery, sortBy, displayPrompts]);
 
   return (
     <div className="min-h-screen bg-gray-50">
@@ -94,11 +126,11 @@ export default function PromptExplorer({ user, prompts: propsPrompts, categories
           
           {/* Search Bar */}
           <div className="max-w-2xl mx-auto relative px-4 sm:px-0">
-            <Search className="absolute left-6 sm:left-4 top-1/2 transform -translate-y-1/2 text-gray-400 w-4 h-4 sm:w-5 sm:h-5" />
+            <Search className="absolute left-[40px] sm:left-[28px] md:left-[28px] top-1/2 transform -translate-y-1/2 text-gray-400 w-4 h-4 pointer-events-none z-10" />
             <Input
               type="text"
-              placeholder="Search prompts..."
-              className="pl-10 sm:pl-12 pr-4 py-3 sm:py-4 md:py-6 text-sm sm:text-base md:text-lg rounded-full border-2 border-gray-200 focus:border-primary"
+              placeholder="Search by title, description, category or prompt text..."
+              className="pl-[70px] sm:pl-[62px] md:pl-[62px] pr-4 py-3 sm:py-4 md:py-6 text-[11px] sm:text-xs md:text-sm rounded-full border-2 border-gray-200 focus:border-primary"
               value={searchQuery}
               onChange={(e) => setSearchQuery(e.target.value)}
             />
@@ -129,6 +161,37 @@ export default function PromptExplorer({ user, prompts: propsPrompts, categories
             </div>
           </div>
 
+          {/* Tag Filter */}
+          {allTags.length > 0 && (
+            <div className="mb-4 sm:mb-6">
+              <h3 className="text-xs sm:text-sm font-medium text-gray-700 mb-2 sm:mb-3">Filter by tags</h3>
+              <div className="flex flex-wrap gap-1.5 sm:gap-2">
+                {allTags.map((tag) => (
+                  <button
+                    key={tag}
+                    onClick={() => toggleTag(tag)}
+                    className={`px-3 sm:px-4 py-1.5 sm:py-2 rounded-full text-xs sm:text-sm font-medium whitespace-nowrap transition-colors flex items-center gap-1 ${
+                      selectedTags.includes(tag)
+                        ? "bg-primary text-white"
+                        : "bg-gray-100 text-gray-700 hover:bg-gray-200"
+                    }`}
+                  >
+                    <Tag className="w-3 h-3" />
+                    {tag}
+                  </button>
+                ))}
+              </div>
+              {selectedTags.length > 0 && (
+                <button
+                  onClick={() => setSelectedTags([])}
+                  className="mt-2 text-xs sm:text-sm text-primary hover:underline"
+                >
+                  Clear selected tags ({selectedTags.length})
+                </button>
+              )}
+            </div>
+          )}
+
           {/* Sorting and Results Count */}
           <div className="flex flex-col sm:flex-row gap-3 sm:gap-4 mb-4 sm:mb-6">
             <div className="flex flex-1 items-center gap-2 sm:gap-4 overflow-x-auto">
@@ -148,7 +211,7 @@ export default function PromptExplorer({ user, prompts: propsPrompts, categories
           </div>
 
           {/* Featured Section */}
-          {selectedCategory === "all" && filteredPrompts.some(p => p.featured) && (
+          {selectedCategory === "all" && selectedTags.length === 0 && filteredPrompts.some(p => p.featured) && (
             <div className="mb-8">
               <h2 className="text-2xl font-bold text-gray-900 mb-4 flex items-center gap-2">
                 <Star className="w-6 h-6 text-yellow-500" />
@@ -159,7 +222,7 @@ export default function PromptExplorer({ user, prompts: propsPrompts, categories
                   .filter(p => p.featured)
                   .slice(0, 2)
                   .map((prompt) => (
-                    <PromptCard key={prompt.id} prompt={prompt} featured />
+                    <PromptCard key={prompt.id} prompt={prompt} user={user} featured />
                   ))}
               </div>
             </div>
@@ -168,9 +231,11 @@ export default function PromptExplorer({ user, prompts: propsPrompts, categories
           {/* Prompt Grid */}
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
             {filteredPrompts
-              .filter(p => !p.featured || selectedCategory !== "all")
+              .filter(p => !p.featured || selectedCategory !== "all" || selectedTags.length > 0)
               .map((prompt) => (
-                <PromptCard key={prompt.id} prompt={prompt} />
+                <LazyLoad key={prompt.id} threshold={0.1}>
+                  <PromptCard prompt={prompt} user={user} />
+                </LazyLoad>
               ))}
           </div>
 
@@ -181,6 +246,7 @@ export default function PromptExplorer({ user, prompts: propsPrompts, categories
               <Button variant="outline" onClick={() => {
                 setSearchQuery("");
                 setSelectedCategory("all");
+                setSelectedTags([]);
               }}>
                 Clear filters
               </Button>
@@ -206,15 +272,18 @@ export default function PromptExplorer({ user, prompts: propsPrompts, categories
 }
 
 // Prompt Card Component
-function PromptCard({ prompt, featured = false }: { prompt: any; featured?: boolean }) {
-  const handleCopyClick = (e: React.MouseEvent) => {
-    e.preventDefault(); // Prevent navigation when clicking copy button
-    e.stopPropagation();
-  };
-
+function PromptCard({ prompt, user, featured = false }: { prompt: any; user: any; featured?: boolean }) {
+  // Debug: Check if content is available
+  console.log('Prompt card data:', { 
+    id: prompt.id, 
+    title: prompt.title, 
+    hasContent: !!prompt.content,
+    contentLength: prompt.content?.length || 0 
+  });
+  
   return (
     <Link href={`/prompt/${prompt.id}`}>
-      <Card className={`h-full hover:shadow-lg transition-shadow cursor-pointer ${
+      <Card className={`h-full hover:shadow-lg transition-shadow cursor-pointer card-hover tap-highlight ${
         featured ? "border-primary" : ""
       }`}>
         <CardHeader>
@@ -249,10 +318,21 @@ function PromptCard({ prompt, featured = false }: { prompt: any; featured?: bool
           
           {/* Stats section */}
           <div className="flex items-center gap-4 mb-3 text-sm text-gray-600">
-            <div className="flex items-center gap-1">
-              <Star className="w-4 h-4" />
-              <span>{prompt.user_favorites?.length || 0}</span>
-            </div>
+            {user ? (
+              <FavoriteButton
+                promptId={prompt.id}
+                initialFavorited={prompt.isFavorited || false}
+                favoriteCount={prompt.favoriteCount || prompt.user_favorites?.length || 0}
+                showCount={true}
+                size="sm"
+                variant="ghost"
+              />
+            ) : (
+              <div className="flex items-center gap-1">
+                <Heart className="w-4 h-4" />
+                <span>{prompt.favoriteCount || prompt.user_favorites?.length || 0}</span>
+              </div>
+            )}
             <div className="flex items-center gap-1">
               <GitFork className="w-4 h-4" />
               <span>{prompt.prompt_forks?.length || prompt.forkCount || 0}</span>
@@ -274,13 +354,16 @@ function PromptCard({ prompt, featured = false }: { prompt: any; featured?: bool
                 }
               </p>
             </div>
-            <div onClick={handleCopyClick}>
+            <div onClick={(e) => {
+              e.preventDefault();
+              e.stopPropagation();
+            }}>
               <PromptCopyButton
                 promptId={prompt.id}
                 text={prompt.content || ''}
                 label=""
                 variant="ghost"
-                className="text-primary"
+                className="text-primary touch-scale"
               />
             </div>
           </div>

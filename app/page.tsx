@@ -8,7 +8,7 @@ export default async function Home() {
 
   // Fetch prompts and categories
   const [{ prompts }, categories] = await Promise.all([
-    fetchPrompts({ page: 1, limit: 20 }),
+    fetchPrompts({ page: 1, limit: 20, user_id: user?.id }),
     getCategories()
   ]);
 

@@ -4,7 +4,7 @@ import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { Star, ArrowLeft, Heart, Share2, Flag, Edit, MessageSquare, GitFork, Lightbulb, Copy, ExternalLink } from "lucide-react";
+import { ArrowLeft, Heart, Share2, Flag, Edit, MessageSquare, GitFork, Lightbulb, Copy, ExternalLink } from "lucide-react";
 import Navigation from "@/components/navigation/Navigation";
 import UserMenu from "@/components/user/UserMenu";
 import SignIn from "@/components/sign-in";
@@ -14,8 +14,14 @@ import { auth } from "@/lib/auth";
 import { fetchPromptById } from "@/app/actions/prompts";
 import { PromptCopyButton } from "@/components/prompt-copy-button";
 import { ForkButton } from "@/components/fork-button";
+import { FavoriteButton } from "@/components/favorite-button";
 import { ImprovementModal } from "@/components/improvement-modal";
 import { ImprovementsList } from "@/components/improvements-list";
+import { DeletePromptButton } from "@/components/delete-prompt-button";
+import { PromptForksDropdown } from "@/components/prompt-forks-dropdown";
+import { SimpleMarkdown } from "@/components/simple-markdown";
+import { PromptContentSection } from "@/components/prompt-content-section";
+import { ForkBadge } from "@/components/fork-badge";
 
 export default async function PromptDetailPage({ params }: { params: Promise<{ id: string }> }) {
   try {
@@ -72,22 +78,48 @@ export default async function PromptDetailPage({ params }: { params: Promise<{ i
           {/* Prompt Header */}
           <div className="bg-white rounded-lg shadow-sm p-4 sm:p-6 md:p-8 mb-4 sm:mb-6">
             <div className="mb-4 sm:mb-6">
-              {/* Tags */}
-              <div className="flex flex-wrap items-center gap-2 sm:gap-3 mb-3 sm:mb-4">
-                {prompt.categories && (
-                  <Badge variant="secondary" className="px-2 py-0.5 sm:px-3 sm:py-1 text-xs sm:text-sm">
-                    {prompt.categories.name}
-                  </Badge>
+              {/* Tags with Delete Button */}
+              <div className="flex flex-wrap items-center justify-between gap-2 sm:gap-3 mb-3 sm:mb-4">
+                <div className="flex flex-wrap items-center gap-2 sm:gap-3">
+                  {prompt.categories && (
+                    <Badge variant="secondary" className="px-2 py-0.5 sm:px-3 sm:py-1 text-xs sm:text-sm">
+                      {prompt.categories.name}
+                    </Badge>
+                  )}
+                  {prompt.tags && prompt.tags.map((tag: string) => (
+                    <Badge key={tag} variant="outline" className="px-2 py-0.5 sm:px-3 sm:py-1 text-xs sm:text-sm">
+                      {tag}
+                    </Badge>
+                  ))}
+                </div>
+                {isOwner && (
+                  <DeletePromptButton
+                    promptId={promptId}
+                    promptTitle={prompt.title}
+                  />
                 )}
-                {prompt.tags && prompt.tags.map((tag: string) => (
-                  <Badge key={tag} variant="outline" className="px-2 py-0.5 sm:px-3 sm:py-1 text-xs sm:text-sm">
-                    {tag}
-                  </Badge>
-                ))}
               </div>
               
               {/* Title */}
-              <h1 className="text-xl sm:text-2xl md:text-3xl font-bold mb-3 sm:mb-4">{prompt.title}</h1>
+              <div className="flex items-start justify-between gap-4 mb-3 sm:mb-4">
+                <h1 className="text-xl sm:text-2xl md:text-3xl font-bold">{prompt.title}</h1>
+                {isOwner && (
+                  <Link href={`/prompt/${promptId}/edit`}>
+                    <Button variant="outline" size="sm" className="text-xs sm:text-sm shrink-0">
+                      <Edit className="w-3 h-3 sm:w-4 sm:h-4 mr-1.5 sm:mr-2" />
+                      Edit
+                    </Button>
+                  </Link>
+                )}
+              </div>
+              
+              {/* Fork Badge */}
+              {prompt.forked_from && (
+                <ForkBadge 
+                  forkedFrom={prompt.forked_from} 
+                  className="mb-3 sm:mb-4"
+                />
+              )}
               
               {/* Author and Date */}
               <div className="flex flex-col sm:flex-row sm:items-center gap-1 sm:gap-4 text-xs sm:text-sm text-gray-600 mb-4 sm:mb-6">
@@ -105,14 +137,22 @@ export default async function PromptDetailPage({ params }: { params: Promise<{ i
 
               {/* Stats */}
               <div className="flex items-center gap-3 sm:gap-4 md:gap-6 mb-4 sm:mb-6">
-                <div className="flex items-center gap-1 sm:gap-2">
-                  <Star className="w-4 h-4 sm:w-5 sm:h-5 text-gray-600" />
-                  <span className="text-sm sm:text-base font-semibold">{bookmarkCount}</span>
-                </div>
-                <div className="flex items-center gap-1 sm:gap-2">
-                  <GitFork className="w-4 h-4 sm:w-5 sm:h-5 text-gray-600" />
-                  <span className="text-sm sm:text-base font-semibold">{forkCount}</span>
-                </div>
+                {user ? (
+                  <FavoriteButton
+                    promptId={promptId}
+                    initialFavorited={prompt.isFavorited || false}
+                    favoriteCount={bookmarkCount}
+                    showCount={true}
+                    size="default"
+                    variant="ghost"
+                  />
+                ) : (
+                  <div className="flex items-center gap-1 sm:gap-2">
+                    <Heart className="w-4 h-4 sm:w-5 sm:h-5 text-gray-600" />
+                    <span className="text-sm sm:text-base font-semibold">{bookmarkCount}</span>
+                  </div>
+                )}
+                <PromptForksDropdown promptId={promptId} forkCount={forkCount} />
                 <div className="flex items-center gap-1 sm:gap-2">
                   <Copy className="w-4 h-4 sm:w-5 sm:h-5 text-gray-600" />
                   <span className="text-sm sm:text-base font-semibold">{copyCount}</span>
@@ -120,7 +160,12 @@ export default async function PromptDetailPage({ params }: { params: Promise<{ i
               </div>
 
               {/* Description */}
-              <p className="text-sm sm:text-base text-gray-600 mb-4 sm:mb-6">{prompt.description}</p>
+              <div className="mb-4 sm:mb-6">
+                <SimpleMarkdown 
+                  content={prompt.description} 
+                  className="text-sm sm:text-base text-gray-600"
+                />
+              </div>
 
               {/* Action Buttons */}
               <div className="grid grid-cols-1 sm:grid-cols-2 lg:flex lg:flex-wrap gap-2 sm:gap-3">
@@ -130,6 +175,13 @@ export default async function PromptDetailPage({ params }: { params: Promise<{ i
                   label="Copy"
                   className="bg-primary hover:bg-primary/90 w-full sm:w-auto"
                 />
+                {user && (
+                  <ForkButton
+                    promptId={promptId}
+                    promptTitle={prompt.title}
+                    className="w-full sm:w-auto"
+                  />
+                )}
                 <Button variant="outline" disabled className="w-full sm:w-auto text-xs sm:text-sm">
                   <ExternalLink className="w-3 h-3 sm:w-4 sm:h-4 mr-1.5 sm:mr-2" />
                   Use in Playground
@@ -146,28 +198,17 @@ export default async function PromptDetailPage({ params }: { params: Promise<{ i
             </div>
           </div>
 
-          {/* Prompt Content */}
-          <Card className="mb-4 sm:mb-6">
-            <CardHeader className="p-4 sm:p-6">
-              <CardTitle className="text-lg sm:text-xl">Prompt</CardTitle>
-            </CardHeader>
-            <CardContent className="p-4 sm:p-6 pt-0 sm:pt-0">
-              <div className="bg-gray-50 p-3 sm:p-4 md:p-6 rounded-lg overflow-x-auto">
-                <pre className="whitespace-pre-wrap font-mono text-xs sm:text-sm">
-                  {prompt.content}
-                </pre>
-              </div>
-              <div className="mt-3 sm:mt-4 flex justify-end">
-                {user && !isOwner && (
-                  <ForkButton
-                    promptId={promptId}
-                    promptTitle={prompt.title}
-                    className="text-primary hover:text-primary/90"
-                  />
-                )}
-              </div>
-            </CardContent>
-          </Card>
+          {/* Prompt Content Section - Client Component */}
+          <PromptContentSection 
+            prompt={{
+              id: promptId,
+              content: prompt.content,
+              title: prompt.title,
+              examples: prompt.examples
+            }}
+            user={user}
+            isOwner={isOwner}
+          />
 
           {/* Additional Actions */}
           <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3 sm:gap-4 mb-4 sm:mb-6">
@@ -179,25 +220,29 @@ export default async function PromptDetailPage({ params }: { params: Promise<{ i
                   currentContent={prompt.content}
                 />
               )}
-              {isOwner && (
-                <Link href={`/prompt/${promptId}/edit`}>
-                  <Button variant="outline" size="sm" className="text-xs sm:text-sm">
-                    <Edit className="w-3 h-3 sm:w-4 sm:h-4 mr-1.5 sm:mr-2" />
-                    Edit Prompt
-                  </Button>
-                </Link>
-              )}
             </div>
             <div className="flex items-center gap-2 sm:gap-4">
-              <Button
-                variant="ghost"
-                size="sm"
-                className="text-gray-500 hover:text-gray-700 text-xs sm:text-sm"
-                disabled={!user}
-              >
-                <Heart className={`w-3 h-3 sm:w-4 sm:h-4 mr-1.5 sm:mr-2 ${prompt.isFavorited ? 'fill-current' : ''}`} />
-                <span className="hidden sm:inline">{prompt.isFavorited ? 'Unfavorite' : 'Favorite'}</span>
-              </Button>
+              {user ? (
+                <FavoriteButton
+                  promptId={promptId}
+                  initialFavorited={prompt.isFavorited || false}
+                  favoriteCount={bookmarkCount}
+                  showCount={false}
+                  size="sm"
+                  variant="ghost"
+                  className="text-gray-500 hover:text-gray-700"
+                />
+              ) : (
+                <Button
+                  variant="ghost"
+                  size="sm"
+                  className="text-gray-500 hover:text-gray-700 text-xs sm:text-sm"
+                  disabled
+                >
+                  <Heart className="w-3 h-3 sm:w-4 sm:h-4 mr-1.5 sm:mr-2" />
+                  <span className="hidden sm:inline">Favorite</span>
+                </Button>
+              )}
               <Button
                 variant="ghost"
                 size="sm"

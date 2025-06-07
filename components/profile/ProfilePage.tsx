@@ -1,7 +1,6 @@
 'use client';
 
 import { useState } from 'react';
-import Image from 'next/image';
 import Link from 'next/link';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
@@ -12,6 +11,8 @@ import Navigation from '@/components/navigation/Navigation';
 import config from '@/config';
 import { useSession } from 'next-auth/react';
 import ProfilePromptsTab from './ProfilePromptsTab';
+import { EditProfileModal } from './EditProfileModal';
+import { ResponsiveAvatar } from '@/components/ui/responsive-image';
 import { 
   fetchUserPrompts, 
   fetchUserForkedPrompts, 
@@ -33,6 +34,7 @@ interface ProfilePageProps {
 
 export default function ProfilePage({ profile, stats, isOwnProfile }: ProfilePageProps) {
   const [activeTab, setActiveTab] = useState('prompts');
+  const [editModalOpen, setEditModalOpen] = useState(false);
   const { data: session } = useSession();
   const user = session?.user;
 
@@ -54,21 +56,13 @@ export default function ProfilePage({ profile, stats, isOwnProfile }: ProfilePag
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-4 sm:py-6 md:py-8">
           <div className="flex flex-col sm:flex-row items-center sm:items-start gap-4 sm:gap-6">
             {/* Avatar */}
-            <div className="relative">
-              {profile.avatar_url ? (
-                <Image
-                  src={profile.avatar_url}
-                  alt={profile.name || 'User avatar'}
-                  width={128}
-                  height={128}
-                  className="w-24 h-24 sm:w-32 sm:h-32 rounded-full border-4 border-white shadow-lg"
-                />
-              ) : (
-                <div className="w-24 h-24 sm:w-32 sm:h-32 rounded-full bg-gray-200 flex items-center justify-center border-4 border-white shadow-lg">
-                  <User className="w-12 h-12 sm:w-16 sm:h-16 text-gray-400" />
-                </div>
-              )}
-            </div>
+            <ResponsiveAvatar
+              src={profile.avatar_url}
+              alt={profile.name || 'User avatar'}
+              fallback={profile.name?.[0] || profile.email?.[0] || 'U'}
+              size="lg"
+              className="border-4 border-white shadow-lg scale-150 sm:scale-200"
+            />
 
             {/* Profile Info */}
             <div className="flex-1 text-center sm:text-left">
@@ -94,7 +88,12 @@ export default function ProfilePage({ profile, stats, isOwnProfile }: ProfilePag
                   </div>
                 </div>
                 {isOwnProfile && (
-                  <Button variant="outline" size="sm" className="flex items-center gap-2 text-xs sm:text-sm">
+                  <Button 
+                    variant="outline" 
+                    size="sm" 
+                    className="flex items-center gap-2 text-xs sm:text-sm tap-highlight"
+                    onClick={() => setEditModalOpen(true)}
+                  >
                     <Edit className="w-3 h-3 sm:w-4 sm:h-4" />
                     Edit Profile
                   </Button>
@@ -103,19 +102,19 @@ export default function ProfilePage({ profile, stats, isOwnProfile }: ProfilePag
 
               {/* Stats */}
               <div className="grid grid-cols-3 gap-2 sm:gap-3 md:gap-4 mt-4 sm:mt-6">
-                <Card>
+                <Card className="card-hover tap-highlight">
                   <CardContent className="p-3 sm:p-4 text-center">
                     <p className="text-xl sm:text-2xl font-bold text-gray-900">{stats.prompts}</p>
                     <p className="text-xs sm:text-sm text-gray-600">Prompts</p>
                   </CardContent>
                 </Card>
-                <Card>
+                <Card className="card-hover tap-highlight">
                   <CardContent className="p-3 sm:p-4 text-center">
                     <p className="text-xl sm:text-2xl font-bold text-gray-900">{stats.forks}</p>
                     <p className="text-xs sm:text-sm text-gray-600">Forks</p>
                   </CardContent>
                 </Card>
-                <Card>
+                <Card className="card-hover tap-highlight">
                   <CardContent className="p-3 sm:p-4 text-center">
                     <p className="text-xl sm:text-2xl font-bold text-gray-900">{stats.favorites}</p>
                     <p className="text-xs sm:text-sm text-gray-600">Favorites</p>
@@ -189,6 +188,21 @@ export default function ProfilePage({ profile, stats, isOwnProfile }: ProfilePag
           </TabsContent>
         </Tabs>
       </div>
+
+      {/* Edit Profile Modal */}
+      {isOwnProfile && (
+        <EditProfileModal
+          open={editModalOpen}
+          onOpenChange={setEditModalOpen}
+          user={{
+            id: profile.id,
+            name: profile.name,
+            username: profile.username,
+            avatar_url: profile.avatar_url,
+            email: profile.email,
+          }}
+        />
+      )}
     </div>
   );
 } 
