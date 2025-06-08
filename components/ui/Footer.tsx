@@ -24,7 +24,7 @@ const Footer = () => {
 						<h3 className="text-lg font-semibold text-foreground">Quick Actions</h3>
 						<div className="flex flex-col space-y-3">
 							<a
-								href="https://forms.gle/claudeaccess"
+								href="https://airtable.com/appKK5oASrMHZix8k/pagXOGfkg7pxQFkjb/form"
 								target="_blank"
 								rel="noopener noreferrer"
 								className="text-muted-foreground hover:text-foreground transition-colors flex items-center gap-2 group"
@@ -55,7 +55,7 @@ const Footer = () => {
 						<h3 className="text-lg font-semibold text-foreground">Resources</h3>
 						<div className="flex flex-col space-y-3">
 							<a
-								href="https://confluence.samba.tv/display/AI"
+								href="https://sambatv.atlassian.net/wiki/spaces/ATF/overview"
 								target="_blank"
 								rel="noopener noreferrer"
 								className="text-muted-foreground hover:text-foreground transition-colors flex items-center gap-2 group"
@@ -64,7 +64,7 @@ const Footer = () => {
 								<ExternalLink className="w-3 h-3 opacity-0 group-hover:opacity-100 transition-opacity" />
 							</a>
 							<a
-								href="https://confluence.samba.tv/display/AI/Training"
+								href="https://sambatv.atlassian.net/wiki/spaces/ATF/pages/14289043559/AI+Enablement+Program+-+Training+Guide"
 								target="_blank"
 								rel="noopener noreferrer"
 								className="text-muted-foreground hover:text-foreground transition-colors flex items-center gap-2 group"
@@ -89,14 +89,14 @@ const Footer = () => {
 						<h3 className="text-lg font-semibold text-foreground">Connect</h3>
 						<div className="flex flex-col space-y-3">
 							<a
-								href="slack://channel?team=T025F3W2X&id=ai-enablement"
+								href="slack://channel?team=TEAMID&id=ai-enablement"
 								className="text-muted-foreground hover:text-foreground transition-colors flex items-center gap-2"
 							>
 								<MessageSquare className="w-4 h-4" />
 								#ai-enablement
 							</a>
 							<a
-								href="slack://channel?team=T025F3W2X&id=ai-policy-qa"
+								href="slack://channel?team=TEAMID&id=ai-policy-qa"
 								className="text-muted-foreground hover:text-foreground transition-colors flex items-center gap-2"
 							>
 								<MessageSquare className="w-4 h-4" />
@@ -120,7 +120,7 @@ const Footer = () => {
 				<div className="mt-8 lg:hidden">
 					<div className="flex flex-wrap gap-2 justify-center">
 						<a
-							href="https://forms.gle/claudeaccess"
+							href="https://airtable.com/appKK5oASrMHZix8k/pagXOGfkg7pxQFkjb/form"
 							target="_blank"
 							rel="noopener noreferrer"
 							className="px-3 py-2 bg-red-600 text-white text-sm rounded-md hover:bg-red-700 transition-colors"
