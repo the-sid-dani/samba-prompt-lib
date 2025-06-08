@@ -65,9 +65,9 @@ export default function CategoryEditModal({ category }: CategoryEditModalProps) 
 
       {isOpen && (
         <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4">
-          <div className="bg-white rounded-lg shadow-xl max-w-md w-full max-h-[90vh] overflow-y-auto">
+          <div className="bg-background border rounded-lg shadow-xl max-w-md w-full max-h-[90vh] overflow-y-auto">
             <div className="flex items-center justify-between p-6 border-b">
-              <h3 className="text-lg font-semibold">Edit Category</h3>
+              <h3 className="text-lg font-semibold text-foreground">Edit Category</h3>
               <Button
                 variant="ghost"
                 size="sm"
@@ -80,7 +80,7 @@ export default function CategoryEditModal({ category }: CategoryEditModalProps) 
             
             <form onSubmit={handleSubmit} className="p-6 space-y-4">
               {error && (
-                <div className="bg-red-50 border border-red-200 text-red-600 px-4 py-3 rounded-md text-sm">
+                <div className="bg-destructive/10 border border-destructive/20 text-destructive px-4 py-3 rounded-md text-sm">
                   {error}
                 </div>
               )}

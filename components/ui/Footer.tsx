@@ -1,5 +1,5 @@
 import Link from 'next/link';
-import { ExternalLink, Clock, MessageSquare } from 'lucide-react';
+import { ExternalLink, MessageSquare } from 'lucide-react';
 
 const Footer = () => {
 	return (
@@ -101,16 +101,6 @@ const Footer = () => {
 							>
 								<MessageSquare className="w-4 h-4" />
 								#ai-policy-qa
-							</a>
-							<a
-								href="https://calendar.google.com/calendar/appointments/AcZssZ2H5oU_aBK9gF9VZlI4QHV2FCT8Vs4kxG8dNP4="
-								target="_blank"
-								rel="noopener noreferrer"
-								className="text-muted-foreground hover:text-foreground transition-colors flex items-center gap-2 group"
-							>
-								<Clock className="w-4 h-4" />
-								Office Hours: Thu 3PM
-								<ExternalLink className="w-3 h-3 opacity-0 group-hover:opacity-100 transition-opacity" />
 							</a>
 						</div>
 					</div>
