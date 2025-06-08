@@ -42,10 +42,13 @@ const Footer = () => {
 								<ExternalLink className="w-3 h-3 opacity-0 group-hover:opacity-100 transition-opacity" />
 							</a>
 							<a
-								href="mailto:sid.dani@samba.tv?subject=AI%20Issue%20Report"
-								className="text-muted-foreground hover:text-foreground transition-colors"
+								href="https://airtable.com/appKK5oASrMHZix8k/pagzHZUCtEDVdfEBg/form"
+								target="_blank"
+								rel="noopener noreferrer"
+								className="text-muted-foreground hover:text-foreground transition-colors flex items-center gap-2 group"
 							>
-								Report an Issue
+								Request a New AI Tool
+								<ExternalLink className="w-3 h-3 opacity-0 group-hover:opacity-100 transition-opacity" />
 							</a>
 						</div>
 					</div>
@@ -89,18 +92,24 @@ const Footer = () => {
 						<h3 className="text-lg font-semibold text-foreground">Connect</h3>
 						<div className="flex flex-col space-y-3">
 							<a
-								href="slack://channel?team=TEAMID&id=ai-enablement"
-								className="text-muted-foreground hover:text-foreground transition-colors flex items-center gap-2"
+								href="https://sambatv.enterprise.slack.com/archives/C09021MFK7G"
+								target="_blank"
+								rel="noopener noreferrer"
+								className="text-muted-foreground hover:text-foreground transition-colors flex items-center gap-2 group"
 							>
 								<MessageSquare className="w-4 h-4" />
 								#ai-enablement
+								<ExternalLink className="w-3 h-3 opacity-0 group-hover:opacity-100 transition-opacity" />
 							</a>
 							<a
-								href="slack://channel?team=TEAMID&id=ai-policy-qa"
-								className="text-muted-foreground hover:text-foreground transition-colors flex items-center gap-2"
+								href="https://sambatv.enterprise.slack.com/archives/C09084P3E9F"
+								target="_blank"
+								rel="noopener noreferrer"
+								className="text-muted-foreground hover:text-foreground transition-colors flex items-center gap-2 group"
 							>
 								<MessageSquare className="w-4 h-4" />
 								#ai-policy-qa
+								<ExternalLink className="w-3 h-3 opacity-0 group-hover:opacity-100 transition-opacity" />
 							</a>
 						</div>
 					</div>
@@ -126,10 +135,12 @@ const Footer = () => {
 							Submit Use Case
 						</a>
 						<a
-							href="mailto:sid.dani@samba.tv?subject=AI%20Issue%20Report"
+							href="https://airtable.com/appKK5oASrMHZix8k/pagzHZUCtEDVdfEBg/form"
+							target="_blank"
+							rel="noopener noreferrer"
 							className="px-3 py-2 bg-muted text-foreground text-sm rounded-md hover:bg-muted/80 transition-colors"
 						>
-							Get Help
+							Request AI Tool
 						</a>
 					</div>
 				</div>
