@@ -65,6 +65,7 @@ function PlaygroundContent() {
   const [messages, setMessages] = useState<Message[]>([]);
   const [inputText, setInputText] = useState('');
   const [systemPrompt, setSystemPrompt] = useState('You are a helpful assistant.');
+  const [systemPromptDisplay, setSystemPromptDisplay] = useState(''); // For display with markup
   const [selectedModel, setSelectedModel] = useState<string>('claude-3-7-sonnet-20250219');
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
@@ -197,7 +198,8 @@ function PlaygroundContent() {
         
         // Put processed content in system prompt field, clear main input
         setInputText('')
-        setSystemPrompt(processedContent) // Keep HTML markup for styling
+        setSystemPrompt(processedContent) // Use clean text
+        setSystemPromptDisplay('') // Clear display markup
         setVariables({})
         setVariablesFilled(true)
         
@@ -242,7 +244,8 @@ function PlaygroundContent() {
       
       // Put content in system prompt field, clear main input
       setInputText(''); // Clear the main input field
-      setSystemPrompt(prompt.content); // Keep HTML markup for styling filled variables
+      setSystemPrompt(prompt.content); // Use clean text
+      setSystemPromptDisplay(''); // Clear display markup
       if (prompt.model) setSelectedModel(prompt.model);
       
       // Don't extract template variables when loading from playground
@@ -284,9 +287,9 @@ function PlaygroundContent() {
     console.log('[Playground] Variable changed:', varName, value);
     setVariables(prev => ({ ...prev, [varName]: value }));
     
-    // Update system prompt display with filled variables
-    setSystemPrompt(prev => {
-      let updated = prev;
+    // Update display version with filled variables
+    setSystemPromptDisplay(prev => {
+      let updated = systemPrompt; // Start with clean text
       if (value.trim()) {
         // Replace standard variable format {{KEY}}
         const regex = new RegExp(`\\{\\{\\s*${varName}\\s*\\}\\}`, 'g');
@@ -295,17 +298,22 @@ function PlaygroundContent() {
         // Replace markdown list format: - `KEY`: Description (e.g., "example") or (default: "example")
         const mdListRegex = new RegExp(`-\\s*\`${varName}\`:\\s*[^\\n]*\\((e\\.g\\.,|default:)\\s*["'][^"']*["']\\)`, 'g');
         updated = updated.replace(mdListRegex, `<mark class="filled-variable">${value}</mark>`);
-      } else {
-        // Restore original variable placeholder if value is empty
-        const regex = new RegExp(
-          `<mark class="filled-variable">${varName.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')}</mark>`,
-          'g'
-        );
-        updated = updated.replace(regex, `{{${varName}}}`);
       }
+      
+      // Apply all other variables too
+      Object.entries(variables).forEach(([key, val]) => {
+        if (key !== varName && val.trim()) {
+          const regex = new RegExp(`\\{\\{\\s*${key}\\s*\\}\\}`, 'g');
+          updated = updated.replace(regex, `<mark class="filled-variable">${val}</mark>`);
+          
+          const mdListRegex = new RegExp(`-\\s*\`${key}\`:\\s*[^\\n]*\\((e\\.g\\.,|default:)\\s*["'][^"']*["']\\)`, 'g');
+          updated = updated.replace(mdListRegex, `<mark class="filled-variable">${val}</mark>`);
+        }
+      });
+      
       return updated;
     });
-  }, []);
+  }, [systemPrompt, variables]);
 
   // Process prompt with variables
   const processPromptWithVariables = (text: string): string => {
@@ -356,8 +364,7 @@ function PlaygroundContent() {
 
     try {
       const processedPrompt = processPromptWithVariables(inputText);
-      const cleanSystemPrompt = systemPrompt.replace(/<[^>]*>/g, ''); // Strip HTML tags
-      const processedSystemPrompt = processPromptWithVariables(cleanSystemPrompt);
+      const processedSystemPrompt = processPromptWithVariables(systemPrompt); // Use clean text
       
       const response = await fetch('/api/playground/generate', {
         method: 'POST',
@@ -476,9 +483,7 @@ function PlaygroundContent() {
   const openSaveModal = () => {
     setSavePromptTitle('');
     setSavePromptDescription('');
-    // Strip HTML tags when saving content but keep text content
-    const cleanContent = systemPrompt.replace(/<[^>]*>/g, '');
-    setSavePromptContent(cleanContent);
+    setSavePromptContent(systemPrompt); // Use clean text directly
     setSavePromptCategory('General');
     setSavePromptTags([]);
     setTagInput('');
@@ -561,7 +566,7 @@ function PlaygroundContent() {
 
   // Extract template variables from both input text and system prompt
   const inputVars = extractTemplateVariables(inputText);
-  const systemVars = extractTemplateVariables(systemPrompt.replace(/<[^>]*>/g, '')); // Strip HTML tags first
+  const systemVars = extractTemplateVariables(systemPrompt); // Use clean text directly
   const templateVars = [...new Set([...inputVars, ...systemVars])];
 
   return (
@@ -755,35 +760,25 @@ function PlaygroundContent() {
                 </AccordionTrigger>
                 <AccordionContent className="px-5 pt-4 pb-5">
                   <div className="space-y-3">
-                    <div
-                      contentEditable
-                      onInput={(e) => {
-                        const target = e.currentTarget;
-                        setSystemPrompt(target.textContent || '');
-                      }}
-                      onFocus={(e) => {
-                        const target = e.currentTarget;
-                        if (target.textContent === '' && target.innerHTML.includes('Enter your system prompt')) {
-                          target.innerHTML = '';
-                        }
-                      }}
-                      onBlur={(e) => {
-                        const target = e.currentTarget;
-                        if (target.textContent === '') {
-                          target.innerHTML = '<span class="text-muted-foreground">Enter your system prompt...</span>';
-                        }
-                      }}
-                      dangerouslySetInnerHTML={{ 
-                        __html: systemPrompt || '<span class="text-muted-foreground">Enter your system prompt...</span>' 
-                      }}
-                      className="w-full h-[100px] max-h-[600px] text-sm rounded-md border border-input bg-background px-3 py-2 overflow-auto focus:outline-none focus:ring-1 focus:ring-red-500 [&_mark.filled-variable]:font-bold [&_mark.filled-variable]:text-red-600 [&_mark.filled-variable]:bg-red-50 [&_mark.filled-variable]:px-1 [&_mark.filled-variable]:py-0.5 [&_mark.filled-variable]:rounded [&_mark.filled-variable]:dark:bg-red-950 [&_mark.filled-variable]:dark:text-red-400"
+                    <Textarea
+                      value={systemPrompt} // Use clean text directly
+                      onChange={(e) => setSystemPrompt(e.target.value)}
+                      placeholder="Enter your system prompt..."
+                      className="w-full min-h-[100px] max-h-[600px] text-sm rounded-md border border-input bg-background px-3 py-2 resize-y focus:outline-none focus:ring-1 focus:ring-red-500"
                       style={{
-                        whiteSpace: 'pre-wrap',
-                        resize: 'vertical',
-                        height: '100px',
-                        maxHeight: '600px'
+                        whiteSpace: 'pre-wrap'
                       }}
                     />
+                    {/* Display processed content with filled variables if any */}
+                    {systemPromptDisplay && Object.keys(variables).some(key => variables[key].trim()) && (
+                      <div className="mt-2 p-3 bg-muted/50 rounded-md border">
+                        <p className="text-xs text-muted-foreground mb-2">Preview with filled variables:</p>
+                        <div 
+                          className="text-sm [&_mark.filled-variable]:font-bold [&_mark.filled-variable]:text-red-600 [&_mark.filled-variable]:bg-red-50 [&_mark.filled-variable]:px-1 [&_mark.filled-variable]:py-0.5 [&_mark.filled-variable]:rounded [&_mark.filled-variable]:dark:bg-red-950 [&_mark.filled-variable]:dark:text-red-400"
+                          dangerouslySetInnerHTML={{ __html: systemPromptDisplay }}
+                        />
+                      </div>
+                    )}
                   </div>
                 </AccordionContent>
               </AccordionItem>
