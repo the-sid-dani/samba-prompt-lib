@@ -2,6 +2,9 @@ import NextAuth, { NextAuthConfig } from "next-auth"
 import GoogleProvider from "next-auth/providers/google"
 import { SupabaseAdapter } from "@auth/supabase-adapter"
 
+// Check if Supabase environment variables are available
+const hasSupabaseConfig = process.env.NEXT_PUBLIC_SUPABASE_URL && process.env.SUPABASE_SERVICE_ROLE_KEY;
+
 const authConfig = {
 	secret: process.env.NEXTAUTH_SECRET,
 	pages: {
@@ -22,9 +25,12 @@ const authConfig = {
 			}
 		}),
 	],
-	adapter: SupabaseAdapter({
-		url: process.env.NEXT_PUBLIC_SUPABASE_URL!,
-		secret: process.env.SUPABASE_SERVICE_ROLE_KEY!,
+	// Only use Supabase adapter if environment variables are available
+	...(hasSupabaseConfig && {
+		adapter: SupabaseAdapter({
+			url: process.env.NEXT_PUBLIC_SUPABASE_URL!,
+			secret: process.env.SUPABASE_SERVICE_ROLE_KEY!,
+		}),
 	}),
 	callbacks: {
 		async signIn({ user, account, profile }) {
