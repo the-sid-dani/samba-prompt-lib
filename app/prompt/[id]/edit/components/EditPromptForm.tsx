@@ -56,7 +56,7 @@ interface PromptData {
   title: string
   description: string
   content: string
-  category_id: number
+  category_id: number | null
   tags: string[]
   user_id: string
 }

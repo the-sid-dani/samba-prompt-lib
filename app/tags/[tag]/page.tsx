@@ -13,13 +13,14 @@ import { getTags, getRelatedTags } from '@/app/actions/tags'
 import Link from 'next/link'
 
 interface TagPageProps {
-  params: {
+  params: Promise<{
     tag: string
-  }
+  }>
 }
 
 export async function generateMetadata({ params }: TagPageProps): Promise<Metadata> {
-  const tagName = decodeURIComponent(params.tag)
+  const { tag } = await params
+  const tagName = decodeURIComponent(tag)
   
   return {
     title: `${tagName} Prompts - SambaTV Prompt Library`,
@@ -160,8 +161,9 @@ async function TagPageContent({ tagName }: { tagName: string }) {
   )
 }
 
-export default function TagPage({ params }: TagPageProps) {
-  const tagName = decodeURIComponent(params.tag)
+export default async function TagPage({ params }: TagPageProps) {
+  const { tag } = await params
+  const tagName = decodeURIComponent(tag)
 
   return (
     <>

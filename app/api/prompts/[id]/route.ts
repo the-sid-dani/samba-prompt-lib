@@ -91,36 +91,7 @@ export const GET = withErrorHandler(async (request: NextRequest, context: { para
       return response
     }
 
-    console.log(`[API] Full query failed, trying simple query. Error:`, error)
-    
-    // Fallback to simple query
-    const { data: simplePrompt, error: simpleError } = await supabase
-      .from('prompt')
-      .select('id, title, content, system_prompt, model, description, created_at, updated_at, user_id, category_id, tags, featured, uses')
-      .eq('id', id)
-      .single()
-    
-    if (simplePrompt && !simpleError) {
-      console.log(`[API] Simple query successful: ${simplePrompt.title}`)
-      
-      const response = NextResponse.json({
-        prompt: {
-          ...simplePrompt,
-          upvotes: 0,
-          downvotes: 0,
-          forkCount: 0,
-        }
-      })
-      
-      response.headers.set(
-        'Cache-Control',
-        `s-maxage=${CACHE_TIMES.promptDetail}, stale-while-revalidate`
-      )
-      
-      return response
-    }
-
-    console.error(`[API] Both queries failed for prompt ${id}. Simple error:`, simpleError)
+    console.log(`[API] Full query failed. Error:`, error)
     
     // Final fallback - list available prompts for debugging
     const { data: availablePrompts } = await supabase
