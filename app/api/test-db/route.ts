@@ -27,7 +27,7 @@ export async function GET() {
       availablePrompts: prompts?.map(p => ({ id: p.id, title: p.title })) || [],
       envCheck: {
         hasSupabaseUrl: !!process.env.NEXT_PUBLIC_SUPABASE_URL,
-        hasSupabaseKey: !!process.env.SUPABASE_SECRET_KEY,
+        		hasSupabaseKey: !!process.env.SUPABASE_SERVICE_ROLE_KEY,
         urlLength: process.env.NEXT_PUBLIC_SUPABASE_URL?.length || 0
       }
     })

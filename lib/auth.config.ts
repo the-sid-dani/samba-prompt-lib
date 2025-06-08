@@ -3,15 +3,15 @@ import GoogleProvider from "next-auth/providers/google"
 import { SupabaseAdapter } from "@auth/supabase-adapter"
 
 const authConfig = {
-	secret: process.env.AUTH_SECRET,
+	secret: process.env.NEXTAUTH_SECRET,
 	pages: {
 		signIn: '/auth/signin',
 	},
 	providers: [
 		GoogleProvider({
 			allowDangerousEmailAccountLinking: true,
-			clientId: process.env.AUTH_GOOGLE_ID!,
-			clientSecret: process.env.AUTH_GOOGLE_SECRET!,
+			clientId: process.env.GOOGLE_CLIENT_ID!,
+			clientSecret: process.env.GOOGLE_CLIENT_SECRET!,
 			authorization: {
 				params: {
 					prompt: "consent",
@@ -24,7 +24,7 @@ const authConfig = {
 	],
 	adapter: SupabaseAdapter({
 		url: process.env.NEXT_PUBLIC_SUPABASE_URL!,
-		secret: process.env.SUPABASE_SECRET_KEY!,
+		secret: process.env.SUPABASE_SERVICE_ROLE_KEY!,
 	}),
 	callbacks: {
 		async signIn({ user, account, profile }) {
