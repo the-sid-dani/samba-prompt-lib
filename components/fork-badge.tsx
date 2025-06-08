@@ -26,22 +26,22 @@ export function ForkBadge({ forkedFrom, className }: ForkBadgeProps) {
 
   return (
     <div className={cn("flex items-center gap-2", className)}>
-      <span className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full bg-red-100 text-red-700 text-xs font-medium">
+      <span className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full bg-red-100 dark:bg-red-900/20 text-red-700 dark:text-red-400 text-xs font-medium">
         <GitFork className="w-3 h-3" />
         <span>Fork</span>
       </span>
-      <span className="text-sm text-gray-600">
+      <span className="text-sm text-muted-foreground">
         Forked from{' '}
         <Link 
           href={`/prompt/${forkedFrom.id}`}
-          className="font-medium text-gray-900 hover:text-red-600 hover:underline"
+          className="font-medium text-foreground hover:text-red-600 hover:underline"
         >
           {forkedFrom.title}
         </Link>
         {' '}by{' '}
         <Link 
           href={`/users/${forkedFrom.profiles.id}`}
-          className="font-medium text-gray-900 hover:text-red-600 hover:underline"
+          className="font-medium text-foreground hover:text-red-600 hover:underline"
         >
           {authorName}
         </Link>

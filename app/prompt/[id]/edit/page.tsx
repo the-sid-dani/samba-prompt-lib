@@ -1,6 +1,7 @@
 import { notFound, redirect } from 'next/navigation'
 import { auth } from '@/lib/auth'
 import { fetchPromptById } from '@/app/actions/prompts'
+import EditPromptForm from './components/EditPromptForm'
 
 export default async function EditPromptPage({ params }: { params: Promise<{ id: string }> }) {
   const session = await auth()
@@ -30,8 +31,6 @@ export default async function EditPromptPage({ params }: { params: Promise<{ id:
     redirect(`/prompt/${promptId}`)
   }
   
-  // For now, redirect to the submission page
-  // In a full implementation, we would create an edit form component
-  // that accepts initial values
-  redirect('/submit')
+  // Pass the prompt data to the edit form component
+  return <EditPromptForm prompt={prompt} />
 } 

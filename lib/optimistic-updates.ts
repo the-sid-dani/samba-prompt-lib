@@ -72,6 +72,7 @@ export function createOptimisticPrompt(
     content: string
     category_id?: number | null
     tags?: string[]
+    examples?: any[]
   },
   userId: string,
   tempId: string
@@ -91,6 +92,7 @@ export function createOptimisticPrompt(
     votes: 0,
     created_at: now,
     updated_at: now,
+    examples: data.examples || [],
     isOptimistic: true,
     tempId,
   }

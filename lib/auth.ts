@@ -14,6 +14,7 @@ declare module 'next-auth' {
 	}
 }
 
+// Create NextAuth instance
 const handler = NextAuth({
 	...authConfig,
 	providers: [
@@ -49,5 +50,6 @@ const handler = NextAuth({
 	],
 })
 
-export const { auth, signIn, signOut } = handler
-export const { GET, POST } = handler.handlers
+// Export handlers and auth functions
+export const { handlers, auth, signIn, signOut } = handler
+export const { GET, POST } = handlers

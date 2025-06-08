@@ -35,14 +35,9 @@ const paramsSchema = z.object({
   id: z.coerce.number().int().positive(),
 })
 
-type Props = {
-  params: {
-    id: string
-  }
-}
-
 // GET /api/prompts/[id] - Get a specific prompt by ID
-export const GET = withErrorHandler(async (request: NextRequest, { params }: Props) => {
+export const GET = withErrorHandler(async (request: NextRequest, context: { params: Promise<{ id: string }> }) => {
+  const params = await context.params;
   const { id } = paramsSchema.parse(params)
   
   // Rate limiting
@@ -51,52 +46,105 @@ export const GET = withErrorHandler(async (request: NextRequest, { params }: Pro
   
   const supabase = createSupabaseAdminClient()
   
-  // Fetch the prompt with related data
-  const { data: prompt, error } = await supabase
-    .from('prompt')
-    .select(`
-      *,
-      categories(*),
-      user_favorites(user_id),
-      prompt_votes(vote_type),
-      prompt_forks(id),
-      prompt_versions(*)
-    `)
-    .eq('id', id)
-    .single()
+  console.log(`[API] Fetching prompt ID: ${id}`)
   
-  if (error || !prompt) {
-    throw new NotFoundError('Prompt not found')
-  }
-  
-  // Calculate additional metrics
-  const upvotes = prompt.prompt_votes?.filter(vote => vote.vote_type === 'up').length || 0
-  const downvotes = prompt.prompt_votes?.filter(vote => vote.vote_type === 'down').length || 0
-  const forkCount = prompt.prompt_forks?.length || 0
-  
-  // Remove raw vote data before sending response
-  const { prompt_votes, prompt_forks, ...promptData } = prompt
-  
-  const response = NextResponse.json({
-    prompt: {
-      ...promptData,
-      upvotes,
-      downvotes,
-      forkCount,
+  try {
+    // Try the full query first
+    const { data: prompt, error } = await supabase
+      .from('prompt')
+      .select(`
+        *,
+        categories(*),
+        user_favorites(user_id),
+        prompt_votes(vote_type),
+        prompt_forks(id),
+        prompt_versions(*)
+      `)
+      .eq('id', id)
+      .single()
+    
+    if (prompt && !error) {
+      console.log(`[API] Successfully fetched prompt: ${prompt.title}`)
+      
+      // Calculate additional metrics
+      const upvotes = prompt.prompt_votes?.filter((vote: any) => vote.vote_type === 'up').length || 0
+      const downvotes = prompt.prompt_votes?.filter((vote: any) => vote.vote_type === 'down').length || 0
+      const forkCount = prompt.prompt_forks?.length || 0
+      
+      // Remove raw vote data before sending response
+      const { prompt_votes, prompt_forks, ...promptData } = prompt
+      
+      const response = NextResponse.json({
+        prompt: {
+          ...promptData,
+          upvotes,
+          downvotes,
+          forkCount,
+        }
+      })
+      
+      response.headers.set(
+        'Cache-Control',
+        `s-maxage=${CACHE_TIMES.promptDetail}, stale-while-revalidate`
+      )
+      
+      return response
     }
-  })
-  
-  // Add cache control headers
-  response.headers.set(
-    'Cache-Control',
-    `s-maxage=${CACHE_TIMES.promptDetail}, stale-while-revalidate`
-  )
-  
-  return response
+
+    console.log(`[API] Full query failed, trying simple query. Error:`, error)
+    
+    // Fallback to simple query
+    const { data: simplePrompt, error: simpleError } = await supabase
+      .from('prompt')
+      .select('id, title, content, system_prompt, model, description, created_at, updated_at, user_id, category_id, tags, featured, uses')
+      .eq('id', id)
+      .single()
+    
+    if (simplePrompt && !simpleError) {
+      console.log(`[API] Simple query successful: ${simplePrompt.title}`)
+      
+      const response = NextResponse.json({
+        prompt: {
+          ...simplePrompt,
+          upvotes: 0,
+          downvotes: 0,
+          forkCount: 0,
+        }
+      })
+      
+      response.headers.set(
+        'Cache-Control',
+        `s-maxage=${CACHE_TIMES.promptDetail}, stale-while-revalidate`
+      )
+      
+      return response
+    }
+
+    console.error(`[API] Both queries failed for prompt ${id}. Simple error:`, simpleError)
+    
+    // Final fallback - list available prompts for debugging
+    const { data: availablePrompts } = await supabase
+      .from('prompt')
+      .select('id, title')
+      .limit(10)
+    
+    const availableIds = availablePrompts?.map((p: any) => p.id) || []
+    console.log('[API] Available prompt IDs:', availableIds)
+    
+    throw new NotFoundError(`Prompt not found. Available prompt IDs: ${availableIds.join(', ') || 'none'}`)
+    
+  } catch (error) {
+    if (error instanceof NotFoundError) {
+      throw error
+    }
+    
+    console.error(`[API] Unexpected error fetching prompt ${id}:`, error)
+    throw new Error('Internal server error while fetching prompt')
+  }
 })
 
 // PUT /api/prompts/[id] - Update an existing prompt
-export const PUT = withErrorHandler(async (request: NextRequest, { params }: Props) => {
+export const PUT = withErrorHandler(async (request: NextRequest, context: { params: Promise<{ id: string }> }) => {
   // Check authentication
   const session = await auth()
   if (!session?.user?.id) {
@@ -106,6 +154,7 @@ export const PUT = withErrorHandler(async (request: NextRequest, { params }: Pro
   // Rate limiting
   checkRateLimit(session.user.id, 60, 60000) // 60 updates per minute
   
+  const params = await context.params;
   const { id } = paramsSchema.parse(params)
   const validatedData = await validateRequestBody<z.infer<typeof updatePromptSchema>>(
     request,
@@ -161,7 +210,7 @@ export const PUT = withErrorHandler(async (request: NextRequest, { params }: Pro
 })
 
 // DELETE /api/prompts/[id] - Delete a prompt
-export const DELETE = withErrorHandler(async (request: NextRequest, { params }: Props) => {
+export const DELETE = withErrorHandler(async (request: NextRequest, context: { params: Promise<{ id: string }> }) => {
   // Check authentication
   const session = await auth()
   if (!session?.user?.id) {
@@ -171,6 +220,7 @@ export const DELETE = withErrorHandler(async (request: NextRequest, { params }: 
   // Rate limiting
   checkRateLimit(session.user.id, 30, 60000) // 30 deletions per minute
   
+  const params = await context.params;
   const { id } = paramsSchema.parse(params)
   
   const supabase = createSupabaseAdminClient()

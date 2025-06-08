@@ -8,6 +8,7 @@ import { Toaster } from '@/components/ui/toaster';
 import FooterWrapper from "@/components/ui/FooterWrapper";
 import { ReactNode } from 'react';
 import StagewiseProvider from '@/components/dev/StagewiseProvider';
+import { ThemeProvider } from '@/hooks/use-theme';
 
 export const metadata: Metadata = config.metadata;
 
@@ -17,22 +18,27 @@ export default function RootLayout({
   children: ReactNode;
 }>) {
   return (
-    <html lang="en">
+    <html lang="en" suppressHydrationWarning>
+      <head>
+        <meta name="theme-color" content="#FFFFFF" />
+      </head>
       <SessionProvider refetchInterval={0} refetchOnWindowFocus={false}>
         <body
-          className="antialiased min-h-screen flex flex-col"
+          className="antialiased min-h-screen flex flex-col transition-colors duration-300"
         >
-          {/* Skip to main content link for keyboard navigation */}
-          <a href="#main-content" className="skip-link">
-            Skip to main content
-          </a>
-          
-          <Toaster />
-          <StagewiseProvider />
-          <main id="main-content" className="flex-grow" role="main">
-            {children}
-          </main>
-          <FooterWrapper />
+          <ThemeProvider defaultTheme="system" storageKey="sambatv-theme">
+            {/* Skip to main content link for keyboard navigation */}
+            <a href="#main-content" className="skip-link">
+              Skip to main content
+            </a>
+            
+            <Toaster />
+            <StagewiseProvider />
+            <main id="main-content" className="flex-grow" role="main">
+              {children}
+            </main>
+            <FooterWrapper />
+          </ThemeProvider>
         </body>
       </SessionProvider>
       {/* Google Tag Manager */}

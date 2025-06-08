@@ -16,6 +16,7 @@ import { FavoriteButton } from "@/components/favorite-button";
 import SignIn from "@/components/sign-in";
 import { LazyLoad } from "@/components/ui/lazy-load";
 import { useDebounce } from "@/lib/mobile-performance";
+import { ForkBadge } from "@/components/fork-badge";
 
 interface PromptExplorerProps {
   user: any;
@@ -107,30 +108,30 @@ export default function PromptExplorer({ user, prompts: propsPrompts, categories
   }, [selectedCategory, selectedTags, debouncedSearchQuery, sortBy, displayPrompts]);
 
   return (
-    <div className="min-h-screen bg-gray-50">
+    <div className="min-h-screen bg-background">
       {/* Navigation */}
       <Navigation />
 
       {/* Hero Section */}
-      <div className="bg-gradient-to-br from-primary/5 via-white to-primary/10 py-8 sm:py-12 md:py-16">
+      <div className="bg-gradient-to-br from-primary/5 via-background to-primary/10 py-8 sm:py-12 md:py-16">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 text-center">
           <div className="flex justify-center mb-3 sm:mb-4">
             <Sparkles className="w-8 h-8 sm:w-10 sm:h-10 md:w-12 md:h-12 text-primary" />
           </div>
-          <h1 className="text-3xl sm:text-4xl md:text-5xl font-bold text-gray-900 mb-3 sm:mb-4">
+          <h1 className="text-3xl sm:text-4xl md:text-5xl font-bold text-foreground mb-3 sm:mb-4">
             Craft Perfect AI Prompts
           </h1>
-          <p className="text-base sm:text-lg md:text-xl text-gray-600 mb-6 sm:mb-8 max-w-2xl mx-auto px-4">
+          <p className="text-base sm:text-lg md:text-xl text-muted-foreground mb-6 sm:mb-8 max-w-2xl mx-auto px-4">
             Discover and share powerful prompts for AI models across SambaTV
           </p>
           
           {/* Search Bar */}
           <div className="max-w-2xl mx-auto relative px-4 sm:px-0">
-            <Search className="absolute left-[40px] sm:left-[28px] md:left-[28px] top-1/2 transform -translate-y-1/2 text-gray-400 w-4 h-4 pointer-events-none z-10" />
+            <Search className="absolute left-[40px] sm:left-[28px] md:left-[28px] top-1/2 transform -translate-y-1/2 text-muted-foreground w-4 h-4 pointer-events-none z-10" />
             <Input
               type="text"
               placeholder="Search by title, description, category or prompt text..."
-              className="pl-[70px] sm:pl-[62px] md:pl-[62px] pr-4 py-3 sm:py-4 md:py-6 text-[11px] sm:text-xs md:text-sm rounded-full border-2 border-gray-200 focus:border-primary"
+              className="pl-[70px] sm:pl-[62px] md:pl-[62px] pr-4 py-3 sm:py-4 md:py-6 text-[11px] sm:text-xs md:text-sm rounded-full border-2 border-border focus:border-primary bg-background text-foreground"
               value={searchQuery}
               onChange={(e) => setSearchQuery(e.target.value)}
             />
@@ -143,7 +144,7 @@ export default function PromptExplorer({ user, prompts: propsPrompts, categories
         <div className="w-full">
           {/* Category Filter */}
           <div className="mb-4 sm:mb-6">
-            <h3 className="text-xs sm:text-sm font-medium text-gray-700 mb-2 sm:mb-3">Filter by category</h3>
+            <h3 className="text-xs sm:text-sm font-medium text-foreground mb-2 sm:mb-3">Filter by category</h3>
             <div className="flex gap-1.5 sm:gap-2 overflow-x-auto pb-2 scrollbar-hide -mx-4 px-4 sm:mx-0 sm:px-0">
               {displayCategories.map((category) => (
                 <button
@@ -151,8 +152,8 @@ export default function PromptExplorer({ user, prompts: propsPrompts, categories
                   onClick={() => setSelectedCategory(category.id)}
                   className={`px-3 sm:px-4 py-1.5 sm:py-2 rounded-full text-xs sm:text-sm font-medium whitespace-nowrap transition-colors ${
                     selectedCategory === category.id
-                      ? "bg-primary text-white"
-                      : "bg-gray-100 text-gray-700 hover:bg-gray-200"
+                      ? "bg-primary text-primary-foreground"
+                      : "bg-muted text-muted-foreground hover:bg-muted/80"
                   }`}
                 >
                   {category.name}
@@ -164,7 +165,7 @@ export default function PromptExplorer({ user, prompts: propsPrompts, categories
           {/* Tag Filter */}
           {allTags.length > 0 && (
             <div className="mb-4 sm:mb-6">
-              <h3 className="text-xs sm:text-sm font-medium text-gray-700 mb-2 sm:mb-3">Filter by tags</h3>
+              <h3 className="text-xs sm:text-sm font-medium text-foreground mb-2 sm:mb-3">Filter by tags</h3>
               <div className="flex flex-wrap gap-1.5 sm:gap-2">
                 {allTags.map((tag) => (
                   <button
@@ -172,8 +173,8 @@ export default function PromptExplorer({ user, prompts: propsPrompts, categories
                     onClick={() => toggleTag(tag)}
                     className={`px-3 sm:px-4 py-1.5 sm:py-2 rounded-full text-xs sm:text-sm font-medium whitespace-nowrap transition-colors flex items-center gap-1 ${
                       selectedTags.includes(tag)
-                        ? "bg-primary text-white"
-                        : "bg-gray-100 text-gray-700 hover:bg-gray-200"
+                        ? "bg-primary text-primary-foreground"
+                        : "bg-muted text-muted-foreground hover:bg-muted/80"
                     }`}
                   >
                     <Tag className="w-3 h-3" />
@@ -205,7 +206,7 @@ export default function PromptExplorer({ user, prompts: propsPrompts, categories
               </Tabs>
             </div>
 
-            <div className="text-xs sm:text-sm text-gray-600 text-center sm:text-right">
+            <div className="text-xs sm:text-sm text-muted-foreground text-center sm:text-right">
               Showing {filteredPrompts.length} prompts
             </div>
           </div>
@@ -213,7 +214,7 @@ export default function PromptExplorer({ user, prompts: propsPrompts, categories
           {/* Featured Section */}
           {selectedCategory === "all" && selectedTags.length === 0 && filteredPrompts.some(p => p.featured) && (
             <div className="mb-8">
-              <h2 className="text-2xl font-bold text-gray-900 mb-4 flex items-center gap-2">
+              <h2 className="text-2xl font-bold text-foreground mb-4 flex items-center gap-2">
                 <Star className="w-6 h-6 text-yellow-500" />
                 Featured Prompts
               </h2>
@@ -242,7 +243,7 @@ export default function PromptExplorer({ user, prompts: propsPrompts, categories
           {/* Empty State */}
           {filteredPrompts.length === 0 && (
             <div className="text-center py-12">
-              <p className="text-gray-500 mb-4">No prompts found matching your criteria.</p>
+              <p className="text-muted-foreground mb-4">No prompts found matching your criteria.</p>
               <Button variant="outline" onClick={() => {
                 setSearchQuery("");
                 setSelectedCategory("all");
@@ -257,11 +258,11 @@ export default function PromptExplorer({ user, prompts: propsPrompts, categories
 
       {/* Login Prompt for Non-authenticated Users */}
       {!user && (
-        <div className="fixed bottom-0 inset-x-0 bg-white border-t shadow-lg p-3 sm:p-4">
+        <div className="fixed bottom-0 inset-x-0 bg-background border-t shadow-lg p-3 sm:p-4">
           <div className="max-w-7xl mx-auto flex flex-col sm:flex-row items-center justify-between gap-3 sm:gap-4">
             <div className="text-center sm:text-left">
-              <p className="font-semibold text-gray-900 text-sm sm:text-base">Join SambaTV Prompt Library</p>
-              <p className="text-xs sm:text-sm text-gray-600">Sign in to create and save prompts</p>
+              <p className="font-semibold text-foreground text-sm sm:text-base">Join SambaTV Prompt Library</p>
+              <p className="text-xs sm:text-sm text-muted-foreground">Sign in to create and save prompts</p>
             </div>
             <SignIn />
           </div>
@@ -281,6 +282,8 @@ function PromptCard({ prompt, user, featured = false }: { prompt: any; user: any
     contentLength: prompt.content?.length || 0 
   });
   
+  console.log('Creating link to:', `/prompt/${prompt.id}`);
+  
   return (
     <Link href={`/prompt/${prompt.id}`}>
       <Card className={`h-full hover:shadow-lg transition-shadow cursor-pointer card-hover tap-highlight ${
@@ -296,6 +299,11 @@ function PromptCard({ prompt, user, featured = false }: { prompt: any; user: any
             )}
           </div>
           <CardTitle className="line-clamp-2">{prompt.title}</CardTitle>
+          {prompt.forked_from && (
+            <div className="mt-2 mb-2">
+              <ForkBadge forkedFrom={prompt.forked_from} className="text-xs" />
+            </div>
+          )}
           <CardDescription className="line-clamp-3">
             {prompt.description}
           </CardDescription>
@@ -317,7 +325,7 @@ function PromptCard({ prompt, user, featured = false }: { prompt: any; user: any
           )}
           
           {/* Stats section */}
-          <div className="flex items-center gap-4 mb-3 text-sm text-gray-600">
+          <div className="flex items-center gap-4 mb-3 text-sm text-muted-foreground">
             {user ? (
               <FavoriteButton
                 promptId={prompt.id}
@@ -345,7 +353,7 @@ function PromptCard({ prompt, user, featured = false }: { prompt: any; user: any
           
           <div className="mt-3 pt-3 border-t flex items-center justify-between">
             <div className="text-sm">
-              <p className="font-medium text-gray-900">
+              <p className="font-medium text-foreground">
                 by {
                   prompt.profiles?.username ||
                   prompt.profiles?.name || 

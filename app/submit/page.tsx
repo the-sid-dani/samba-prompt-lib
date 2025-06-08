@@ -3,7 +3,7 @@
 import { useState, useEffect } from 'react'
 import { useRouter } from 'next/navigation'
 import { useSession } from 'next-auth/react'
-import { useForm, useWatch } from 'react-hook-form'
+import { useForm } from 'react-hook-form'
 import { zodResolver } from '@hookform/resolvers/zod'
 import * as z from 'zod'
 import { Loader2, Save, Send, Zap, Plus, X } from 'lucide-react'
@@ -21,26 +21,16 @@ import {
 } from '@/components/ui/form'
 import { Input } from '@/components/ui/input'
 import { Textarea } from '@/components/ui/textarea'
-import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from '@/components/ui/select'
 import { Badge } from '@/components/ui/badge'
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card'
 import { Alert, AlertDescription } from '@/components/ui/alert'
 import { AlertCircle } from 'lucide-react'
 import { cn } from '@/lib/utils'
 
-import { MarkdownEditor } from '@/components/markdown-editor'
 import { useAsyncOperation } from '@/hooks/use-api-error'
 import { createPrompt, getCategories, fetchTags, createCategory } from '@/app/actions/prompts'
 import { useToast } from '@/hooks/use-toast'
-import { TagInput } from '@/components/tag-input'
-import { PromptExamplesEditor } from '@/components/prompt-examples-editor'
-import { PromptFormPreview } from '@/components/prompt-form-preview'
+import TagInput from '@/components/tag-input'
 import {
   AlertDialog,
   AlertDialogAction,
@@ -52,7 +42,7 @@ import {
   AlertDialogTitle,
 } from '@/components/ui/alert-dialog'
 
-// Form validation schema
+// Form validation schema - simplified
 const formSchema = z.object({
   title: z.string()
     .min(1, 'Title is required')
@@ -68,22 +58,9 @@ const formSchema = z.object({
   tags: z.array(z.string())
     .min(1, 'Please add at least one tag')
     .max(5, 'Maximum 5 tags allowed'),
-  examples: z.array(z.object({
-    input: z.string().min(1, 'Example input is required'),
-    output: z.string().min(1, 'Example output is required'),
-    description: z.string().optional()
-  })).optional().default([]),
 })
 
 type FormData = z.infer<typeof formSchema>
-
-// Available AI models (this would come from API in production)
-const AI_MODELS = [
-  { id: 'gpt-4', name: 'GPT-4' },
-  { id: 'gpt-3.5-turbo', name: 'GPT-3.5 Turbo' },
-  { id: 'claude-3', name: 'Claude 3' },
-  { id: 'gemini-pro', name: 'Gemini Pro' },
-]
 
 export default function SubmitPromptPage() {
   const router = useRouter()
@@ -99,9 +76,6 @@ export default function SubmitPromptPage() {
   const [newCategoryName, setNewCategoryName] = useState('')
   const [isCreatingCategory, setIsCreatingCategory] = useState(false)
   
-  // Debug log
-  console.log('SubmitPromptPage rendered, session:', session, 'status:', status)
-  
   // Form setup with React Hook Form
   const form = useForm<FormData>({
     resolver: zodResolver(formSchema),
@@ -111,21 +85,12 @@ export default function SubmitPromptPage() {
       content: '',
       category_id: '',
       tags: [],
-      examples: [],
     },
-  })
-  
-  // Watch the content field for live preview
-  const watchedContent = useWatch({
-    control: form.control,
-    name: 'content',
-    defaultValue: ''
   })
   
   // Redirect if not authenticated
   useEffect(() => {
     if (status === 'unauthenticated') {
-      console.log('User not authenticated, redirecting to home')
       router.push('/')
     }
   }, [status, router])
@@ -134,9 +99,7 @@ export default function SubmitPromptPage() {
   useEffect(() => {
     const fetchCategories = async () => {
       try {
-        console.log('Fetching categories...')
         const cats = await getCategories()
-        console.log('Categories fetched:', cats)
         setCategories(cats)
       } catch (error) {
         console.error('Error fetching categories:', error)
@@ -151,13 +114,15 @@ export default function SubmitPromptPage() {
     fetchCategories()
   }, [toast])
   
-  // Load draft from localStorage
+  // Load draft from localStorage (only explicit drafts)
   useEffect(() => {
     const savedDraft = localStorage.getItem('prompt-draft')
-    if (savedDraft) {
+    const isExplicitDraft = localStorage.getItem('prompt-draft-explicit')
+    const autoSavedContent = localStorage.getItem('prompt-auto-save')
+    
+    if (savedDraft && isExplicitDraft === 'true') {
       try {
         const draft = JSON.parse(savedDraft)
-        console.log('Loading draft from localStorage:', draft)
         form.reset(draft)
         setIsDraft(true)
         toast({
@@ -167,45 +132,54 @@ export default function SubmitPromptPage() {
       } catch (error) {
         console.error('Error loading draft:', error)
       }
+    } else if (autoSavedContent) {
+      // Show option to restore auto-saved content
+      try {
+        const autoSaved = JSON.parse(autoSavedContent)
+        // Only show if there's meaningful content
+        if (autoSaved.title || autoSaved.description || autoSaved.content) {
+          toast({
+            title: 'Auto-saved content found',
+            description: 'Would you like to restore your previous work? Use "Save as Draft" to keep your work.',
+          })
+          
+          // Optional: Auto-restore after a delay if user doesn't interact
+          setTimeout(() => {
+            const currentForm = form.getValues()
+            // Only auto-restore if form is still empty
+            if (!currentForm.title && !currentForm.description && !currentForm.content) {
+              form.reset(autoSaved)
+              localStorage.removeItem('prompt-auto-save')
+              toast({
+                title: 'Content restored',
+                description: 'Your previous work has been restored',
+              })
+            }
+          }, 5000)
+        }
+      } catch (error) {
+        console.error('Error loading auto-saved content:', error)
+        localStorage.removeItem('prompt-auto-save') // Clear corrupted data
+      }
     }
   }, [form, toast])
   
-  // Auto-save callback for markdown editor
-  const handleAutoSave = () => {
-    const formData = form.getValues()
-    console.log('Auto-saving draft from markdown editor')
-    localStorage.setItem('prompt-draft', JSON.stringify(formData))
-    setLastSaved(new Date())
-    
-    // Show subtle feedback without toast to avoid interruption
-    if (!isDraft) {
-      setIsDraft(true)
-    }
-  }
-  
-  // Auto-save draft for all fields
+  // Auto-save form state (but don't mark as draft)
   useEffect(() => {
     const subscription = form.watch((value) => {
-      // Only save if form has been touched
       if (form.formState.isDirty) {
-        console.log('Auto-saving draft to localStorage:', value)
-        localStorage.setItem('prompt-draft', JSON.stringify(value))
+        localStorage.setItem('prompt-auto-save', JSON.stringify(value))
         setLastSaved(new Date())
-        if (!isDraft) {
-          setIsDraft(true)
-        }
       }
     })
     
     return () => subscription.unsubscribe()
-  }, [form, isDraft])
+  }, [form])
   
   // Fetch tag suggestions
   const handleFetchTagSuggestions = async (query: string): Promise<string[]> => {
     try {
-      console.log('Fetching tag suggestions for query:', query)
       const tags = await fetchTags(query)
-      console.log('Received tag suggestions:', tags)
       return tags
     } catch (error) {
       console.error('Error fetching tag suggestions:', error)
@@ -228,15 +202,9 @@ export default function SubmitPromptPage() {
     
     try {
       const newCategory = await createCategory(newCategoryName.trim())
-      console.log('Created new category:', newCategory)
       
-      // Add to categories list
       setCategories(prev => [...prev, newCategory])
-      
-      // Select the new category
       form.setValue('category_id', newCategory.id.toString())
-      
-      // Reset form
       setNewCategoryName('')
       setShowNewCategoryInput(false)
       
@@ -256,28 +224,15 @@ export default function SubmitPromptPage() {
     }
   }
   
-  // Handle navigation with unsaved changes
-  useEffect(() => {
-    const handleBeforeUnload = (e: BeforeUnloadEvent) => {
-      if (form.formState.isDirty && !isSubmitting) {
-        e.preventDefault()
-        e.returnValue = 'You have unsaved changes. Are you sure you want to leave?'
-      }
-    }
-    
-    window.addEventListener('beforeunload', handleBeforeUnload)
-    return () => window.removeEventListener('beforeunload', handleBeforeUnload)
-  }, [form.formState.isDirty, isSubmitting])
-  
   // Enhanced discard draft function
   const handleDiscardDraft = () => {
-    console.log('Showing discard confirmation dialog')
     setShowDiscardDialog(true)
   }
   
   const confirmDiscardDraft = () => {
-    console.log('Discarding draft')
     localStorage.removeItem('prompt-draft')
+    localStorage.removeItem('prompt-draft-explicit')
+    localStorage.removeItem('prompt-auto-save')
     form.reset()
     setIsDraft(false)
     setLastSaved(null)
@@ -288,10 +243,8 @@ export default function SubmitPromptPage() {
     })
   }
   
-  // Enhanced form submission with better error handling
+  // Form submission
   const onSubmit = async (data: FormData) => {
-    console.log('Form submitted with data:', data)
-    
     // Validate all required fields
     if (!data.title || !data.description || !data.content || !data.category_id || data.tags.length === 0) {
       toast({
@@ -311,10 +264,9 @@ export default function SubmitPromptPage() {
     const result = await executeCreate(createPrompt, promptData)
     
     if (result) {
-      console.log('Prompt created successfully:', result)
-      
-      // Clear draft
       localStorage.removeItem('prompt-draft')
+      localStorage.removeItem('prompt-draft-explicit')
+      localStorage.removeItem('prompt-auto-save')
       setIsDraft(false)
       
       toast({
@@ -322,7 +274,6 @@ export default function SubmitPromptPage() {
         description: 'Your prompt has been submitted successfully',
       })
       
-      // Small delay before redirect for better UX
       setTimeout(() => {
         router.push(`/prompt/${result.id}`)
       }, 500)
@@ -332,8 +283,8 @@ export default function SubmitPromptPage() {
   // Handle save as draft
   const handleSaveDraft = () => {
     const formData = form.getValues()
-    console.log('Saving draft:', formData)
     localStorage.setItem('prompt-draft', JSON.stringify(formData))
+    localStorage.setItem('prompt-draft-explicit', 'true')
     setIsDraft(true)
     toast({
       title: 'Draft saved',
@@ -355,12 +306,11 @@ export default function SubmitPromptPage() {
   
   return (
     <>
-      {/* Navigation */}
-      <Navigation showCreateButton={false} />
+      <Navigation />
       
       <div className="min-h-screen bg-gradient-to-b from-background to-muted/20 py-4 md:py-8">
-        <div className="max-w-2xl mx-auto px-4 sm:px-6 lg:px-8">
-          {/* Header Section with Samba Branding */}
+        <div className="max-w-5xl mx-auto px-4 sm:px-6 lg:px-8">
+          {/* Header Section */}
           <div className="text-center mb-6 md:mb-8">
             <div className="inline-flex items-center gap-2 mb-3 md:mb-4">
               <h1 className="text-2xl md:text-3xl font-bold bg-gradient-to-r from-primary to-primary/70 bg-clip-text text-transparent">
@@ -391,15 +341,7 @@ export default function SubmitPromptPage() {
                 <Alert className="mb-4 md:mb-6 border-primary/20 bg-primary/5">
                   <AlertCircle className="h-4 w-4 text-primary" />
                   <AlertDescription className="text-sm">
-                    You have a saved draft. You can continue editing or{' '}
-                    <Button
-                      variant="link"
-                      className="h-auto p-0 text-destructive hover:text-destructive/80"
-                      onClick={handleDiscardDraft}
-                    >
-                      discard it
-                    </Button>
-                    .
+                    You have a saved draft. You can continue editing.
                     {lastSaved && (
                       <span className="text-xs text-muted-foreground ml-2">
                         Last saved: {lastSaved.toLocaleTimeString()}
@@ -443,20 +385,20 @@ export default function SubmitPromptPage() {
                         <FormControl>
                           <Textarea 
                             placeholder="Explain what your prompt does and when someone would use it..."
-                            className="resize-none border-muted-foreground/20 focus:border-primary transition-colors"
+                            className="resize-y border-muted-foreground/20 focus:border-primary transition-colors min-h-[80px] max-h-[300px]"
                             rows={3}
                             {...field} 
                           />
                         </FormControl>
                         <FormDescription>
-                          Brief description of your prompt (max 500 characters)
+                          Brief description of your prompt (max 500 characters). Drag the bottom-right corner to resize.
                         </FormDescription>
                         <FormMessage />
                       </FormItem>
                     )}
                   />
                   
-                  {/* Content Field with Markdown Editor */}
+                  {/* Content Field - Simplified */}
                   <FormField
                     control={form.control}
                     name="content"
@@ -464,30 +406,21 @@ export default function SubmitPromptPage() {
                       <FormItem>
                         <FormLabel className="text-base font-semibold">Prompt Content *</FormLabel>
                         <FormControl>
-                          <MarkdownEditor
-                            value={field.value}
-                            onChange={field.onChange}
+                          <Textarea 
                             placeholder="Enter your full prompt content here. You can use markdown for formatting."
-                            minHeight={300}
-                            autoSave={true}
-                            onAutoSave={handleAutoSave}
+                            className="resize-y border-muted-foreground/20 focus:border-primary transition-colors min-h-[300px] max-h-[600px]"
+                            {...field} 
                           />
                         </FormControl>
                         <FormDescription>
-                          The full prompt content with markdown formatting support. Includes preview mode and auto-save.
+                          The full prompt content with markdown formatting support. Drag the bottom-right corner to resize.
                         </FormDescription>
                         <FormMessage />
                       </FormItem>
                     )}
                   />
                   
-                  {/* Live Preview */}
-                  <PromptFormPreview 
-                    content={watchedContent}
-                    className="mb-6"
-                  />
-                  
-                  {/* Category Field - Now with clickable badges */}
+                  {/* Category Field */}
                   <FormField
                     control={form.control}
                     name="category_id"
@@ -496,46 +429,35 @@ export default function SubmitPromptPage() {
                         <FormLabel className="text-base font-semibold">Category *</FormLabel>
                         <FormControl>
                           <div className="space-y-3">
-                            <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-2 md:gap-3">
+                            <div className="flex flex-wrap gap-2">
                               {categories.map((category) => (
                                 <button
                                   key={category.id}
                                   type="button"
                                   onClick={() => field.onChange(category.id.toString())}
                                   className={cn(
-                                    "relative flex items-center justify-center min-h-[44px] px-4 py-3 rounded-lg border-2 transition-all duration-200",
-                                    "hover:border-primary/50 hover:bg-primary/5",
-                                    "focus:outline-none focus:ring-2 focus:ring-primary focus:ring-offset-2",
+                                    "flex items-center justify-center px-3 py-2 rounded-full text-sm font-medium whitespace-nowrap transition-colors min-h-[36px]",
                                     field.value === category.id.toString()
-                                      ? "border-primary bg-primary/10 text-primary font-medium"
-                                      : "border-muted-foreground/20 text-muted-foreground"
+                                      ? "bg-primary text-white"
+                                      : "bg-gray-100 text-gray-700 hover:bg-gray-200"
                                   )}
                                 >
-                                  <span className="text-sm md:text-base">{category.name}</span>
-                                  {field.value === category.id.toString() && (
-                                    <div className="absolute top-1 right-1 w-2 h-2 rounded-full bg-primary animate-pulse" />
-                                  )}
+                                  {category.name}
                                 </button>
                               ))}
                               
-                              {/* Add New Category Button */}
                               {!showNewCategoryInput && (
                                 <button
                                   type="button"
                                   onClick={() => setShowNewCategoryInput(true)}
-                                  className={cn(
-                                    "relative flex items-center justify-center min-h-[44px] px-4 py-3 rounded-lg border-2 border-dashed transition-all duration-200",
-                                    "border-muted-foreground/20 text-muted-foreground hover:border-primary/50 hover:bg-primary/5",
-                                    "focus:outline-none focus:ring-2 focus:ring-primary focus:ring-offset-2"
-                                  )}
+                                  className="flex items-center justify-center px-3 py-2 rounded-full text-sm font-medium whitespace-nowrap transition-colors bg-gray-100 text-gray-700 hover:bg-gray-200 border-2 border-dashed border-gray-300 min-h-[36px]"
                                 >
-                                  <Plus className="h-4 w-4 mr-2" />
-                                  <span className="text-sm md:text-base">Add New</span>
+                                  <Plus className="h-4 w-4 mr-1" />
+                                  Add New
                                 </button>
                               )}
                             </div>
                             
-                            {/* New Category Input */}
                             {showNewCategoryInput && (
                               <div className="flex flex-col sm:flex-row gap-2">
                                 <Input
@@ -595,7 +517,7 @@ export default function SubmitPromptPage() {
                     )}
                   />
                   
-                  {/* Tags Field with Enhanced Component */}
+                  {/* Tags Field */}
                   <FormField
                     control={form.control}
                     name="tags"
@@ -620,24 +542,7 @@ export default function SubmitPromptPage() {
                     )}
                   />
                   
-                  {/* Examples Field */}
-                  <FormField
-                    control={form.control}
-                    name="examples"
-                    render={({ field }) => (
-                      <FormItem>
-                        <FormControl>
-                          <PromptExamplesEditor
-                            examples={field.value}
-                            onChange={field.onChange}
-                          />
-                        </FormControl>
-                        <FormMessage />
-                      </FormItem>
-                    )}
-                  />
-                  
-                  {/* Form Actions with improved styling */}
+                  {/* Form Actions */}
                   <div className="flex flex-col sm:flex-row justify-between gap-3 sm:gap-4 pt-6 border-t">
                     <Button
                       type="button"

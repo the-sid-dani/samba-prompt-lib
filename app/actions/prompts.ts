@@ -75,6 +75,7 @@ const createPromptSchema = z.object({
     output: z.string(),
     description: z.string().optional()
   })).optional().default([]),
+  forked_from: z.number().optional(),
 })
 
 const updatePromptSchema = z.object({
@@ -139,6 +140,52 @@ export const getCategories = unstable_cache(
   }
 )
 
+// Cached function to get categories with prompt counts
+export const getCategoriesWithCounts = unstable_cache(
+  async () => {
+    const supabase = createSupabaseAdminClient()
+    
+    // First get all categories
+    const { data: categories, error: categoriesError } = await supabase
+      .from('categories')
+      .select('*')
+      .order('display_order', { ascending: true })
+    
+    if (categoriesError) {
+      console.error('Error fetching categories:', categoriesError)
+      return []
+    }
+    
+    if (!categories || categories.length === 0) {
+      return []
+    }
+    
+    // Get prompt counts for each category
+    const categoriesWithCounts = await Promise.all(
+      categories.map(async (category) => {
+        const { count, error: countError } = await supabase
+          .from('prompt')
+          .select('*', { count: 'exact', head: true })
+          .eq('category_id', category.id)
+        
+        if (countError) {
+          console.error(`Error counting prompts for category ${category.id}:`, countError)
+          return { ...category, prompt_count: 0 }
+        }
+        
+        return { ...category, prompt_count: count || 0 }
+      })
+    )
+    
+    return categoriesWithCounts
+  },
+  ['categories-with-counts'],
+  {
+    tags: [CACHE_TAGS.categories, CACHE_TAGS.prompts],
+    revalidate: CACHE_TIMES.prompts,
+  }
+)
+
 // Create a new category
 export async function createCategory(name: string, description?: string) {
   try {
@@ -191,6 +238,53 @@ export async function createCategory(name: string, description?: string) {
     return category
   } catch (error) {
     console.error('Error in createCategory:', error)
+    throw error
+  }
+}
+
+// Update an existing category
+export async function updateCategory(id: number, name: string, description?: string) {
+  try {
+    const session = await auth()
+    if (!session?.user?.id) {
+      throw new Error('Unauthorized: Must be logged in to update categories')
+    }
+    
+    const supabase = createSupabaseAdminClient()
+    
+    // Check if another category with the same name exists (excluding current one)
+    const { data: existing } = await supabase
+      .from('categories')
+      .select('id')
+      .ilike('name', name)
+      .neq('id', id)
+      .single()
+    
+    if (existing) {
+      throw new Error('Another category with this name already exists')
+    }
+    
+    // Update the category
+    const { data: category, error } = await supabase
+      .from('categories')
+      .update({
+        name,
+        description: description || `${name} related prompts`
+      })
+      .eq('id', id)
+      .select()
+      .single()
+    
+    if (error) {
+      throw new Error(`Failed to update category: ${error.message}`)
+    }
+    
+    // Revalidate categories cache
+    revalidateTag(CACHE_TAGS.categories)
+    
+    return category
+  } catch (error) {
+    console.error('Error in updateCategory:', error)
     throw error
   }
 }
@@ -265,11 +359,35 @@ export async function fetchPrompts(input?: Partial<z.infer<typeof fetchPromptsSc
           
           const { data: profiles, error: profileError } = await supabase
             .from('profiles')
-            .select('id, email, name, username')
+            .select('id, email, name, username, avatar_url')
             .in('id', userIds)
           
           // Create a map for quick lookup
           const profileMap = new Map(profiles?.map(p => [p.id, p]) || [])
+          
+          // Fetch fork information
+          const promptIds = prompts.map(p => p.id)
+          const { data: forkRelations } = await supabase
+            .from('prompt_forks')
+            .select(`
+              forked_prompt_id,
+              original_prompt:prompt!prompt_forks_original_prompt_id_fkey(
+                id,
+                title,
+                user_id,
+                profiles(
+                  id,
+                  username,
+                  name,
+                  email,
+                  avatar_url
+                )
+              )
+            `)
+            .in('forked_prompt_id', promptIds)
+          
+          // Create a map for fork lookup
+          const forkMap = new Map(forkRelations?.map(f => [f.forked_prompt_id, f.original_prompt]) || [])
           
           // Enrich prompts with profile data and favorite status
           const enrichedPrompts = prompts.map(prompt => {
@@ -280,7 +398,8 @@ export async function fetchPrompts(input?: Partial<z.infer<typeof fetchPromptsSc
               ...prompt,
               profiles: profileMap.get(prompt.user_id) || null,
               isFavorited,
-              favoriteCount: userFavorites.length
+              favoriteCount: userFavorites.length,
+              forked_from: forkMap.get(prompt.id) || null
             }
           })
           
@@ -352,21 +471,7 @@ export async function fetchPromptById(id: number, userId?: string): Promise<Prom
           user_favorites(user_id),
           prompt_votes(vote_type, user_id),
           prompt_forks!prompt_forks_original_prompt_id_fkey(id),
-          prompt_versions(*),
-          forked_from:prompt_forks!prompt_forks_forked_prompt_id_fkey(
-            original_prompt:original_prompt_id(
-              id,
-              title,
-              user_id,
-              profiles:user_id(
-                id,
-                username,
-                name,
-                email,
-                avatar_url
-              )
-            )
-          )
+          prompt_versions(*)
         `)
         .eq('id', id)
         .single()
@@ -390,6 +495,37 @@ export async function fetchPromptById(id: number, userId?: string): Promise<Prom
         profileData = profile
       }
       
+      // Fetch fork origin info if this prompt was forked
+      let forkedFrom = null;
+      const { data: forkRelation } = await supabase
+        .from('prompt_forks')
+        .select(`
+          original_prompt_id,
+          original_prompt:prompt!prompt_forks_original_prompt_id_fkey(
+            id,
+            title,
+            user_id
+          )
+        `)
+        .eq('forked_prompt_id', id)
+        .single();
+      
+      if (forkRelation && forkRelation.original_prompt) {
+        // Fetch the profile data for the original prompt author
+        const { data: originalAuthorProfile } = await supabase
+          .from('profiles')
+          .select('id, username, name, email, avatar_url')
+          .eq('id', forkRelation.original_prompt.user_id)
+          .single();
+        
+        if (originalAuthorProfile) {
+          forkedFrom = {
+            ...forkRelation.original_prompt,
+            profiles: originalAuthorProfile
+          };
+        }
+      }
+      
       // Cast the prompt to any to handle the complex type
       const promptData = prompt as any
       
@@ -408,9 +544,6 @@ export async function fetchPromptById(id: number, userId?: string): Promise<Prom
         ? promptVotes.find(vote => vote.user_id === userId)?.vote_type as 'up' | 'down' | undefined
         : undefined
       
-      // Extract fork origin info
-      const forkedFrom = (promptData as any).forked_from?.[0]?.original_prompt;
-      
       // Construct the return object
       const result: PromptWithRelations = {
         id: promptData.id,
@@ -425,6 +558,7 @@ export async function fetchPromptById(id: number, userId?: string): Promise<Prom
         votes: promptData.votes,
         created_at: promptData.created_at,
         updated_at: promptData.updated_at,
+        examples: promptData.examples,
         categories: promptData.categories as Database['public']['Tables']['categories']['Row'] | null,
         user_favorites: userFavorites,
         prompt_votes: promptVotes,
@@ -436,7 +570,7 @@ export async function fetchPromptById(id: number, userId?: string): Promise<Prom
         isFavorited,
         userVote: userVote || null,
         profiles: profileData,
-        forked_from: forkedFrom,
+        forked_from: forkedFrom || undefined,
       }
       
       return result
@@ -471,21 +605,7 @@ export async function fetchPromptById(id: number, userId?: string): Promise<Prom
             user_favorites(user_id),
             prompt_votes(vote_type, user_id),
             prompt_forks!prompt_forks_original_prompt_id_fkey(id),
-            prompt_versions(*),
-            forked_from:prompt_forks!prompt_forks_forked_prompt_id_fkey(
-              original_prompt:original_prompt_id(
-                id,
-                title,
-                user_id,
-                profiles:user_id(
-                  id,
-                  username,
-                  name,
-                  email,
-                  avatar_url
-                )
-              )
-            )
+            prompt_versions(*)
           `)
           .eq('id', promptId)
           .single()
@@ -509,6 +629,37 @@ export async function fetchPromptById(id: number, userId?: string): Promise<Prom
           profileData = profile
         }
         
+        // Fetch fork origin info if this prompt was forked
+        let forkedFrom = null;
+        const { data: forkRelation } = await supabase
+          .from('prompt_forks')
+          .select(`
+            original_prompt_id,
+            original_prompt:prompt!prompt_forks_original_prompt_id_fkey(
+              id,
+              title,
+              user_id
+            )
+          `)
+          .eq('forked_prompt_id', promptId)
+          .single();
+        
+        if (forkRelation && forkRelation.original_prompt) {
+          // Fetch the profile data for the original prompt author
+          const { data: originalAuthorProfile } = await supabase
+            .from('profiles')
+            .select('id, username, name, email, avatar_url')
+            .eq('id', forkRelation.original_prompt.user_id)
+            .single();
+          
+          if (originalAuthorProfile) {
+            forkedFrom = {
+              ...forkRelation.original_prompt,
+              profiles: originalAuthorProfile
+            };
+          }
+        }
+        
         // Cast the prompt to any to handle the complex type
         const promptData = prompt as any
         
@@ -527,9 +678,6 @@ export async function fetchPromptById(id: number, userId?: string): Promise<Prom
           ? promptVotes.find(vote => vote.user_id === currentUserId)?.vote_type as 'up' | 'down' | undefined
           : undefined
         
-        // Extract fork origin info
-        const forkedFrom = (promptData as any).forked_from?.[0]?.original_prompt;
-        
         // Construct the return object
         const result: PromptWithRelations = {
           id: promptData.id,
@@ -544,6 +692,7 @@ export async function fetchPromptById(id: number, userId?: string): Promise<Prom
           votes: promptData.votes,
           created_at: promptData.created_at,
           updated_at: promptData.updated_at,
+          examples: promptData.examples,
           categories: promptData.categories as Database['public']['Tables']['categories']['Row'] | null,
           user_favorites: userFavorites,
           prompt_votes: promptVotes,
@@ -555,7 +704,7 @@ export async function fetchPromptById(id: number, userId?: string): Promise<Prom
           isFavorited,
           userVote: userVote || null,
           profiles: profileData,
-          forked_from: forkedFrom,
+          forked_from: forkedFrom || undefined,
         }
         
         return result
@@ -588,8 +737,11 @@ export async function createPrompt(input: z.infer<typeof createPromptSchema>) {
     const validatedData = createPromptSchema.parse(input)
     const supabase = await getSupabaseClient()
     
+    // Separate forked_from from the main prompt data
+    const { forked_from, ...promptDataWithoutFork } = validatedData
+    
     const promptData: PromptInsert = {
-      ...validatedData,
+      ...promptDataWithoutFork,
       user_id: session.user.id,
     }
     
@@ -601,6 +753,37 @@ export async function createPrompt(input: z.infer<typeof createPromptSchema>) {
     
     if (error) {
       throw new Error(`Failed to create prompt: ${error.message}`)
+    }
+    
+    // If this is a fork, create the fork relationship
+    if (forked_from) {
+      const { error: forkError } = await supabase
+        .from('prompt_forks')
+        .insert({
+          original_prompt_id: forked_from,
+          forked_prompt_id: prompt.id,
+        })
+      
+      if (forkError) {
+        console.error('Failed to record fork relationship:', forkError)
+        // Don't throw here, the prompt was created successfully
+      }
+      
+      // Track user interaction
+      const { error: interactionError } = await supabase
+        .from('user_interactions')
+        .insert({
+          user_id: session.user.id,
+          prompt_id: forked_from,
+          interaction_type: 'fork',
+        })
+      
+      if (interactionError) {
+        console.error('Failed to track fork interaction:', interactionError)
+      }
+      
+      // Revalidate the original prompt's cache to update fork count
+      revalidateTag(CACHE_TAGS.prompt(forked_from))
     }
     
     // Revalidate caches
@@ -702,15 +885,118 @@ export async function deletePrompt(id: number) {
       throw new Error('Forbidden: You can only delete your own prompts')
     }
     
-    // Delete the prompt
-    const { error: deleteError } = await supabase
+    // Use admin client for deleting related records to bypass RLS
+    const adminSupabase = createSupabaseAdminClient()
+    
+    console.log(`Starting deletion of prompt ${id} and related records...`)
+    
+    // Delete related records first to avoid foreign key constraint violations
+    
+    // 1. Delete prompt fork relationships (both as original and as fork) - separate operations
+    console.log(`Deleting fork relationships for prompt ${id}...`)
+    
+    // Delete where this prompt is the original
+    const { error: forkDeleteError1 } = await adminSupabase
+      .from('prompt_forks')
+      .delete()
+      .eq('original_prompt_id', id)
+    
+    if (forkDeleteError1) {
+      console.error('Error deleting prompt forks (as original):', forkDeleteError1)
+    } else {
+      console.log(`Deleted fork relationships where prompt ${id} is original`)
+    }
+    
+    // Delete where this prompt is the fork
+    const { error: forkDeleteError2 } = await adminSupabase
+      .from('prompt_forks')
+      .delete()
+      .eq('forked_prompt_id', id)
+    
+    if (forkDeleteError2) {
+      console.error('Error deleting prompt forks (as fork):', forkDeleteError2)
+    } else {
+      console.log(`Deleted fork relationships where prompt ${id} is forked`)
+    }
+    
+    // 2. Delete user favorites
+    console.log(`Deleting favorites for prompt ${id}...`)
+    const { error: favoritesDeleteError } = await adminSupabase
+      .from('user_favorites')
+      .delete()
+      .eq('prompt_id', id)
+    
+    if (favoritesDeleteError) {
+      console.error('Error deleting prompt favorites:', favoritesDeleteError)
+    } else {
+      console.log(`Deleted favorites for prompt ${id}`)
+    }
+    
+    // 3. Delete prompt votes
+    console.log(`Deleting votes for prompt ${id}...`)
+    const { error: votesDeleteError } = await adminSupabase
+      .from('prompt_votes')
+      .delete()
+      .eq('prompt_id', id)
+    
+    if (votesDeleteError) {
+      console.error('Error deleting prompt votes:', votesDeleteError)
+    } else {
+      console.log(`Deleted votes for prompt ${id}`)
+    }
+    
+    // 4. Delete user interactions
+    console.log(`Deleting interactions for prompt ${id}...`)
+    const { error: interactionsDeleteError } = await adminSupabase
+      .from('user_interactions')
+      .delete()
+      .eq('prompt_id', id)
+    
+    if (interactionsDeleteError) {
+      console.error('Error deleting user interactions:', interactionsDeleteError)
+    } else {
+      console.log(`Deleted interactions for prompt ${id}`)
+    }
+    
+    // 5. Delete prompt versions (if this table exists)
+    console.log(`Deleting versions for prompt ${id}...`)
+    const { error: versionsDeleteError } = await adminSupabase
+      .from('prompt_versions')
+      .delete()
+      .eq('prompt_id', id)
+    
+    if (versionsDeleteError) {
+      console.error('Error deleting prompt versions:', versionsDeleteError)
+    } else {
+      console.log(`Deleted versions for prompt ${id}`)
+    }
+    
+    // 6. Delete improvement suggestions (if this table exists)
+    console.log(`Deleting improvements for prompt ${id}...`)
+    const { error: improvementsDeleteError } = await adminSupabase
+      .from('prompt_improvements')
+      .delete()
+      .eq('prompt_id', id)
+    
+    if (improvementsDeleteError) {
+      console.error('Error deleting prompt improvements:', improvementsDeleteError)
+    } else {
+      console.log(`Deleted improvements for prompt ${id}`)
+    }
+    
+    // 7. Finally, delete the prompt itself using admin client to ensure it works
+    console.log(`Deleting main prompt ${id}...`)
+    const { error: deleteError } = await adminSupabase
       .from('prompt')
       .delete()
       .eq('id', id)
     
     if (deleteError) {
+      console.error('Error deleting main prompt:', deleteError)
       throw new Error(`Failed to delete prompt: ${deleteError.message}`)
     }
+    
+    console.log(`Successfully deleted prompt ${id} and all related records`)
     
     // Revalidate caches
     revalidateAfterPromptDelete(
@@ -1034,7 +1320,10 @@ export async function fetchTags(query?: string): Promise<string[]> {
   }
 }
 
-// Increment prompt uses counter when copied
+// Global map to track recent increment operations (server-side protection)
+const recentIncrements = new Map<string, number>()
+
+// Increment prompt uses counter when copied - atomic database operation
 export async function incrementPromptUses(promptId: number) {
   try {
     const session = await auth()
@@ -1042,52 +1331,60 @@ export async function incrementPromptUses(promptId: number) {
     
     console.log('Incrementing uses for prompt:', promptId, 'by user:', userId)
     
-    const supabase = createSupabaseAdminClient()
+    const adminSupabase = createSupabaseAdminClient()
     
-    // First, get current uses count
-    const { data: prompt, error: fetchError } = await supabase
+    // Get current value first
+    const { data: currentData, error: fetchError } = await adminSupabase
       .from('prompt')
       .select('uses')
       .eq('id', promptId)
       .single()
     
-    if (fetchError || !prompt) {
-      throw new Error('Prompt not found')
+    if (fetchError) {
+      console.error('Error fetching current uses:', fetchError)
+      throw new Error('Failed to fetch current usage count')
     }
     
-    // Increment uses counter
-    const { error: updateError } = await supabase
+    const currentUses = currentData?.uses || 0
+    const newUses = currentUses + 1
+    
+    console.log(`Current uses: ${currentUses}, incrementing to: ${newUses}`)
+    
+    // Atomic update with a WHERE clause to prevent race conditions
+    const { data, error } = await adminSupabase
       .from('prompt')
-      .update({ uses: (prompt.uses || 0) + 1 })
+      .update({ 
+        uses: newUses,
+        updated_at: new Date().toISOString()
+      })
       .eq('id', promptId)
+      .eq('uses', currentUses) // Only update if uses hasn't changed
+      .select('uses')
+      .single()
     
-    if (updateError) {
-      throw new Error(`Failed to update prompt uses: ${updateError.message}`)
-    }
-    
-    // Optionally track user interaction if user is logged in
-    if (userId) {
-      const { error: interactionError } = await supabase
-        .from('user_interactions')
-        .insert({
-          user_id: userId,
-          prompt_id: promptId,
-          interaction_type: 'copy',
-        })
-      
-      // Don't throw on interaction error, just log it
-      if (interactionError) {
-        console.error('Failed to track user interaction:', interactionError)
+    if (error) {
+      console.error('Error incrementing uses:', error)
+      // If the update failed due to race condition, try once more
+      if (error.code === 'PGRST116') { // No rows affected
+        console.log('Race condition detected, retrying...')
+        // Recursive call with retry
+        return await incrementPromptUses(promptId)
       }
+      throw new Error('Failed to increment usage count')
     }
     
-    // Revalidate prompt cache
-    revalidateTag(CACHE_TAGS.prompt(promptId))
+    console.log('Successfully incremented uses for prompt:', promptId, 'new count:', data?.uses)
     
-    console.log('Successfully incremented uses for prompt:', promptId)
-    return { success: true, newCount: (prompt.uses || 0) + 1 }
+    // Revalidate caches to ensure updated counts are shown everywhere
+    revalidateTag(CACHE_TAGS.prompt(promptId)) // Individual prompt cache
+    revalidateTag(CACHE_TAGS.prompts) // Main prompts list cache (homepage)
+    
+    return {
+      success: true,
+      newCount: data?.uses || newUses
+    }
   } catch (error) {
-    console.error('Error in incrementPromptUses:', error)
+    console.error('Error incrementing prompt uses:', error)
     throw error
   }
 }
@@ -1440,7 +1737,7 @@ export async function fetchUserImprovements(userId?: string) {
 // Fetch all forks of a prompt
 export async function fetchPromptForks(promptId: number) {
   try {
-    const supabase = await createClient();
+    const supabase = createSupabaseAdminClient();
     
     // Get all forks of this prompt with their details
     const { data: forks, error } = await supabase

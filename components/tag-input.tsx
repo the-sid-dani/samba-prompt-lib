@@ -15,7 +15,7 @@ interface TagInputProps {
   disabled?: boolean
 }
 
-export function TagInput({
+export default function TagInput({
   value = [],
   onChange,
   placeholder = 'Type to search or add tags...',

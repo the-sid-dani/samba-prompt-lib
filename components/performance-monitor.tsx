@@ -20,7 +20,7 @@ export function PerformanceMonitor() {
     if (!ENABLE_MONITORING) return;
 
     // Dynamic import to avoid loading in production
-    import('web-vitals').then(({ onCLS, onFID, onFCP, onLCP, onTTFB, onINP }) => {
+    import('web-vitals').then(({ onCLS, onFCP, onLCP, onTTFB, onINP }) => {
       const logMetric = (metric: Metric) => {
         // Log to console in development
         console.log(`[Web Vitals] ${metric.name}:`, {

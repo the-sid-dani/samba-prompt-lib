@@ -5,17 +5,24 @@ import Image from 'next/image';
 import { Button } from '@/components/ui/button';
 import { Plus } from 'lucide-react';
 import { useSession } from 'next-auth/react';
+import { useEffect, useState } from 'react';
 import UserMenu from '@/components/user/UserMenu';
 import SignIn from '@/components/sign-in';
 import MobileNavigation from './MobileNavigation';
+import ThemeToggle from '@/components/ui/theme-toggle';
 
 export default function Navigation() {
-  const { data: session } = useSession();
+  const { data: session, status } = useSession();
+  const [hasMounted, setHasMounted] = useState(false);
+
+  useEffect(() => {
+    setHasMounted(true);
+  }, []);
 
   return (
     <>
       {/* Desktop Navigation */}
-      <nav className="hidden md:block sticky top-0 z-50 bg-white border-b shadow-sm">
+      <nav className="hidden md:block sticky top-0 z-50 bg-background border-b shadow-sm">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           <div className="flex justify-between items-center h-16">
             <div className="flex items-center space-x-8">
@@ -39,38 +46,61 @@ export default function Navigation() {
 
               {/* Navigation Links */}
               <div className="flex items-center space-x-1">
-                <Link href="/">
-                  <Button variant="ghost" size="sm">
-                    Explore
-                  </Button>
-                </Link>
-                <Link href="/categories">
-                  <Button variant="ghost" size="sm">
-                    Categories
-                  </Button>
-                </Link>
-                <Link href="/leaderboard">
-                  <Button variant="ghost" size="sm">
-                    Leaderboard
-                  </Button>
-                </Link>
+                {!hasMounted ? (
+                  // Show loading placeholders during hydration
+                  <>
+                    <div className="w-16 h-8 bg-muted animate-pulse rounded"></div>
+                    <div className="w-20 h-8 bg-muted animate-pulse rounded"></div>
+                    <div className="w-20 h-8 bg-muted animate-pulse rounded"></div>
+                    <div className="w-24 h-8 bg-muted animate-pulse rounded"></div>
+                  </>
+                ) : (
+                  <>
+                    <Link href="/">
+                      <Button variant="ghost" className="text-base font-medium h-10 px-4">
+                        Explore
+                      </Button>
+                    </Link>
+                    <Link href="/playground">
+                      <Button variant="ghost" className="text-base font-medium h-10 px-4">
+                        Playground
+                      </Button>
+                    </Link>
+                    <Link href="/categories">
+                      <Button variant="ghost" className="text-base font-medium h-10 px-4">
+                        Categories
+                      </Button>
+                    </Link>
+                  </>
+                )}
               </div>
             </div>
 
             {/* Right Side Actions */}
             <div className="flex items-center space-x-4">
-              {session?.user ? (
+              {!hasMounted ? (
+                // Show loading state during hydration to prevent mismatch
                 <>
-                  <Link href="/submit">
-                    <Button size="sm" className="bg-primary hover:bg-primary/90">
-                      <Plus className="w-4 h-4 mr-1" />
-                      Create Prompt
-                    </Button>
-                  </Link>
-                  <UserMenu />
+                  <div className="w-20 h-8 bg-muted animate-pulse rounded"></div>
+                  <div className="w-8 h-8 bg-muted animate-pulse rounded"></div>
                 </>
               ) : (
-                <SignIn />
+                <>
+                  {session?.user ? (
+                    <>
+                      <Link href="/submit">
+                        <Button className="bg-primary hover:bg-primary/90 text-base font-medium h-10 px-4">
+                          <Plus className="w-4 h-4 mr-2" />
+                          Create Prompt
+                        </Button>
+                      </Link>
+                      <UserMenu />
+                    </>
+                  ) : (
+                    <SignIn />
+                  )}
+                  <ThemeToggle />
+                </>
               )}
             </div>
           </div>

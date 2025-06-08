@@ -52,7 +52,7 @@ export function PromptForksDropdown({ promptId, forkCount }: PromptForksDropdown
       setIsLoading(true)
       fetchPromptForks(promptId)
         .then((data) => {
-          setForks(data as Fork[])
+          setForks(data as unknown as Fork[])
           setHasLoaded(true)
         })
         .catch((error) => {

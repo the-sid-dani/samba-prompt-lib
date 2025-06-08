@@ -24,28 +24,73 @@ export function PromptContentRenderer({
       return displayContent
     }
     
-    // Regular expression to match {{variable}} or {{variable|default|description}}
-    const variablePattern = /(\{\{[^}]+\}\})/g
+    // Check if content contains HTML markup (from template variables)
+    if (displayContent.includes('<mark class="filled-variable">')) {
+      // Handle HTML content with filled variables
+      const pattern = /(<mark class="filled-variable">.*?<\/mark>|\{\{[^}]+\}\})/g
+      const parts = displayContent.split(pattern)
+      
+      return parts.map((part, index) => {
+        // Check if this part is a filled variable
+        if (part.startsWith('<mark class="filled-variable">')) {
+          const content = part.replace(/<mark class="filled-variable">|<\/mark>/g, '')
+          return (
+            <span
+              key={index}
+              className="text-red-600 font-bold bg-red-100 dark:bg-red-900/30 rounded-sm px-1"
+              title="Filled variable"
+            >
+              {content}
+            </span>
+          )
+        }
+        
+        // Check if this part is an unfilled variable
+        if (part.match(/^\{\{[^}]+\}\}$/)) {
+          return (
+            <span
+              key={index}
+              className="text-red-600 font-bold"
+              title="Template variable"
+            >
+              {part}
+            </span>
+          )
+        }
+        
+        // Regular text
+        return part
+      })
+    }
     
-    // Split content by variables to process each part
-    const parts = displayContent.split(variablePattern)
+    // Fallback to original pattern matching for highlight markers
+    const pattern = /(\{\{[^}]+\}\}|\|\|\|HIGHLIGHT\|\|\|.*?\|\|\|HIGHLIGHT\|\|\|)/g
+    const parts = displayContent.split(pattern)
     
     return parts.map((part, index) => {
       // Check if this part is a variable
       if (part.match(/^\{\{[^}]+\}\}$/)) {
-        // Extract variable content without braces
-        const variableContent = part.slice(2, -2)
-        const [variableName] = variableContent.split('|').map(p => p.trim())
-        
         return (
           <span
             key={index}
-            className="inline-flex items-center px-2 py-0.5 rounded-md bg-red-100 text-red-800 font-medium mx-0.5"
-            title={`Variable: ${variableName}`}
+            className="text-red-600 font-bold"
+            title="Template variable"
           >
-            <span className="text-red-600 mr-0.5">{'{{'}</span>
-            <span>{variableName}</span>
-            <span className="text-red-600 ml-0.5">{'}}'}</span>
+            {part}
+          </span>
+        )
+      }
+      
+      // Check if this part is a highlighted replacement
+      if (part.startsWith('|||HIGHLIGHT|||') && part.endsWith('|||HIGHLIGHT|||')) {
+        const content = part.replace(/\|\|\|HIGHLIGHT\|\|\|/g, '')
+        return (
+          <span
+            key={index}
+            className="text-red-600 font-bold"
+            title="Filled variable"
+          >
+            {content}
           </span>
         )
       }

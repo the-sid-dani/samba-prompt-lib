@@ -2,6 +2,19 @@
 @tailwind components;
 @tailwind utilities;
 
+/* Add line clamp utility */
+.line-clamp-3 {
+  display: -webkit-box;
+  -webkit-line-clamp: 3;
+  -webkit-box-orient: vertical;
+  overflow: hidden;
+}
+
+/* Global smooth theme transitions */
+* {
+  transition: background-color 300ms ease, border-color 300ms ease, color 300ms ease;
+}
+
 @layer base {
   :root {
     /* SambaTV Brand Colors */
@@ -258,6 +271,22 @@ textarea:focus {
   body {
     @apply bg-background text-foreground;
   }
+  
+  /* Smooth theme transitions */
+  *,
+  *::before,
+  *::after {
+    transition: 
+      background-color 0.3s ease,
+      border-color 0.3s ease,
+      color 0.3s ease,
+      box-shadow 0.3s ease;
+  }
+  
+  /* Prevent transitions on page load */
+  .preload * {
+    transition: none !important;
+  }
 }
 
 /* Hide scrollbar for Chrome, Safari and Opera */
@@ -269,4 +298,8 @@ textarea:focus {
 .scrollbar-hide {
   -ms-overflow-style: none;  /* IE and Edge */
   scrollbar-width: none;  /* Firefox */
+}
+
+.filled-variable {
+  @apply text-red-600 font-bold bg-red-100 dark:bg-red-900/30 rounded-sm px-1;
 }

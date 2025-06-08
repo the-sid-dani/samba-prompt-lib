@@ -13,7 +13,7 @@ export async function GET(request: NextRequest) {
 
 	// Get user data
 	const { data: userData, error: userError } = await supabase
-		.from('users')
+		.from('profiles')
 		.select('*')
 		.eq('id', userId)
 		.single();

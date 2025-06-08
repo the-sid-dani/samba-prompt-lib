@@ -12,6 +12,9 @@ interface PromptContentSectionProps {
     id: number
     content: string
     title: string
+    description: string
+    category_id?: number | null
+    tags?: string[]
     examples?: any[]
   }
   user: any
@@ -28,6 +31,7 @@ export function PromptContentSection({ prompt, user, isOwner }: PromptContentSec
         content={prompt.content}
         className="mb-4 sm:mb-6"
         onContentChange={setProcessedContent}
+        promptId={prompt.id}
       />
 
       {/* Examples */}
@@ -44,7 +48,7 @@ export function PromptContentSection({ prompt, user, isOwner }: PromptContentSec
           <CardTitle className="text-lg sm:text-xl">Prompt</CardTitle>
         </CardHeader>
         <CardContent className="p-4 sm:p-6 pt-0 sm:pt-0">
-          <div className="bg-gray-50 p-3 sm:p-4 md:p-6 rounded-lg overflow-x-auto">
+          <div className="bg-muted p-3 sm:p-4 md:p-6 rounded-lg overflow-x-auto">
             <PromptContentRenderer 
               content={prompt.content}
               processedContent={processedContent}
@@ -52,7 +56,7 @@ export function PromptContentSection({ prompt, user, isOwner }: PromptContentSec
             />
           </div>
           <div className="mt-3 sm:mt-4 flex items-center justify-between">
-            <div className="text-xs text-gray-500">
+            <div className="text-xs text-muted-foreground">
               {processedContent ? (
                 <span>Variables filled! The prompt above shows your customized version.</span>
               ) : (
@@ -63,6 +67,10 @@ export function PromptContentSection({ prompt, user, isOwner }: PromptContentSec
               <ForkButton
                 promptId={prompt.id}
                 promptTitle={prompt.title}
+                promptDescription={prompt.description}
+                promptContent={prompt.content}
+                categoryId={prompt.category_id || 1}
+                tags={prompt.tags || []}
                 className="bg-primary text-white hover:bg-primary/90"
               />
             )}

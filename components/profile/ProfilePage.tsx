@@ -47,12 +47,12 @@ export default function ProfilePage({ profile, stats, isOwnProfile }: ProfilePag
   };
 
   return (
-    <div className="min-h-screen bg-gray-50">
+    <div className="min-h-screen bg-background">
       {/* Navigation */}
       <Navigation />
 
       {/* Profile Header */}
-      <div className="bg-white shadow-sm border-b">
+      <div className="bg-card shadow-sm border-b border-border">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-4 sm:py-6 md:py-8">
           <div className="flex flex-col sm:flex-row items-center sm:items-start gap-4 sm:gap-6">
             {/* Avatar */}
@@ -61,20 +61,20 @@ export default function ProfilePage({ profile, stats, isOwnProfile }: ProfilePag
               alt={profile.name || 'User avatar'}
               fallback={profile.name?.[0] || profile.email?.[0] || 'U'}
               size="lg"
-              className="border-4 border-white shadow-lg scale-150 sm:scale-200"
+              className="border-4 border-card shadow-lg scale-150 sm:scale-200"
             />
 
             {/* Profile Info */}
             <div className="flex-1 text-center sm:text-left">
               <div className="flex flex-col sm:flex-row items-center sm:items-start justify-between gap-3 sm:gap-4">
                 <div>
-                  <h1 className="text-2xl sm:text-3xl font-bold text-gray-900">
+                  <h1 className="text-2xl sm:text-3xl font-bold text-foreground">
                     {profile.name || profile.username || 'Anonymous User'}
                   </h1>
                   {profile.username && profile.name && (
-                    <p className="text-base sm:text-lg text-gray-600">@{profile.username}</p>
+                    <p className="text-base sm:text-lg text-muted-foreground">@{profile.username}</p>
                   )}
-                  <div className="flex flex-col sm:flex-row items-center gap-2 sm:gap-4 mt-2 text-xs sm:text-sm text-gray-600">
+                  <div className="flex flex-col sm:flex-row items-center gap-2 sm:gap-4 mt-2 text-xs sm:text-sm text-muted-foreground">
                     {profile.email && (
                       <div className="flex items-center gap-1">
                         <Mail className="w-3 h-3 sm:w-4 sm:h-4" />
@@ -104,20 +104,20 @@ export default function ProfilePage({ profile, stats, isOwnProfile }: ProfilePag
               <div className="grid grid-cols-3 gap-2 sm:gap-3 md:gap-4 mt-4 sm:mt-6">
                 <Card className="card-hover tap-highlight">
                   <CardContent className="p-3 sm:p-4 text-center">
-                    <p className="text-xl sm:text-2xl font-bold text-gray-900">{stats.prompts}</p>
-                    <p className="text-xs sm:text-sm text-gray-600">Prompts</p>
+                    <p className="text-xl sm:text-2xl font-bold text-foreground">{stats.prompts}</p>
+                    <p className="text-xs sm:text-sm text-muted-foreground">Prompts</p>
                   </CardContent>
                 </Card>
                 <Card className="card-hover tap-highlight">
                   <CardContent className="p-3 sm:p-4 text-center">
-                    <p className="text-xl sm:text-2xl font-bold text-gray-900">{stats.forks}</p>
-                    <p className="text-xs sm:text-sm text-gray-600">Forks</p>
+                    <p className="text-xl sm:text-2xl font-bold text-foreground">{stats.forks}</p>
+                    <p className="text-xs sm:text-sm text-muted-foreground">Forks</p>
                   </CardContent>
                 </Card>
                 <Card className="card-hover tap-highlight">
                   <CardContent className="p-3 sm:p-4 text-center">
-                    <p className="text-xl sm:text-2xl font-bold text-gray-900">{stats.favorites}</p>
-                    <p className="text-xs sm:text-sm text-gray-600">Favorites</p>
+                    <p className="text-xl sm:text-2xl font-bold text-foreground">{stats.favorites}</p>
+                    <p className="text-xs sm:text-sm text-muted-foreground">Favorites</p>
                   </CardContent>
                 </Card>
               </div>
@@ -179,7 +179,7 @@ export default function ProfilePage({ profile, stats, isOwnProfile }: ProfilePag
                 </CardDescription>
               </CardHeader>
               <CardContent>
-                <div className="text-center py-12 text-gray-500">
+                <div className="text-center py-12 text-muted-foreground">
                   <p>No activity yet</p>
                   <p className="text-sm mt-2">Your activity will appear here</p>
                 </div>

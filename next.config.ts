@@ -35,7 +35,6 @@ const nextConfig: NextConfig = {
   
   // Experimental features for better performance
   experimental: {
-    optimizeCss: true,
     scrollRestoration: true,
   },
   
@@ -74,6 +73,18 @@ const nextConfig: NextConfig = {
   
   // Webpack optimization
   webpack: (config, { isServer }) => {
+    // Add WebAssembly support for tiktoken
+    config.experiments = {
+      ...config.experiments,
+      asyncWebAssembly: true,
+    };
+    
+    // Add rule for WASM files
+    config.module.rules.push({
+      test: /\.wasm$/,
+      type: 'webassembly/async',
+    });
+    
     // Optimize bundle size
     if (!isServer) {
       config.optimization.splitChunks = {

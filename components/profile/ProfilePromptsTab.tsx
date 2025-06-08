@@ -96,12 +96,12 @@ export default function ProfilePromptsTab({
             {prompt.description}
           </CardDescription>
           {showAuthor && prompt.profiles && (
-            <p className="text-sm text-gray-600 mt-2">
+            <p className="text-sm text-muted-foreground mt-2">
               by {prompt.profiles.name || prompt.profiles.username || 'Anonymous'}
             </p>
           )}
         </CardContent>
-        <CardFooter className="flex items-center justify-between text-sm text-gray-600">
+        <CardFooter className="flex items-center justify-between text-sm text-muted-foreground">
           <div className="flex items-center gap-4">
             <span className="flex items-center gap-1">
               <Heart className="w-4 h-4" />
@@ -132,17 +132,17 @@ export default function ProfilePromptsTab({
             <h3 className="font-medium">
               {prompt.title}
             </h3>
-            <p className="text-sm text-gray-600 mt-1 line-clamp-1">
+            <p className="text-sm text-muted-foreground mt-1 line-clamp-1">
               {prompt.description}
             </p>
             {showAuthor && prompt.profiles && (
-              <p className="text-xs text-gray-500 mt-1">
+              <p className="text-xs text-muted-foreground mt-1">
                 by {prompt.profiles.name || prompt.profiles.username || 'Anonymous'}
               </p>
             )}
           </div>
           <div className="flex items-center gap-6 ml-4">
-            <div className="flex items-center gap-4 text-sm text-gray-600">
+            <div className="flex items-center gap-4 text-sm text-muted-foreground">
               <span className="flex items-center gap-1">
                 <Heart className="w-4 h-4" />
                 {prompt.user_favorites?.length || 0}
@@ -207,7 +207,7 @@ export default function ProfilePromptsTab({
       </CardHeader>
       <CardContent>
         {prompts.length === 0 ? (
-          <div className="text-center py-12 text-gray-500">
+          <div className="text-center py-12 text-muted-foreground">
             <p>{emptyMessage}</p>
             <p className="text-sm mt-2">{emptySubMessage}</p>
           </div>
@@ -226,7 +226,7 @@ export default function ProfilePromptsTab({
             {/* Pagination */}
             {pagination.totalPages > 1 && (
               <div className="flex items-center justify-between mt-6">
-                <p className="text-sm text-gray-600">
+                <p className="text-sm text-muted-foreground">
                   Showing {prompts.length} of {pagination.total} prompts
                 </p>
                 <div className="flex items-center gap-2">
@@ -239,7 +239,7 @@ export default function ProfilePromptsTab({
                     <ChevronLeft className="h-4 w-4" />
                     Previous
                   </Button>
-                  <span className="text-sm text-gray-600">
+                  <span className="text-sm text-muted-foreground">
                     Page {page} of {pagination.totalPages}
                   </span>
                   <Button
