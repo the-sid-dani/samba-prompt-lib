@@ -14,6 +14,8 @@
     "test:ui": "vitest --ui",
     "migrate": "node scripts/migrate-database.js",
     "migrate:rollback": "node scripts/migrate-database.js rollback",
+    "rollback:emergency": "./scripts/emergency-rollback.sh",
+    "rollback:verify": "./scripts/verify-rollback.sh",
     "refresh:models": "tsx scripts/refreshModels.ts"
   },
   "dependencies": {
