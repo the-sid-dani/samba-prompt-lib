@@ -637,7 +637,7 @@ function PlaygroundContent() {
                             <div
                               className={`max-w-[70vw] min-w-[60px] rounded-lg px-4 py-3 shadow-sm relative ${
                                 message.role === 'user'
-                                  ? 'bg-red-600 text-white rounded-br-none'
+                                  ? 'bg-slate-100 text-slate-900 border border-slate-200 rounded-br-none dark:bg-slate-800 dark:text-slate-100 dark:border-slate-700'
                                   : 'bg-muted text-foreground border border-border rounded-bl-none'
                               }`}
                               style={{ wordBreak: 'break-word', overflowWrap: 'break-word' }}
@@ -653,7 +653,7 @@ function PlaygroundContent() {
                                 onClick={() => copyMessage(message.content)}
                                 className={`absolute top-1 right-1 h-6 w-6 p-0 opacity-0 group-hover:opacity-100 transition-opacity ${
                                   message.role === 'user' 
-                                    ? 'text-red-200 hover:text-white hover:bg-white hover:bg-opacity-20' 
+                                    ? 'text-slate-500 hover:text-slate-700 hover:bg-slate-200 dark:text-slate-400 dark:hover:text-slate-200 dark:hover:bg-slate-700' 
                                     : 'text-muted-foreground hover:text-foreground hover:bg-muted'
                                 }`}
                               >
