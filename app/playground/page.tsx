@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useEffect, useCallback, useRef } from 'react';
+import { useState, useEffect, useCallback, useRef, Suspense } from 'react';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -51,7 +51,7 @@ interface Message {
   timestamp: Date;
 }
 
-export default function PlaygroundPage() {
+function PlaygroundContent() {
   console.log('[Playground] Rendering playground page');
   
   const { data: session } = useSession();
@@ -1118,5 +1118,25 @@ export default function PlaygroundPage() {
         onOpenChange={setShowModelPreferences} 
       />
     </div>
+  );
+}
+
+export default function PlaygroundPage() {
+  return (
+    <Suspense fallback={
+      <div className="min-h-screen bg-background">
+        <Navigation />
+        <div className="flex h-[calc(100vh-64px)]">
+          <div className="flex-1 flex items-center justify-center">
+            <div className="flex items-center gap-2">
+              <Loader2 className="h-6 w-6 animate-spin text-red-600" />
+              <span className="text-lg text-muted-foreground">Loading playground...</span>
+            </div>
+          </div>
+        </div>
+      </div>
+    }>
+      <PlaygroundContent />
+    </Suspense>
   );
 }

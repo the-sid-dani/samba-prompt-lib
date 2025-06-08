@@ -66,6 +66,7 @@ export function OptimizedImage({
       priority={priority || optimizedProps.priority}
       placeholder="blur"
       blurDataURL={DEFAULT_BLUR_DATA_URL}
+      alt={props.alt || ''}
       className={cn(
         'transition-opacity duration-300',
         className

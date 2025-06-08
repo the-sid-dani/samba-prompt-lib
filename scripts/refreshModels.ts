@@ -1,5 +1,4 @@
 import fs from 'node:fs/promises';
-import fetch from 'node-fetch';
 
 interface ModelInfo {
   id: string;
