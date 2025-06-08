@@ -8,6 +8,7 @@ import { Button } from '@/components/ui/button';
 import { useSession, signOut } from 'next-auth/react';
 import SignIn from '@/components/sign-in';
 import ThemeToggle from '@/components/ui/theme-toggle';
+import Logo from '@/components/ui/logo';
 
 export default function MobileNavigation() {
   const [isOpen, setIsOpen] = useState(false);
@@ -40,7 +41,7 @@ export default function MobileNavigation() {
   return (
     <div className="md:hidden">
       {/* Mobile Header */}
-      <header className="sticky top-0 z-50 bg-background border-b shadow-sm">
+      <header className="sticky top-0 z-50 bg-background/95 backdrop-blur-sm border-b border-border/50 shadow-sm transition-[background-color,border-color] duration-300">
         <div className="flex items-center justify-between px-4 h-14">
           {/* Menu Button */}
           <button
@@ -104,16 +105,14 @@ export default function MobileNavigation() {
 
       {/* Mobile Menu Drawer */}
       <div
-        className={`fixed top-0 left-0 h-full w-64 bg-background shadow-xl transform transition-transform duration-300 ease-in-out z-50 ${
+        className={`fixed top-0 left-0 h-full w-64 bg-background/95 backdrop-blur-sm shadow-xl transform transition-[transform,background-color] duration-300 ease-in-out z-50 ${
           isOpen ? 'translate-x-0' : '-translate-x-full'
         }`}
       >
         {/* Menu Header */}
         <div className="p-4 border-b">
           <div className="flex items-center justify-between">
-            <Image
-              src="/sambatv-logo.png"
-              alt="SambaTV"
+            <Logo
               width={120}
               height={32}
               className="h-8 w-auto"

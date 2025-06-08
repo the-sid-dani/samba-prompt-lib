@@ -47,7 +47,7 @@ export default function ProfilePage({ profile, stats, isOwnProfile }: ProfilePag
   };
 
   return (
-    <div className="min-h-screen bg-background">
+    <div className="min-h-screen bg-background transition-[background-color] duration-300">
       {/* Navigation */}
       <Navigation />
 

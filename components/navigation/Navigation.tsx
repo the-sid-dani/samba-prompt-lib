@@ -1,7 +1,6 @@
 'use client';
 
 import Link from 'next/link';
-import Image from 'next/image';
 import { Button } from '@/components/ui/button';
 import { Plus } from 'lucide-react';
 import { useSession } from 'next-auth/react';
@@ -10,6 +9,7 @@ import UserMenu from '@/components/user/UserMenu';
 import SignIn from '@/components/sign-in';
 import MobileNavigation from './MobileNavigation';
 import ThemeToggle from '@/components/ui/theme-toggle';
+import Logo from '@/components/ui/logo';
 
 export default function Navigation() {
   const { data: session, status } = useSession();
@@ -22,7 +22,7 @@ export default function Navigation() {
   return (
     <>
       {/* Desktop Navigation */}
-      <nav className="hidden md:block sticky top-0 z-50 bg-background border-b shadow-sm">
+      <nav className="hidden md:block sticky top-0 z-50 bg-background/95 backdrop-blur-sm border-b border-border/50 shadow-sm transition-[background-color,border-color] duration-300">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           <div className="flex justify-between items-center h-16">
             <div className="flex items-center space-x-8">
@@ -33,9 +33,7 @@ export default function Navigation() {
               >
                 <div className="relative">
                   <div className="absolute inset-0 bg-primary/20 blur-xl group-hover:blur-2xl transition-all rounded-lg"></div>
-                  <Image
-                    src="/sambatv-logo.png"
-                    alt="SambaTV"
+                  <Logo
                     width={150}
                     height={32}
                     className="relative h-8 w-auto"

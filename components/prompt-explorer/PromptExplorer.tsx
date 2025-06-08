@@ -96,7 +96,8 @@ export default function PromptExplorer({
     if (newFilters.selectedAuthor) params.set('author', newFilters.selectedAuthor);
     if (newFilters.sortBy !== 'popular') params.set('sort', newFilters.sortBy);
     
-    const newURL = params.toString() ? `?${params.toString()}` : '/';
+    const base = window.location.pathname;
+    const newURL = params.toString() ? `${base}?${params.toString()}` : base;
     router.replace(newURL, { scroll: false });
   }, [router]);
 
@@ -161,6 +162,8 @@ export default function PromptExplorer({
           searchParams.sort_order = 'desc';
           break;
       }
+
+      console.log('Fetching prompts with sort:', currentFilters.sortBy, 'mapped to:', searchParams.sort_by, searchParams.sort_order);
 
       const { prompts: newPrompts } = await fetchPrompts(searchParams);
       setPrompts(newPrompts);
@@ -233,7 +236,7 @@ export default function PromptExplorer({
       sortBy: "popular"
     };
     setFilters(clearedFilters);
-    router.replace('/', { scroll: false });
+    updateURL(clearedFilters);
     startTransition(() => {
       fetchFilteredPrompts(clearedFilters);
     });
@@ -242,17 +245,15 @@ export default function PromptExplorer({
   // Check if any filters are active
   const hasActiveFilters = filters.search || 
     filters.selectedCategory !== 'all' || 
-    filters.selectedTags.length > 0 || 
-    filters.selectedAuthor ||
-    filters.dateRange;
+    filters.selectedTags.length > 0;
 
   return (
-    <div className="min-h-screen bg-background">
+    <div className="min-h-screen bg-background transition-[background-color] duration-300">
       {/* Navigation */}
       <Navigation />
 
       {/* Hero Section */}
-      <div className="bg-gradient-to-br from-primary/5 via-background to-primary/10 py-8 sm:py-12 md:py-16">
+      <div className="bg-gradient-to-br from-primary/5 via-background to-primary/10 py-8 sm:py-12 md:py-16 transition-[background-color] duration-300">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 text-center">
           <div className="flex justify-center mb-3 sm:mb-4">
             <Sparkles className="w-8 h-8 sm:w-10 sm:h-10 md:w-12 md:h-12 text-primary" />
@@ -281,202 +282,102 @@ export default function PromptExplorer({
       {/* Main Content */}
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-4 sm:py-6 md:py-8">
         <div className="w-full">
-          {/* Advanced Filters Collapsible */}
-          <div className="mb-6">
-            <Collapsible open={isFiltersOpen} onOpenChange={setIsFiltersOpen}>
-              <div className="flex items-center justify-between mb-4">
-                <CollapsibleTrigger asChild>
-                  <Button variant="outline" className="flex items-center gap-2">
-                    <Filter className="w-4 h-4" />
-                    Advanced Filters
-                    <ChevronDown className={`w-4 h-4 transition-transform ${isFiltersOpen ? 'rotate-180' : ''}`} />
-                  </Button>
-                </CollapsibleTrigger>
-                
-                {hasActiveFilters && (
-                  <Button 
-                    variant="ghost" 
-                    size="sm" 
-                    onClick={clearAllFilters}
-                    className="text-primary hover:text-primary/80"
+          {/* Filters */}
+          <div className="mb-4 space-y-3">
+            {/* Category Filter */}
+            <div>
+              <h3 className="text-sm font-medium text-foreground mb-2">Filter by category</h3>
+              <div className="flex gap-2 overflow-x-auto pb-2">
+                {displayCategories.map((category) => (
+                  <button
+                    key={category.id}
+                    onClick={() => handleFilterChange({ selectedCategory: category.id })}
+                    className={`px-3 py-1.5 rounded-full text-sm font-medium whitespace-nowrap transition-colors ${
+                      filters.selectedCategory === category.id
+                        ? "bg-primary text-primary-foreground"
+                        : "bg-muted text-muted-foreground hover:bg-muted/80"
+                    }`}
                   >
-                    <X className="w-4 h-4 mr-2" />
-                    Clear All Filters
-                  </Button>
-                )}
+                    {category.name}
+                  </button>
+                ))}
               </div>
+            </div>
 
-              <CollapsibleContent className="space-y-4 p-4 border rounded-lg bg-card">
-                {/* Category Filter */}
-                <div>
-                  <h3 className="text-sm font-medium text-foreground mb-2">Category</h3>
-                  <div className="flex gap-2 overflow-x-auto pb-2">
-                    {displayCategories.map((category) => (
-                      <button
-                        key={category.id}
-                        onClick={() => handleFilterChange({ selectedCategory: category.id })}
-                        className={`px-3 py-1.5 rounded-full text-xs font-medium whitespace-nowrap transition-colors ${
-                          filters.selectedCategory === category.id
-                            ? "bg-primary text-primary-foreground"
-                            : "bg-muted text-muted-foreground hover:bg-muted/80"
-                        }`}
-                      >
-                        {category.name}
-                      </button>
-                    ))}
-                  </div>
+            {/* Tag Filter */}
+            {availableTags.length > 0 && (
+              <div>
+                <h3 className="text-sm font-medium text-foreground mb-2">Filter by tags</h3>
+                <div className="flex flex-wrap gap-2">
+                  {availableTags.slice(0, 20).map((tag) => (
+                    <button
+                      key={tag}
+                      onClick={() => toggleTag(tag)}
+                      className={`px-3 py-1.5 rounded-full text-sm font-medium whitespace-nowrap transition-colors flex items-center gap-1 ${
+                        filters.selectedTags.includes(tag)
+                          ? "bg-primary text-primary-foreground"
+                          : "bg-muted text-muted-foreground hover:bg-muted/80"
+                      }`}
+                    >
+                      <Tag className="w-3 h-3" />
+                      {tag}
+                    </button>
+                  ))}
                 </div>
+              </div>
+            )}
 
-                {/* Tag Filter */}
-                {availableTags.length > 0 && (
-                  <div>
-                    <h3 className="text-sm font-medium text-foreground mb-2">Tags</h3>
-                    <div className="flex flex-wrap gap-2">
-                      {availableTags.slice(0, 20).map((tag) => (
-                        <button
-                          key={tag}
-                          onClick={() => toggleTag(tag)}
-                          className={`px-3 py-1.5 rounded-full text-xs font-medium whitespace-nowrap transition-colors flex items-center gap-1 ${
-                            filters.selectedTags.includes(tag)
-                              ? "bg-primary text-primary-foreground"
-                              : "bg-muted text-muted-foreground hover:bg-muted/80"
-                          }`}
-                        >
-                          <Tag className="w-3 h-3" />
-                          {tag}
-                        </button>
-                      ))}
-                    </div>
-                  </div>
-                )}
-
-                {/* Author Filter */}
-                <div>
-                  <h3 className="text-sm font-medium text-foreground mb-2">Author</h3>
-                  <Popover>
-                    <PopoverTrigger asChild>
-                      <Button variant="outline" className="w-full sm:w-64 justify-start">
-                        <Users className="w-4 h-4 mr-2" />
-                        {filters.selectedAuthor || "Any author"}
-                      </Button>
-                    </PopoverTrigger>
-                    <PopoverContent className="w-64 p-0">
-                      <Command>
-                        <CommandInput placeholder="Search authors..." />
-                        <CommandEmpty>No authors found.</CommandEmpty>
-                        <CommandGroup>
-                          <CommandItem
-                            onSelect={() => handleFilterChange({ selectedAuthor: "" })}
-                          >
-                            Any author
-                          </CommandItem>
-                          {availableAuthors.map((author) => (
-                            <CommandItem
-                              key={author}
-                              onSelect={() => handleFilterChange({ selectedAuthor: author })}
-                            >
-                              {author}
-                            </CommandItem>
-                          ))}
-                        </CommandGroup>
-                      </Command>
-                    </PopoverContent>
-                  </Popover>
-                </div>
-
-                {/* Date Range Filter */}
-                <div>
-                  <h3 className="text-sm font-medium text-foreground mb-2">Date Range</h3>
-                  <div className="flex gap-2 items-center">
-                    <Input
-                      type="date"
-                      value={filters.dateRange?.from ? filters.dateRange.from.toISOString().split('T')[0] : ''}
-                      onChange={(e) => {
-                        const fromDate = e.target.value ? new Date(e.target.value) : undefined;
-                        handleFilterChange({ 
-                          dateRange: fromDate ? { from: fromDate, to: filters.dateRange?.to } : undefined 
-                        });
-                      }}
-                      className="w-32"
-                      placeholder="From"
-                    />
-                    <span className="text-muted-foreground">to</span>
-                    <Input
-                      type="date"
-                      value={filters.dateRange?.to ? filters.dateRange.to.toISOString().split('T')[0] : ''}
-                      onChange={(e) => {
-                        const toDate = e.target.value ? new Date(e.target.value) : undefined;
-                        handleFilterChange({ 
-                          dateRange: filters.dateRange?.from ? { from: filters.dateRange.from, to: toDate } : undefined 
-                        });
-                      }}
-                      className="w-32"
-                      placeholder="To"
-                    />
-                  </div>
-                </div>
-
-                {/* Popularity Range Filter */}
-                <div>
-                  <h3 className="text-sm font-medium text-foreground mb-2">
-                    Popularity (Uses: {filters.popularityRange[0]} - {filters.popularityRange[1]})
-                  </h3>
-                  <Slider
-                    value={filters.popularityRange}
-                    onValueChange={(value) => handleFilterChange({ popularityRange: value as [number, number] })}
-                    max={1000}
-                    min={0}
-                    step={10}
-                    className="w-full sm:w-64"
-                  />
-                </div>
-              </CollapsibleContent>
-            </Collapsible>
           </div>
 
-          {/* Active Filters Display */}
+          {/* Active Filters Display with Clear All Button */}
           {hasActiveFilters && (
-            <div className="mb-4 flex flex-wrap gap-2">
-              {filters.search && (
-                <Badge variant="secondary" className="flex items-center gap-1">
-                  Search: "{filters.search}"
-                  <button onClick={() => handleFilterChange({ search: "" })} className="ml-1">
-                    <X className="w-3 h-3" />
-                  </button>
-                </Badge>
-              )}
-              {filters.selectedCategory !== 'all' && (
-                <Badge variant="secondary" className="flex items-center gap-1">
-                  Category: {displayCategories.find(c => c.id === filters.selectedCategory)?.name}
-                  <button onClick={() => handleFilterChange({ selectedCategory: "all" })} className="ml-1">
-                    <X className="w-3 h-3" />
-                  </button>
-                </Badge>
-              )}
-              {filters.selectedTags.map(tag => (
-                <Badge key={tag} variant="secondary" className="flex items-center gap-1">
-                  Tag: {tag}
-                  <button onClick={() => toggleTag(tag)} className="ml-1">
-                    <X className="w-3 h-3" />
-                  </button>
-                </Badge>
-              ))}
-              {filters.selectedAuthor && (
-                <Badge variant="secondary" className="flex items-center gap-1">
-                  Author: {filters.selectedAuthor}
-                  <button onClick={() => handleFilterChange({ selectedAuthor: "" })} className="ml-1">
-                    <X className="w-3 h-3" />
-                  </button>
-                </Badge>
-              )}
+            <div className="mb-3 flex flex-wrap items-center justify-between gap-2">
+              <div className="flex flex-wrap gap-2">
+                {filters.search && (
+                  <Badge variant="secondary" className="flex items-center gap-1">
+                    Search: "{filters.search}"
+                    <button onClick={() => handleFilterChange({ search: "" })} className="ml-1">
+                      <X className="w-3 h-3" />
+                    </button>
+                  </Badge>
+                )}
+                {filters.selectedCategory !== 'all' && (
+                  <Badge variant="secondary" className="flex items-center gap-1">
+                    Category: {displayCategories.find(c => c.id === filters.selectedCategory)?.name}
+                    <button onClick={() => handleFilterChange({ selectedCategory: "all" })} className="ml-1">
+                      <X className="w-3 h-3" />
+                    </button>
+                  </Badge>
+                )}
+                {filters.selectedTags.map(tag => (
+                  <Badge key={tag} variant="secondary" className="flex items-center gap-1">
+                    Tag: {tag}
+                    <button onClick={() => toggleTag(tag)} className="ml-1">
+                      <X className="w-3 h-3" />
+                    </button>
+                  </Badge>
+                ))}
+              </div>
+              <Button 
+                variant="ghost" 
+                size="sm" 
+                onClick={clearAllFilters}
+                className="text-primary hover:text-primary/80 shrink-0"
+              >
+                <X className="w-4 h-4 mr-2" />
+                Clear All Filters
+              </Button>
             </div>
           )}
 
           {/* Sorting and Results Count */}
-          <div className="flex flex-col sm:flex-row gap-3 sm:gap-4 mb-4 sm:mb-6">
+          <div className="flex flex-col sm:flex-row gap-3 sm:gap-4 mb-4">
             <div className="flex flex-1 items-center gap-2 sm:gap-4 overflow-x-auto">
               {/* Sort Tabs */}
-              <Tabs value={filters.sortBy} onValueChange={(value) => handleFilterChange({ sortBy: value })} className="w-full sm:w-auto">
+              <Tabs value={filters.sortBy} onValueChange={(value) => {
+                console.log('Sort tab clicked:', value);
+                handleFilterChange({ sortBy: value });
+              }} className="w-full sm:w-auto">
                 <TabsList className="w-full sm:w-auto grid grid-cols-3 sm:flex">
                   <TabsTrigger value="popular" className="text-xs sm:text-sm">Popular</TabsTrigger>
                   <TabsTrigger value="trending" className="text-xs sm:text-sm">Trending</TabsTrigger>

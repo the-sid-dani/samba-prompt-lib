@@ -36,6 +36,7 @@ const nextConfig: NextConfig = {
   // Experimental features for better performance
   experimental: {
     scrollRestoration: true,
+    // ppr: true, // Enable Partial Prerendering for improved performance (requires canary)
   },
   
   // Headers for better caching

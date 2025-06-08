@@ -148,7 +148,7 @@ export default function EditPromptForm({ prompt }: EditPromptFormProps) {
     <>
       <Navigation />
       
-      <div className="min-h-screen bg-background py-4 md:py-8">
+      <div className="min-h-screen bg-background transition-[background-color] duration-300 py-4 md:py-8">
         <div className="max-w-5xl mx-auto px-4 sm:px-6 lg:px-8">
           {/* Back Button */}
           <Link href={`/prompt/${prompt.id}`} className="inline-flex items-center text-sm sm:text-base text-muted-foreground hover:text-foreground mb-4 sm:mb-6">

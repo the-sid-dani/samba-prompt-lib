@@ -3,7 +3,7 @@ import { ExternalLink, Clock, MessageSquare } from 'lucide-react';
 
 const Footer = () => {
 	return (
-		<footer className="w-full border-t border-border bg-background py-12">
+		  <footer className="w-full border-t border-border bg-background transition-[background-color,border-color] duration-300 py-12">
 			<div className="container mx-auto px-4">
 				<div className="grid grid-cols-1 lg:grid-cols-4 gap-8">
 					{/* Brand Section */}

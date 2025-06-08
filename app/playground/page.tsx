@@ -42,6 +42,7 @@ import { SUPPORTED_MODELS } from '@/lib/ai';
 import { useModelPreferences } from '@/hooks/useModelPreferences';
 import { ModelInfo } from '@/lib/ai/generated-models';
 import { ModelPreferences } from '@/components/playground/ModelPreferences';
+import { estimateTokensFallback } from '@/lib/tokenization';
 
 interface Message {
   id: string;
@@ -104,32 +105,10 @@ export default function PlaygroundPage() {
   }, [availableModels, selectedModel, modelPrefsLoading]);
 
   // Accurate token counting using tiktoken
+  // Estimate tokens with lightweight fallback for immediate UI feedback
   const estimateTokens = useCallback((text: string): number => {
-    if (!text.trim()) return 0;
-    
-    try {
-      // Use tiktoken for accurate GPT tokenization (works for most models)
-      const { encoding_for_model, get_encoding } = require('tiktoken');
-      
-      // Determine encoding based on selected model
-      let encoding;
-      if (selectedModel.includes('gpt-4') || selectedModel.includes('gpt-3.5')) {
-        encoding = encoding_for_model(selectedModel as any);
-      } else {
-        // Use cl100k_base encoding for other models (Claude, Gemini, etc.)
-        encoding = get_encoding('cl100k_base');
-      }
-      
-      const tokens = encoding.encode(text);
-      encoding.free(); // Free memory
-      return tokens.length;
-    } catch (error) {
-      console.warn('Tiktoken error, falling back to word approximation:', error);
-      // Fallback to improved word-based estimation
-      const words = text.trim().split(/\s+/).length;
-      return Math.ceil(words * 1.3); // More accurate multiplier
-    }
-  }, [selectedModel]);
+    return estimateTokensFallback(text);
+  }, []);
 
   // Calculate total tokens for conversation
   const calculateTotalTokens = useCallback(() => {
@@ -318,7 +297,10 @@ export default function PlaygroundPage() {
         updated = updated.replace(mdListRegex, `<mark class="filled-variable">${value}</mark>`);
       } else {
         // Restore original variable placeholder if value is empty
-        const regex = new RegExp(`<mark class="filled-variable">.*?</mark>`, 'g');
+        const regex = new RegExp(
+          `<mark class="filled-variable">${varName.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')}</mark>`,
+          'g'
+        );
         updated = updated.replace(regex, `{{${varName}}}`);
       }
       return updated;
@@ -583,7 +565,7 @@ export default function PlaygroundPage() {
   const templateVars = [...new Set([...inputVars, ...systemVars])];
 
   return (
-    <div className="min-h-screen bg-background">
+    <div className="min-h-screen bg-background transition-[background-color] duration-300">
       <Navigation />
       
       <div className="container mx-auto px-4 py-8">

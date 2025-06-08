@@ -1,4 +1,4 @@
-import { useRef, useCallback } from 'react'
+import { useRef, useCallback, useEffect } from 'react'
 import { toast } from '@/hooks/use-toast'
 
 interface ToastOptions {
@@ -12,6 +12,14 @@ const recentNotifications = new Set<string>()
 
 export function useDebouncedToast() {
   const timeoutRef = useRef<NodeJS.Timeout | null>(null)
+
+  useEffect(() => {
+    return () => {
+      if (timeoutRef.current) {
+        clearTimeout(timeoutRef.current)
+      }
+    }
+  }, [])
 
   const showToast = useCallback((options: ToastOptions, debounceTime = 1000) => {
     const key = `${options.title}-${options.description}`

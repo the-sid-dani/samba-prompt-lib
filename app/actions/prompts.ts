@@ -444,6 +444,7 @@ export async function fetchPrompts(input?: Partial<z.infer<typeof fetchPromptsSc
             });
           }
           
+          // Use original database count for pagination metadata to maintain consistency
           const totalPages = Math.ceil((count || 0) / params.limit)
           
           return {
@@ -451,9 +452,9 @@ export async function fetchPrompts(input?: Partial<z.infer<typeof fetchPromptsSc
             pagination: {
               page: params.page,
               limit: params.limit,
-              total: filteredPrompts.length, // Update total to reflect filtered count
-              totalPages: Math.ceil(filteredPrompts.length / params.limit),
-              hasMore: params.page < Math.ceil(filteredPrompts.length / params.limit),
+              total: count || 0, // Use original database count
+              totalPages: totalPages,
+              hasMore: params.page < totalPages,
             },
           }
         }

@@ -5,6 +5,7 @@ import { Button } from '@/components/ui/button'
 import { GitFork, Loader2 } from 'lucide-react'
 import { createPrompt } from '@/app/actions/prompts'
 import { useAsyncOperation } from '@/hooks/use-api-error'
+import { cn } from '@/lib/utils'
 
 interface ForkButtonProps {
   promptId: number
@@ -56,7 +57,11 @@ export function ForkButton({
     <Button
       variant={variant}
       size={size}
-      className={`${className || ''} ${variant === 'default' ? 'bg-red-600 hover:bg-red-700 text-white border-red-600 hover:border-red-700' : ''} font-medium shadow-sm`}
+      className={cn(
+        "font-medium shadow-sm",
+        variant === 'default' && "bg-destructive hover:bg-destructive/90 text-destructive-foreground",
+        className
+      )}
       onClick={handleFork}
       disabled={isLoading}
     >

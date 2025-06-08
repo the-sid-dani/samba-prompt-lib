@@ -9,6 +9,7 @@ import FooterWrapper from "@/components/ui/FooterWrapper";
 import { ReactNode } from 'react';
 import StagewiseProvider from '@/components/dev/StagewiseProvider';
 import { ThemeProvider } from '@/hooks/use-theme';
+import { StagingBanner } from '@/components/staging/StagingBanner';
 
 export const metadata: Metadata = config.metadata;
 
@@ -32,6 +33,7 @@ export default function RootLayout({
               Skip to main content
             </a>
             
+            <StagingBanner />
             <Toaster />
             <StagewiseProvider />
             <main id="main-content" className="flex-grow" role="main">
