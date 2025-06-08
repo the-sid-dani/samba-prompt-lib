@@ -23,9 +23,15 @@ const updateCategorySchema = z.object({
 
 // Get all tags with usage count
 export async function getTags() {
-  const supabase = await createSupabaseAdminClient()
-  
   try {
+    // Check if Supabase is configured
+    if (!process.env.NEXT_PUBLIC_SUPABASE_URL || !process.env.SUPABASE_SERVICE_ROLE_KEY) {
+      console.warn('Supabase not configured, returning empty tags array')
+      return []
+    }
+
+    const supabase = await createSupabaseAdminClient()
+    
     // Get all tags
     const { data: tags, error: tagsError } = await supabase
       .from('tags')
@@ -56,7 +62,7 @@ export async function getTags() {
     return tagsWithUsage
   } catch (error) {
     console.error('Error fetching tags:', error)
-    throw new Error('Failed to fetch tags')
+    return []
   }
 }
 
