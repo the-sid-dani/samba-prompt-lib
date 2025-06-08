@@ -4,6 +4,9 @@ import { SupabaseAdapter } from "@auth/supabase-adapter"
 
 const authConfig = {
 	secret: process.env.AUTH_SECRET,
+	pages: {
+		signIn: '/auth/signin',
+	},
 	providers: [
 		GoogleProvider({
 			allowDangerousEmailAccountLinking: true,

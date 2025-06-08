@@ -112,7 +112,7 @@ function PromptCard({ prompt, user }: { prompt: any; user: any }) {
           
           <div className="mt-3 pt-3 border-t flex items-center justify-between">
             <div className="text-sm">
-              <p className="font-medium text-gray-900">
+              <p className="font-medium text-foreground">
                 by {
                   prompt.profiles?.username ||
                   prompt.profiles?.name || 

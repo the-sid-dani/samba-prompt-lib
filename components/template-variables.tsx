@@ -6,7 +6,7 @@ import { Badge } from '@/components/ui/badge'
 import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
 import { Copy, RotateCcw, Beaker } from 'lucide-react'
-import { toast } from '@/hooks/use-toast'
+import { useDebouncedToast } from '@/hooks/use-debounced-toast'
 import { useRouter } from 'next/navigation'
 
 interface TemplateVariable {
@@ -27,6 +27,7 @@ export function TemplateVariables({ content, promptId, className, onContentChang
   const [variableValues, setVariableValues] = useState<Record<string, string>>({})
   const [processedContent, setProcessedContent] = useState(content)
   const router = useRouter()
+  const { showToast } = useDebouncedToast()
 
   // Extract template variables from content
   useEffect(() => {
@@ -101,8 +102,16 @@ export function TemplateVariables({ content, promptId, className, onContentChang
   const handleCopyProcessed = () => {
     // Create clean content without highlight markers for copying
     let cleanContent = content
+    let hasFilledVars = false
+    
     variables.forEach(variable => {
       const value = variableValues[variable.name] || variable.defaultValue || `{{${variable.name}}}`
+      
+      // Check if this variable has been customized (not just using default)
+      if (variableValues[variable.name] && variableValues[variable.name] !== '') {
+        hasFilledVars = true
+      }
+      
       const patterns = [
         new RegExp(`\\{\\{\\s*${variable.name}\\s*\\|[^}]*\\}\\}`, 'g'),
         new RegExp(`\\{\\{\\s*${variable.name}\\s*\\}\\}`, 'g')
@@ -113,10 +122,19 @@ export function TemplateVariables({ content, promptId, className, onContentChang
     })
     
     navigator.clipboard.writeText(cleanContent)
-    toast({
-      title: "Copied!",
-      description: "Prompt with filled variables copied to clipboard",
-    })
+    
+    // Only show notification if variables were actually customized
+    if (hasFilledVars) {
+      showToast({
+        title: "Copied!",
+        description: "Customized prompt copied to clipboard",
+      })
+    } else {
+      showToast({
+        title: "Copied!",
+        description: "Prompt copied to clipboard",
+      })
+    }
   }
 
   const handleTestInPlayground = () => {

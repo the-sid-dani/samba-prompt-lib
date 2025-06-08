@@ -55,35 +55,23 @@ export default function CategoriesGrid({ categories }: CategoriesGridProps) {
       ) : (
         <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-4 gap-6">
           {filteredCategories.map((category) => (
-            <Card key={category.id} className="group hover:shadow-lg hover:shadow-black/5 transition-all duration-300 border border-border bg-card h-full">
-              <CardHeader className="pb-4 space-y-3">
-                <CardTitle className="text-lg font-bold text-foreground leading-tight min-h-[3rem] flex items-start">
-                  {category.name}
-                </CardTitle>
-                <CardDescription className="text-muted-foreground text-sm leading-relaxed line-clamp-3 min-h-[4.5rem]">
-                  {category.description || `${category.name} related prompts for various tasks and use cases.`}
-                </CardDescription>
-              </CardHeader>
-              <CardContent className="pt-0 pb-6">
-                <div className="flex items-center justify-between">
-                  <div className="text-left">
-                    <p className="text-sm font-medium text-foreground mb-1">
-                      {category.prompt_count || 0} prompts
-                    </p>
-                  </div>
-                  <Link href={`/categories/${category.id}`}>
-                    <Button 
-                      variant="ghost" 
-                      size="sm"
-                      className="text-primary hover:text-primary hover:bg-primary/10 font-medium transition-all duration-200"
-                    >
-                      View
-                      <ArrowRight className="w-4 h-4 ml-1" />
-                    </Button>
-                  </Link>
-                </div>
-              </CardContent>
-            </Card>
+            <Link key={category.id} href={`/categories/${category.id}`} className="block">
+              <Card className="group hover:shadow-lg hover:shadow-black/5 transition-all duration-300 border border-border bg-card h-full cursor-pointer">
+                <CardHeader className="pb-2 space-y-2">
+                  <CardTitle className="text-lg font-bold text-foreground leading-tight">
+                    {category.name}
+                  </CardTitle>
+                  <CardDescription className="text-muted-foreground text-sm leading-relaxed line-clamp-2">
+                    {category.description || `${category.name} related prompts for various tasks and use cases.`}
+                  </CardDescription>
+                </CardHeader>
+                <CardContent className="pt-0 pb-4">
+                  <p className="text-sm font-medium text-foreground">
+                    {category.prompt_count || 0} prompts
+                  </p>
+                </CardContent>
+              </Card>
+            </Link>
           ))}
         </div>
       )}

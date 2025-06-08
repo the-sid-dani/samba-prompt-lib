@@ -46,17 +46,22 @@ export function PromptForksDropdown({ promptId, forkCount }: PromptForksDropdown
   const [forks, setForks] = useState<Fork[]>([])
   const [isLoading, setIsLoading] = useState(false)
   const [hasLoaded, setHasLoaded] = useState(false)
+  const [error, setError] = useState<string | null>(null)
 
   useEffect(() => {
     if (isOpen && !hasLoaded && forkCount > 0) {
+      console.log('Component: Loading forks for promptId:', promptId, 'forkCount:', forkCount)
       setIsLoading(true)
+      setError(null)
       fetchPromptForks(promptId)
         .then((data) => {
+          console.log('Component: Received fork data:', data)
           setForks(data as unknown as Fork[])
           setHasLoaded(true)
         })
         .catch((error) => {
           console.error('Failed to fetch forks:', error)
+          setError('Failed to load forks')
         })
         .finally(() => {
           setIsLoading(false)
@@ -95,16 +100,7 @@ export function PromptForksDropdown({ promptId, forkCount }: PromptForksDropdown
         className="w-[320px] sm:w-[380px] max-h-[400px] overflow-y-auto"
       >
         <DropdownMenuLabel className="font-medium text-sm">
-          <div className="flex items-center justify-between">
-            <span>Forked Versions ({forkCount})</span>
-            <Link 
-              href={`/prompt/${promptId}/forks`}
-              className="text-xs text-primary hover:underline font-normal"
-              onClick={(e) => e.stopPropagation()}
-            >
-              View all
-            </Link>
-          </div>
+          Forked Versions ({forkCount})
         </DropdownMenuLabel>
         <DropdownMenuSeparator />
         
@@ -121,6 +117,10 @@ export function PromptForksDropdown({ promptId, forkCount }: PromptForksDropdown
                 </div>
               </div>
             ))}
+          </div>
+        ) : error ? (
+          <div className="p-4 text-center text-sm text-red-500">
+            {error}
           </div>
         ) : forks.length > 0 ? (
           <>

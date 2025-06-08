@@ -1,14 +1,20 @@
 "use client";
 
-import { useState, useEffect } from "react";
-import { Search, Plus, TrendingUp, Star, Heart, Eye, Copy, Sparkles, GitFork, Tag } from "lucide-react";
+import { useState, useEffect, useTransition, useCallback } from "react";
+import { Search, Plus, TrendingUp, Star, Heart, Eye, Copy, Sparkles, GitFork, Tag, Filter, CalendarDays, Users, X, ChevronDown } from "lucide-react";
 import Link from "next/link";
 import Image from "next/image";
+import { useRouter, useSearchParams } from "next/navigation";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Badge } from "@/components/ui/badge";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import { Collapsible, CollapsibleContent, CollapsibleTrigger } from "@/components/ui/collapsible";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import { Slider } from "@/components/ui/slider";
+import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
+import { Command, CommandEmpty, CommandGroup, CommandInput, CommandItem } from "@/components/ui/command";
 import Navigation from '@/components/navigation/Navigation';
 import config from "@/config";
 import { PromptCopyButton } from "@/components/prompt-copy-button";
@@ -17,95 +23,228 @@ import SignIn from "@/components/sign-in";
 import { LazyLoad } from "@/components/ui/lazy-load";
 import { useDebounce } from "@/lib/mobile-performance";
 import { ForkBadge } from "@/components/fork-badge";
+import { fetchPrompts, fetchTags } from "@/app/actions/prompts";
+import { DateRange } from "react-day-picker";
 
 interface PromptExplorerProps {
   user: any;
   prompts?: any[];
   categories?: any[];
+  initialFilters?: {
+    search?: string;
+    category?: string;
+    tags?: string[];
+    dateRange?: DateRange;
+    popularity?: [number, number];
+    author?: string;
+    sort?: string;
+  };
 }
 
-export default function PromptExplorer({ user, prompts: propsPrompts, categories: propsCategories }: PromptExplorerProps) {
-  const [selectedCategory, setSelectedCategory] = useState("all");
-  const [selectedTags, setSelectedTags] = useState<string[]>([]);
-  const [searchQuery, setSearchQuery] = useState("");
-  const [sortBy, setSortBy] = useState("popular");
+interface FilterState {
+  search: string;
+  selectedCategory: string;
+  selectedTags: string[];
+  dateRange: DateRange | undefined;
+  popularityRange: [number, number];
+  selectedAuthor: string;
+  sortBy: string;
+}
+
+export default function PromptExplorer({ 
+  user, 
+  prompts: propsPrompts, 
+  categories: propsCategories,
+  initialFilters = {}
+}: PromptExplorerProps) {
+  const router = useRouter();
+  const searchParams = useSearchParams();
+  const [isPending, startTransition] = useTransition();
   
+  // Initialize filters from URL parameters or props
+  const [filters, setFilters] = useState<FilterState>({
+    search: searchParams.get('search') || initialFilters.search || "",
+    selectedCategory: searchParams.get('category') || initialFilters.category || "all",
+    selectedTags: searchParams.getAll('tag') || initialFilters.tags || [],
+    dateRange: initialFilters.dateRange,
+    popularityRange: [0, 1000], // Default range
+    selectedAuthor: searchParams.get('author') || initialFilters.author || "",
+    sortBy: searchParams.get('sort') || initialFilters.sort || "popular"
+  });
+
   // Debounce search for better performance
-  const debouncedSearchQuery = useDebounce(searchQuery, 300);
+  const debouncedSearchQuery = useDebounce(filters.search, 300);
   
-  // Use real data from props
-  const displayPrompts = propsPrompts || [];
+  // State for data and UI
+  const [prompts, setPrompts] = useState(propsPrompts || []);
+  const [availableTags, setAvailableTags] = useState<string[]>([]);
+  const [availableAuthors, setAvailableAuthors] = useState<string[]>([]);
+  const [isFiltersOpen, setIsFiltersOpen] = useState(false);
+  const [loading, setLoading] = useState(false);
+  
   const displayCategories = propsCategories ? 
     [{ id: "all", name: "All" }, ...propsCategories.map(cat => ({ id: cat.id.toString(), name: cat.name }))] 
     : [{ id: "all", name: "All" }];
-  
-  // Extract unique tags from all prompts
-  const allTags = Array.from(
-    new Set(
-      displayPrompts
-        .flatMap(prompt => prompt.tags || [])
-        .filter((tag): tag is string => typeof tag === 'string')
-    )
-  ).sort();
-  
-  const [filteredPrompts, setFilteredPrompts] = useState(displayPrompts);
 
+  // Update URL when filters change
+  const updateURL = useCallback((newFilters: FilterState) => {
+    const params = new URLSearchParams();
+    
+    if (newFilters.search) params.set('search', newFilters.search);
+    if (newFilters.selectedCategory !== 'all') params.set('category', newFilters.selectedCategory);
+    newFilters.selectedTags.forEach(tag => params.append('tag', tag));
+    if (newFilters.selectedAuthor) params.set('author', newFilters.selectedAuthor);
+    if (newFilters.sortBy !== 'popular') params.set('sort', newFilters.sortBy);
+    
+    const newURL = params.toString() ? `?${params.toString()}` : '/';
+    router.replace(newURL, { scroll: false });
+  }, [router]);
+
+  // Fetch prompts with current filters
+  const fetchFilteredPrompts = useCallback(async (currentFilters: FilterState) => {
+    setLoading(true);
+    try {
+      const searchParams: any = {
+        page: 1,
+        limit: 50,
+        user_id: user?.id,
+      };
+
+      if (currentFilters.search) {
+        searchParams.search = currentFilters.search;
+      }
+      
+      if (currentFilters.selectedCategory !== 'all') {
+        searchParams.category_id = parseInt(currentFilters.selectedCategory);
+      }
+      
+      // Multi-tag filtering
+      if (currentFilters.selectedTags.length > 0) {
+        searchParams.tags = currentFilters.selectedTags;
+      }
+      
+      // Author filtering
+      if (currentFilters.selectedAuthor) {
+        searchParams.author = currentFilters.selectedAuthor;
+      }
+
+      // Date range filtering
+      if (currentFilters.dateRange?.from) {
+        searchParams.date_from = currentFilters.dateRange.from.toISOString().split('T')[0];
+      }
+      
+      if (currentFilters.dateRange?.to) {
+        searchParams.date_to = currentFilters.dateRange.to.toISOString().split('T')[0];
+      }
+
+      // Popularity range filtering  
+      if (currentFilters.popularityRange[0] > 0) {
+        searchParams.popularity_min = currentFilters.popularityRange[0];
+      }
+      
+      if (currentFilters.popularityRange[1] < 1000) {
+        searchParams.popularity_max = currentFilters.popularityRange[1];
+      }
+
+      // Map sort values
+      switch (currentFilters.sortBy) {
+        case 'popular':
+          searchParams.sort_by = 'uses';
+          searchParams.sort_order = 'desc';
+          break;
+        case 'trending':
+          searchParams.sort_by = 'votes';
+          searchParams.sort_order = 'desc';
+          break;
+        case 'newest':
+          searchParams.sort_by = 'created_at';
+          searchParams.sort_order = 'desc';
+          break;
+      }
+
+      const { prompts: newPrompts } = await fetchPrompts(searchParams);
+      setPrompts(newPrompts);
+    } catch (error) {
+      console.error('Error fetching filtered prompts:', error);
+    } finally {
+      setLoading(false);
+    }
+  }, [user?.id]);
+
+  // Load available tags and authors
+  useEffect(() => {
+    const loadFilterOptions = async () => {
+      try {
+        const tags = await fetchTags();
+        setAvailableTags(tags);
+        
+        // Extract unique authors from current prompts
+        const authors = Array.from(
+          new Set(
+            prompts
+              .map(p => p.profiles?.username || p.profiles?.name || p.profiles?.email?.split('@')[0])
+              .filter(Boolean)
+          )
+        ).sort();
+        setAvailableAuthors(authors);
+      } catch (error) {
+        console.error('Error loading filter options:', error);
+      }
+    };
+
+    loadFilterOptions();
+  }, [prompts]);
+
+  // Handle filter changes
+  const handleFilterChange = useCallback((newFilters: Partial<FilterState>) => {
+    const updatedFilters = { ...filters, ...newFilters };
+    setFilters(updatedFilters);
+    updateURL(updatedFilters);
+    
+    startTransition(() => {
+      fetchFilteredPrompts(updatedFilters);
+    });
+  }, [filters, updateURL, fetchFilteredPrompts]);
+
+  // Handle search
+  useEffect(() => {
+    if (debouncedSearchQuery !== filters.search) {
+      handleFilterChange({ search: debouncedSearchQuery });
+    }
+  }, [debouncedSearchQuery, filters.search, handleFilterChange]);
+
+  // Toggle tag filter
   const toggleTag = (tag: string) => {
-    setSelectedTags(prev => 
-      prev.includes(tag) 
-        ? prev.filter(t => t !== tag)
-        : [...prev, tag]
-    );
+    const newTags = filters.selectedTags.includes(tag) 
+      ? filters.selectedTags.filter(t => t !== tag)
+      : [...filters.selectedTags, tag];
+    handleFilterChange({ selectedTags: newTags });
   };
 
-  useEffect(() => {
-    let filtered = displayPrompts;
+  // Clear all filters
+  const clearAllFilters = () => {
+    const clearedFilters: FilterState = {
+      search: "",
+      selectedCategory: "all",
+      selectedTags: [],
+      dateRange: undefined,
+      popularityRange: [0, 1000],
+      selectedAuthor: "",
+      sortBy: "popular"
+    };
+    setFilters(clearedFilters);
+    router.replace('/', { scroll: false });
+    startTransition(() => {
+      fetchFilteredPrompts(clearedFilters);
+    });
+  };
 
-    // Filter by category
-    if (selectedCategory !== "all") {
-      filtered = filtered.filter(prompt => {
-        const promptCategory = prompt.category_id?.toString();
-        return promptCategory === selectedCategory;
-      });
-    }
-
-    // Filter by selected tags
-    if (selectedTags.length > 0) {
-      filtered = filtered.filter(prompt => {
-        if (!prompt.tags || !Array.isArray(prompt.tags)) return false;
-        return selectedTags.some(tag => prompt.tags.includes(tag));
-      });
-    }
-
-    // Filter by search query (use debounced value)
-    if (debouncedSearchQuery) {
-      filtered = filtered.filter(prompt => 
-        prompt.title.toLowerCase().includes(debouncedSearchQuery.toLowerCase()) ||
-        prompt.description.toLowerCase().includes(debouncedSearchQuery.toLowerCase()) ||
-        (prompt.tags && Array.isArray(prompt.tags) && 
-         prompt.tags.some((tag: string) => tag.toLowerCase().includes(debouncedSearchQuery.toLowerCase())))
-      );
-    }
-
-    // Sort prompts
-    switch (sortBy) {
-      case "popular":
-        filtered.sort((a, b) => (b.uses || 0) - (a.uses || 0));
-        break;
-      case "trending":
-        filtered.sort((a, b) => (b.upvotes || 0) - (a.upvotes || 0));
-        break;
-      case "newest":
-        filtered.sort((a, b) => {
-          const dateA = new Date(a.created_at || 0).getTime();
-          const dateB = new Date(b.created_at || 0).getTime();
-          return dateB - dateA;
-        });
-        break;
-    }
-
-    setFilteredPrompts(filtered);
-  }, [selectedCategory, selectedTags, debouncedSearchQuery, sortBy, displayPrompts]);
+  // Check if any filters are active
+  const hasActiveFilters = filters.search || 
+    filters.selectedCategory !== 'all' || 
+    filters.selectedTags.length > 0 || 
+    filters.selectedAuthor ||
+    filters.dateRange;
 
   return (
     <div className="min-h-screen bg-background">
@@ -132,8 +271,8 @@ export default function PromptExplorer({ user, prompts: propsPrompts, categories
               type="text"
               placeholder="Search by title, description, category or prompt text..."
               className="pl-[70px] sm:pl-[62px] md:pl-[62px] pr-4 py-3 sm:py-4 md:py-6 text-[11px] sm:text-xs md:text-sm rounded-full border-2 border-border focus:border-primary bg-background text-foreground"
-              value={searchQuery}
-              onChange={(e) => setSearchQuery(e.target.value)}
+              value={filters.search}
+              onChange={(e) => setFilters(prev => ({ ...prev, search: e.target.value }))}
             />
           </div>
         </div>
@@ -142,53 +281,193 @@ export default function PromptExplorer({ user, prompts: propsPrompts, categories
       {/* Main Content */}
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-4 sm:py-6 md:py-8">
         <div className="w-full">
-          {/* Category Filter */}
-          <div className="mb-4 sm:mb-6">
-            <h3 className="text-xs sm:text-sm font-medium text-foreground mb-2 sm:mb-3">Filter by category</h3>
-            <div className="flex gap-1.5 sm:gap-2 overflow-x-auto pb-2 scrollbar-hide -mx-4 px-4 sm:mx-0 sm:px-0">
-              {displayCategories.map((category) => (
-                <button
-                  key={category.id}
-                  onClick={() => setSelectedCategory(category.id)}
-                  className={`px-3 sm:px-4 py-1.5 sm:py-2 rounded-full text-xs sm:text-sm font-medium whitespace-nowrap transition-colors ${
-                    selectedCategory === category.id
-                      ? "bg-primary text-primary-foreground"
-                      : "bg-muted text-muted-foreground hover:bg-muted/80"
-                  }`}
-                >
-                  {category.name}
-                </button>
-              ))}
-            </div>
+          {/* Advanced Filters Collapsible */}
+          <div className="mb-6">
+            <Collapsible open={isFiltersOpen} onOpenChange={setIsFiltersOpen}>
+              <div className="flex items-center justify-between mb-4">
+                <CollapsibleTrigger asChild>
+                  <Button variant="outline" className="flex items-center gap-2">
+                    <Filter className="w-4 h-4" />
+                    Advanced Filters
+                    <ChevronDown className={`w-4 h-4 transition-transform ${isFiltersOpen ? 'rotate-180' : ''}`} />
+                  </Button>
+                </CollapsibleTrigger>
+                
+                {hasActiveFilters && (
+                  <Button 
+                    variant="ghost" 
+                    size="sm" 
+                    onClick={clearAllFilters}
+                    className="text-primary hover:text-primary/80"
+                  >
+                    <X className="w-4 h-4 mr-2" />
+                    Clear All Filters
+                  </Button>
+                )}
+              </div>
+
+              <CollapsibleContent className="space-y-4 p-4 border rounded-lg bg-card">
+                {/* Category Filter */}
+                <div>
+                  <h3 className="text-sm font-medium text-foreground mb-2">Category</h3>
+                  <div className="flex gap-2 overflow-x-auto pb-2">
+                    {displayCategories.map((category) => (
+                      <button
+                        key={category.id}
+                        onClick={() => handleFilterChange({ selectedCategory: category.id })}
+                        className={`px-3 py-1.5 rounded-full text-xs font-medium whitespace-nowrap transition-colors ${
+                          filters.selectedCategory === category.id
+                            ? "bg-primary text-primary-foreground"
+                            : "bg-muted text-muted-foreground hover:bg-muted/80"
+                        }`}
+                      >
+                        {category.name}
+                      </button>
+                    ))}
+                  </div>
+                </div>
+
+                {/* Tag Filter */}
+                {availableTags.length > 0 && (
+                  <div>
+                    <h3 className="text-sm font-medium text-foreground mb-2">Tags</h3>
+                    <div className="flex flex-wrap gap-2">
+                      {availableTags.slice(0, 20).map((tag) => (
+                        <button
+                          key={tag}
+                          onClick={() => toggleTag(tag)}
+                          className={`px-3 py-1.5 rounded-full text-xs font-medium whitespace-nowrap transition-colors flex items-center gap-1 ${
+                            filters.selectedTags.includes(tag)
+                              ? "bg-primary text-primary-foreground"
+                              : "bg-muted text-muted-foreground hover:bg-muted/80"
+                          }`}
+                        >
+                          <Tag className="w-3 h-3" />
+                          {tag}
+                        </button>
+                      ))}
+                    </div>
+                  </div>
+                )}
+
+                {/* Author Filter */}
+                <div>
+                  <h3 className="text-sm font-medium text-foreground mb-2">Author</h3>
+                  <Popover>
+                    <PopoverTrigger asChild>
+                      <Button variant="outline" className="w-full sm:w-64 justify-start">
+                        <Users className="w-4 h-4 mr-2" />
+                        {filters.selectedAuthor || "Any author"}
+                      </Button>
+                    </PopoverTrigger>
+                    <PopoverContent className="w-64 p-0">
+                      <Command>
+                        <CommandInput placeholder="Search authors..." />
+                        <CommandEmpty>No authors found.</CommandEmpty>
+                        <CommandGroup>
+                          <CommandItem
+                            onSelect={() => handleFilterChange({ selectedAuthor: "" })}
+                          >
+                            Any author
+                          </CommandItem>
+                          {availableAuthors.map((author) => (
+                            <CommandItem
+                              key={author}
+                              onSelect={() => handleFilterChange({ selectedAuthor: author })}
+                            >
+                              {author}
+                            </CommandItem>
+                          ))}
+                        </CommandGroup>
+                      </Command>
+                    </PopoverContent>
+                  </Popover>
+                </div>
+
+                {/* Date Range Filter */}
+                <div>
+                  <h3 className="text-sm font-medium text-foreground mb-2">Date Range</h3>
+                  <div className="flex gap-2 items-center">
+                    <Input
+                      type="date"
+                      value={filters.dateRange?.from ? filters.dateRange.from.toISOString().split('T')[0] : ''}
+                      onChange={(e) => {
+                        const fromDate = e.target.value ? new Date(e.target.value) : undefined;
+                        handleFilterChange({ 
+                          dateRange: fromDate ? { from: fromDate, to: filters.dateRange?.to } : undefined 
+                        });
+                      }}
+                      className="w-32"
+                      placeholder="From"
+                    />
+                    <span className="text-muted-foreground">to</span>
+                    <Input
+                      type="date"
+                      value={filters.dateRange?.to ? filters.dateRange.to.toISOString().split('T')[0] : ''}
+                      onChange={(e) => {
+                        const toDate = e.target.value ? new Date(e.target.value) : undefined;
+                        handleFilterChange({ 
+                          dateRange: filters.dateRange?.from ? { from: filters.dateRange.from, to: toDate } : undefined 
+                        });
+                      }}
+                      className="w-32"
+                      placeholder="To"
+                    />
+                  </div>
+                </div>
+
+                {/* Popularity Range Filter */}
+                <div>
+                  <h3 className="text-sm font-medium text-foreground mb-2">
+                    Popularity (Uses: {filters.popularityRange[0]} - {filters.popularityRange[1]})
+                  </h3>
+                  <Slider
+                    value={filters.popularityRange}
+                    onValueChange={(value) => handleFilterChange({ popularityRange: value as [number, number] })}
+                    max={1000}
+                    min={0}
+                    step={10}
+                    className="w-full sm:w-64"
+                  />
+                </div>
+              </CollapsibleContent>
+            </Collapsible>
           </div>
 
-          {/* Tag Filter */}
-          {allTags.length > 0 && (
-            <div className="mb-4 sm:mb-6">
-              <h3 className="text-xs sm:text-sm font-medium text-foreground mb-2 sm:mb-3">Filter by tags</h3>
-              <div className="flex flex-wrap gap-1.5 sm:gap-2">
-                {allTags.map((tag) => (
-                  <button
-                    key={tag}
-                    onClick={() => toggleTag(tag)}
-                    className={`px-3 sm:px-4 py-1.5 sm:py-2 rounded-full text-xs sm:text-sm font-medium whitespace-nowrap transition-colors flex items-center gap-1 ${
-                      selectedTags.includes(tag)
-                        ? "bg-primary text-primary-foreground"
-                        : "bg-muted text-muted-foreground hover:bg-muted/80"
-                    }`}
-                  >
-                    <Tag className="w-3 h-3" />
-                    {tag}
+          {/* Active Filters Display */}
+          {hasActiveFilters && (
+            <div className="mb-4 flex flex-wrap gap-2">
+              {filters.search && (
+                <Badge variant="secondary" className="flex items-center gap-1">
+                  Search: "{filters.search}"
+                  <button onClick={() => handleFilterChange({ search: "" })} className="ml-1">
+                    <X className="w-3 h-3" />
                   </button>
-                ))}
-              </div>
-              {selectedTags.length > 0 && (
-                <button
-                  onClick={() => setSelectedTags([])}
-                  className="mt-2 text-xs sm:text-sm text-primary hover:underline"
-                >
-                  Clear selected tags ({selectedTags.length})
-                </button>
+                </Badge>
+              )}
+              {filters.selectedCategory !== 'all' && (
+                <Badge variant="secondary" className="flex items-center gap-1">
+                  Category: {displayCategories.find(c => c.id === filters.selectedCategory)?.name}
+                  <button onClick={() => handleFilterChange({ selectedCategory: "all" })} className="ml-1">
+                    <X className="w-3 h-3" />
+                  </button>
+                </Badge>
+              )}
+              {filters.selectedTags.map(tag => (
+                <Badge key={tag} variant="secondary" className="flex items-center gap-1">
+                  Tag: {tag}
+                  <button onClick={() => toggleTag(tag)} className="ml-1">
+                    <X className="w-3 h-3" />
+                  </button>
+                </Badge>
+              ))}
+              {filters.selectedAuthor && (
+                <Badge variant="secondary" className="flex items-center gap-1">
+                  Author: {filters.selectedAuthor}
+                  <button onClick={() => handleFilterChange({ selectedAuthor: "" })} className="ml-1">
+                    <X className="w-3 h-3" />
+                  </button>
+                </Badge>
               )}
             </div>
           )}
@@ -197,7 +476,7 @@ export default function PromptExplorer({ user, prompts: propsPrompts, categories
           <div className="flex flex-col sm:flex-row gap-3 sm:gap-4 mb-4 sm:mb-6">
             <div className="flex flex-1 items-center gap-2 sm:gap-4 overflow-x-auto">
               {/* Sort Tabs */}
-              <Tabs value={sortBy} onValueChange={setSortBy} className="w-full sm:w-auto">
+              <Tabs value={filters.sortBy} onValueChange={(value) => handleFilterChange({ sortBy: value })} className="w-full sm:w-auto">
                 <TabsList className="w-full sm:w-auto grid grid-cols-3 sm:flex">
                   <TabsTrigger value="popular" className="text-xs sm:text-sm">Popular</TabsTrigger>
                   <TabsTrigger value="trending" className="text-xs sm:text-sm">Trending</TabsTrigger>
@@ -206,20 +485,21 @@ export default function PromptExplorer({ user, prompts: propsPrompts, categories
               </Tabs>
             </div>
 
-            <div className="text-xs sm:text-sm text-muted-foreground text-center sm:text-right">
-              Showing {filteredPrompts.length} prompts
+            <div className="text-xs sm:text-sm text-muted-foreground text-center sm:text-right flex items-center gap-2">
+              {loading && <div className="w-4 h-4 border-2 border-primary border-t-transparent rounded-full animate-spin" />}
+              Showing {prompts.length} prompts
             </div>
           </div>
 
           {/* Featured Section */}
-          {selectedCategory === "all" && selectedTags.length === 0 && filteredPrompts.some(p => p.featured) && (
+          {filters.selectedCategory === "all" && filters.selectedTags.length === 0 && prompts.some(p => p.featured) && (
             <div className="mb-8">
               <h2 className="text-2xl font-bold text-foreground mb-4 flex items-center gap-2">
                 <Star className="w-6 h-6 text-yellow-500" />
                 Featured Prompts
               </h2>
               <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                {filteredPrompts
+                {prompts
                   .filter(p => p.featured)
                   .slice(0, 2)
                   .map((prompt) => (
@@ -231,8 +511,8 @@ export default function PromptExplorer({ user, prompts: propsPrompts, categories
 
           {/* Prompt Grid */}
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-            {filteredPrompts
-              .filter(p => !p.featured || selectedCategory !== "all" || selectedTags.length > 0)
+            {prompts
+              .filter(p => !p.featured || filters.selectedCategory !== "all" || filters.selectedTags.length > 0)
               .map((prompt) => (
                 <LazyLoad key={prompt.id} threshold={0.1}>
                   <PromptCard prompt={prompt} user={user} />
@@ -241,15 +521,11 @@ export default function PromptExplorer({ user, prompts: propsPrompts, categories
           </div>
 
           {/* Empty State */}
-          {filteredPrompts.length === 0 && (
+          {prompts.length === 0 && !loading && (
             <div className="text-center py-12">
               <p className="text-muted-foreground mb-4">No prompts found matching your criteria.</p>
-              <Button variant="outline" onClick={() => {
-                setSearchQuery("");
-                setSelectedCategory("all");
-                setSelectedTags([]);
-              }}>
-                Clear filters
+              <Button variant="outline" onClick={clearAllFilters}>
+                Clear all filters
               </Button>
             </div>
           )}

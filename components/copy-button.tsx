@@ -3,7 +3,7 @@
 import { useState } from 'react'
 import { Button } from '@/components/ui/button'
 import { Copy, Check, Loader2 } from 'lucide-react'
-import { useToast } from '@/hooks/use-toast'
+import { useDebouncedToast } from '@/hooks/use-debounced-toast'
 import { cn } from '@/lib/utils'
 
 interface CopyButtonProps {
@@ -27,7 +27,7 @@ export function CopyButton({
 }: CopyButtonProps) {
   const [isCopied, setIsCopied] = useState(false)
   const [isLoading, setIsLoading] = useState(false)
-  const { toast } = useToast()
+  const { showToast } = useDebouncedToast()
   
   // Debug log
   console.log('CopyButton render - text length:', text?.length || 0)
@@ -35,10 +35,15 @@ export function CopyButton({
   const hasContent = text && text.length > 0
   
   const handleCopy = async () => {
+    // Prevent rapid duplicate clicks
+    if (isCopied || isLoading) {
+      return
+    }
+    
     // Validate text is provided
     if (!hasContent) {
       console.error('No text provided to copy')
-      toast({
+      showToast({
         title: 'Error',
         description: 'No content available to copy',
         variant: 'destructive',
@@ -79,9 +84,11 @@ export function CopyButton({
       }
       
       setIsCopied(true)
-      toast({
+      
+      // Show a more concise notification
+      showToast({
         title: 'Copied!',
-        description: 'Prompt copied to clipboard',
+        description: 'Content copied to clipboard',
       })
       
       // Reset icon after 2 seconds
@@ -90,7 +97,7 @@ export function CopyButton({
       }, 2000)
     } catch (err) {
       console.error('Failed to copy to clipboard:', err)
-      toast({
+      showToast({
         title: 'Error',
         description: 'Failed to copy to clipboard',
         variant: 'destructive',

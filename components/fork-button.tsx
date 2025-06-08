@@ -26,7 +26,7 @@ export function ForkButton({
   promptContent,
   categoryId,
   tags,
-  variant = 'outline',
+  variant = 'default',
   size = 'default',
   className,
   showLabel = true,
@@ -56,7 +56,7 @@ export function ForkButton({
     <Button
       variant={variant}
       size={size}
-      className={className}
+      className={`${className || ''} ${variant === 'default' ? 'bg-red-600 hover:bg-red-700 text-white border-red-600 hover:border-red-700' : ''} font-medium shadow-sm`}
       onClick={handleFork}
       disabled={isLoading}
     >

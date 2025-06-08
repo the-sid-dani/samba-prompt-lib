@@ -97,8 +97,14 @@ const fetchPromptsSchema = z.object({
   search: z.string().optional(),
   category_id: z.number().int().positive().optional(),
   tag: z.string().optional(),
+  tags: z.array(z.string()).optional(),
   featured: z.boolean().optional(),
   user_id: z.string().optional(),
+  author: z.string().optional(),
+  date_from: z.string().optional(),
+  date_to: z.string().optional(),
+  popularity_min: z.number().int().min(0).optional(),
+  popularity_max: z.number().int().optional(),
   sort_by: z.enum(['created_at', 'updated_at', 'votes', 'uses', 'title']).default('created_at'),
   sort_order: z.enum(['asc', 'desc']).default('desc'),
 })
@@ -331,12 +337,35 @@ export async function fetchPrompts(input?: Partial<z.infer<typeof fetchPromptsSc
           query = query.contains('tags', [params.tag])
         }
         
+        // Multi-tag filtering (all tags must be present)
+        if (params.tags && params.tags.length > 0) {
+          query = query.contains('tags', params.tags)
+        }
+        
         if (params.featured !== undefined) {
           query = query.eq('featured', params.featured)
         }
         
         if (params.user_id) {
           query = query.eq('user_id', params.user_id)
+        }
+        
+        // Date range filtering
+        if (params.date_from) {
+          query = query.gte('created_at', params.date_from)
+        }
+        
+        if (params.date_to) {
+          query = query.lte('created_at', params.date_to)
+        }
+        
+        // Popularity range filtering
+        if (params.popularity_min !== undefined) {
+          query = query.gte('uses', params.popularity_min)
+        }
+        
+        if (params.popularity_max !== undefined) {
+          query = query.lte('uses', params.popularity_max)
         }
         
         // Apply sorting
@@ -403,16 +432,28 @@ export async function fetchPrompts(input?: Partial<z.infer<typeof fetchPromptsSc
             }
           })
           
+          // Apply author filtering after enrichment
+          let filteredPrompts = enrichedPrompts;
+          if (params.author) {
+            filteredPrompts = enrichedPrompts.filter(prompt => {
+              const profile = prompt.profiles;
+              if (!profile) return false;
+              
+              const authorName = profile.username || profile.name || profile.email?.split('@')[0] || '';
+              return authorName.toLowerCase().includes(params.author!.toLowerCase());
+            });
+          }
+          
           const totalPages = Math.ceil((count || 0) / params.limit)
           
           return {
-            prompts: enrichedPrompts as PromptWithCategory[],
+            prompts: filteredPrompts as PromptWithCategory[],
             pagination: {
               page: params.page,
               limit: params.limit,
-              total: count || 0,
-              totalPages,
-              hasMore: params.page < totalPages,
+              total: filteredPrompts.length, // Update total to reflect filtered count
+              totalPages: Math.ceil(filteredPrompts.length / params.limit),
+              hasMore: params.page < Math.ceil(filteredPrompts.length / params.limit),
             },
           }
         }
@@ -1739,39 +1780,80 @@ export async function fetchPromptForks(promptId: number) {
   try {
     const supabase = createSupabaseAdminClient();
     
-    // Get all forks of this prompt with their details
-    const { data: forks, error } = await supabase
+    console.log('Fetching forks for promptId:', promptId);
+    
+    // First, let's get the fork relationships
+    const { data: forkRelations, error: forkError } = await supabase
       .from('prompt_forks')
-      .select(`
-        id,
-        created_at,
-        forked_prompt:forked_prompt_id (
-          id,
-          title,
-          description,
-          uses,
-          votes,
-          created_at,
-          profiles:user_id (
-            id,
-            username,
-            name,
-            email,
-            avatar_url
-          )
-        )
-      `)
-      .eq('original_prompt_id', promptId)
-      .order('created_at', { ascending: false });
+      .select('*')
+      .eq('original_prompt_id', promptId);
 
-    if (error) {
-      console.error('Error fetching prompt forks:', error);
-      throw error;
+    console.log('Fork relations:', forkRelations, 'Error:', forkError);
+
+    if (forkError) {
+      throw new Error(`Failed to fetch fork relations: ${forkError.message}`);
     }
 
-    return forks || [];
+    if (!forkRelations || forkRelations.length === 0) {
+      console.log('No fork relations found');
+      return [];
+    }
+
+    // Now get the actual forked prompts with their details
+    const forkedPromptIds = forkRelations.map(rel => rel.forked_prompt_id);
+    console.log('Forked prompt IDs:', forkedPromptIds);
+    
+    const { data: forkedPrompts, error: promptError } = await supabase
+      .from('prompt')
+      .select(`
+        id,
+        title,
+        description,
+        uses,
+        votes,
+        created_at,
+        user_id
+      `)
+      .in('id', forkedPromptIds);
+
+    console.log('Forked prompts:', forkedPrompts, 'Error:', promptError);
+
+    if (promptError) {
+      throw new Error(`Failed to fetch forked prompts: ${promptError.message}`);
+    }
+
+    // Get profiles separately to avoid join issues
+    const userIds = (forkedPrompts || []).map(p => p.user_id).filter(Boolean);
+    const { data: profiles } = await supabase
+      .from('profiles')
+      .select('id, username, name, email, avatar_url')
+      .in('id', userIds);
+
+    console.log('Profiles:', profiles);
+
+    // Combine the data and format it
+    const forks = (forkedPrompts || []).map(prompt => {
+      const forkRelation = forkRelations.find(rel => rel.forked_prompt_id === prompt.id);
+      const profile = profiles?.find(p => p.id === prompt.user_id);
+      
+      return {
+        id: forkRelation?.id || prompt.id,
+        created_at: forkRelation?.created_at || prompt.created_at,
+        forked_prompt: {
+          ...prompt,
+          profiles: profile
+        }
+      };
+    });
+
+    console.log('Final forks data:', forks);
+
+    // Sort by creation date
+    forks.sort((a, b) => new Date(b.created_at).getTime() - new Date(a.created_at).getTime());
+
+    return forks;
   } catch (error) {
     console.error('Error in fetchPromptForks:', error);
-    throw error;
+    return []; // Return empty array instead of throwing to prevent client crashes
   }
 } 

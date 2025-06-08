@@ -40,7 +40,7 @@ export default function UserMenu() {
 						</AvatarFallback>
 					</Avatar>
 					<span className="hidden md:flex items-center space-x-1">
-						<span className="text-sm font-medium text-gray-700">
+						<span className="text-sm font-medium text-foreground">
 							{user.name || user.email}
 						</span>
 					</span>

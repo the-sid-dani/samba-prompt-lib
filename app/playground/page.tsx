@@ -26,9 +26,13 @@ import {
   Bot,
   X,
   Search,
-  Cpu
+  Cpu,
+  Info,
+  SlidersHorizontal
 } from 'lucide-react';
 import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from '@/components/ui/accordion';
+import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip';
+import { ScrollArea } from '@/components/ui/scroll-area';
 import { useToast } from '@/hooks/use-toast';
 import { useSession } from 'next-auth/react';
 import { useRouter, useSearchParams } from 'next/navigation';
@@ -60,14 +64,16 @@ export default function PlaygroundPage() {
   const [messages, setMessages] = useState<Message[]>([]);
   const [inputText, setInputText] = useState('');
   const [systemPrompt, setSystemPrompt] = useState('You are a helpful assistant.');
-  const [selectedModel, setSelectedModel] = useState<string>('claude-3-5-sonnet-20241022');
+  const [selectedModel, setSelectedModel] = useState<string>('claude-3-7-sonnet-20250219');
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
   const [variables, setVariables] = useState<Record<string, string>>({});
   const [temperature, setTemperature] = useState(0.7);
   const [maxTokens, setMaxTokens] = useState(1000);
+  const [topP, setTopP] = useState(1.0);
+  const [frequencyPenalty, setFrequencyPenalty] = useState(0);
+  const [presencePenalty, setPresencePenalty] = useState(0);
   const [estimatedTokens, setEstimatedTokens] = useState(0);
-  const [webSearchEnabled, setWebSearchEnabled] = useState(false);
   const [showModelPreferences, setShowModelPreferences] = useState(false);
   const [variablesFilled, setVariablesFilled] = useState(false);
 
@@ -212,7 +218,7 @@ export default function PlaygroundPage() {
         
         // Put processed content in system prompt field, clear main input
         setInputText('')
-        setSystemPrompt(processedContent)
+        setSystemPrompt(processedContent) // Keep HTML markup for styling
         setVariables({})
         setVariablesFilled(true)
         
@@ -257,7 +263,7 @@ export default function PlaygroundPage() {
       
       // Put content in system prompt field, clear main input
       setInputText(''); // Clear the main input field
-      setSystemPrompt(prompt.content); // Put prompt content in system prompt field
+      setSystemPrompt(prompt.content); // Keep HTML markup for styling filled variables
       if (prompt.model) setSelectedModel(prompt.model);
       
       // Don't extract template variables when loading from playground
@@ -281,25 +287,55 @@ export default function PlaygroundPage() {
 
   // Extract template variables from prompt text
   const extractTemplateVariables = (text: string): string[] => {
-    const regex = /\{\{([^}]+)\}\}/g;
-    const matches = text.match(regex);
-    if (!matches) return [];
+    // Extract standard {{variable}} format
+    const standardRegex = /\{\{([^}]+)\}\}/g;
+    const standardMatches = text.match(standardRegex) || [];
+    const standardVars = standardMatches.map(match => match.slice(2, -2).trim());
     
-    return [...new Set(matches.map(match => match.slice(2, -2).trim()))];
+    // Extract markdown list format: - `VARIABLE`: Description (e.g., "example") or (default: "example")
+    const mdListRegex = /-\s*`([A-Z_]+)`:\s*[^\n]*\((e\.g\.,|default:)\s*["'][^"']*["']\)/g;
+    const mdListMatches = [...text.matchAll(mdListRegex)];
+    const mdListVars = mdListMatches.map(match => match[1]);
+    
+    return [...new Set([...standardVars, ...mdListVars])];
   };
 
   // Handle template variable changes
   const handleVariableChange = useCallback((varName: string, value: string) => {
     console.log('[Playground] Variable changed:', varName, value);
     setVariables(prev => ({ ...prev, [varName]: value }));
+    
+    // Update system prompt display with filled variables
+    setSystemPrompt(prev => {
+      let updated = prev;
+      if (value.trim()) {
+        // Replace standard variable format {{KEY}}
+        const regex = new RegExp(`\\{\\{\\s*${varName}\\s*\\}\\}`, 'g');
+        updated = updated.replace(regex, `<mark class="filled-variable">${value}</mark>`);
+        
+        // Replace markdown list format: - `KEY`: Description (e.g., "example") or (default: "example")
+        const mdListRegex = new RegExp(`-\\s*\`${varName}\`:\\s*[^\\n]*\\((e\\.g\\.,|default:)\\s*["'][^"']*["']\\)`, 'g');
+        updated = updated.replace(mdListRegex, `<mark class="filled-variable">${value}</mark>`);
+      } else {
+        // Restore original variable placeholder if value is empty
+        const regex = new RegExp(`<mark class="filled-variable">.*?</mark>`, 'g');
+        updated = updated.replace(regex, `{{${varName}}}`);
+      }
+      return updated;
+    });
   }, []);
 
   // Process prompt with variables
   const processPromptWithVariables = (text: string): string => {
     let processed = text;
     Object.entries(variables).forEach(([key, value]) => {
+      // Replace standard variable format {{KEY}}
       const regex = new RegExp(`\\{\\{\\s*${key}\\s*\\}\\}`, 'g');
       processed = processed.replace(regex, value);
+      
+      // Replace markdown list format: - `KEY`: Description (e.g., "example") or (default: "example")
+      const mdListRegex = new RegExp(`-\\s*\`${key}\`:\\s*[^\\n]*\\((e\\.g\\.,|default:)\\s*["'][^"']*["']\\)`, 'g');
+      processed = processed.replace(mdListRegex, value);
     });
     return processed;
   };
@@ -338,7 +374,8 @@ export default function PlaygroundPage() {
 
     try {
       const processedPrompt = processPromptWithVariables(inputText);
-      const processedSystemPrompt = processPromptWithVariables(systemPrompt);
+      const cleanSystemPrompt = systemPrompt.replace(/<[^>]*>/g, ''); // Strip HTML tags
+      const processedSystemPrompt = processPromptWithVariables(cleanSystemPrompt);
       
       const response = await fetch('/api/playground/generate', {
         method: 'POST',
@@ -352,9 +389,9 @@ export default function PlaygroundPage() {
           parameters: {
             temperature,
             maxTokens,
-            topP: 1.0,
-            frequencyPenalty: 0,
-            presencePenalty: 0,
+            topP,
+            frequencyPenalty,
+            presencePenalty,
           },
         }),
       });
@@ -457,7 +494,9 @@ export default function PlaygroundPage() {
   const openSaveModal = () => {
     setSavePromptTitle('');
     setSavePromptDescription('');
-    setSavePromptContent(systemPrompt);
+    // Strip HTML tags when saving content but keep text content
+    const cleanContent = systemPrompt.replace(/<[^>]*>/g, '');
+    setSavePromptContent(cleanContent);
     setSavePromptCategory('General');
     setSavePromptTags([]);
     setTagInput('');
@@ -538,19 +577,23 @@ export default function PlaygroundPage() {
     }
   };
 
-  const templateVars = extractTemplateVariables(inputText);
+  // Extract template variables from both input text and system prompt
+  const inputVars = extractTemplateVariables(inputText);
+  const systemVars = extractTemplateVariables(systemPrompt.replace(/<[^>]*>/g, '')); // Strip HTML tags first
+  const templateVars = [...new Set([...inputVars, ...systemVars])];
 
   return (
     <div className="min-h-screen bg-background">
       <Navigation />
       
-      <div className="flex h-[calc(100vh-64px)]">
-        {/* Left Panel - Conversation */}
-        <div className="w-2/3 flex flex-col bg-background p-4">
-          <div className="flex-1 flex flex-col bg-card border border-border rounded-lg shadow-sm">
+      <div className="container mx-auto px-4 py-8">
+        <div className="flex min-h-[calc(100vh-12rem)] bg-card rounded-xl overflow-hidden shadow-2xl shadow-black/10 dark:shadow-black/50">
+          {/* Left Panel - Conversation */}
+          <div className="w-3/5 flex flex-col bg-card">
+                      <div className="flex-1 flex flex-col">
             {/* Header */}
-            <div className="border-b border-border bg-card rounded-t-lg">
-              <div className="px-6 py-4">
+            <div className="border-b border-border">
+              <div className="p-6">
                 <div className="flex items-center justify-between">
                   <div className="flex items-center gap-3">
                     <MessageSquare className="h-5 w-5 text-muted-foreground" />
@@ -560,6 +603,12 @@ export default function PlaygroundPage() {
                     </Badge>
                   </div>
                   <div className="flex items-center gap-2">
+                    {messages.length > 0 && (
+                      <Button variant="outline" size="sm" onClick={clearConversation}>
+                        <RotateCcw className="h-4 w-4 mr-2" />
+                        Clear
+                      </Button>
+                    )}
                     <Button variant="outline" size="sm" onClick={exportConversation}>
                       <Download className="h-4 w-4 mr-2" />
                       Export
@@ -618,7 +667,7 @@ export default function PlaygroundPage() {
                                 className={`absolute top-1 right-1 h-6 w-6 p-0 opacity-0 group-hover:opacity-100 transition-opacity ${
                                   message.role === 'user' 
                                     ? 'text-red-200 hover:text-white hover:bg-white hover:bg-opacity-20' 
-                                    : 'text-slate-500 hover:text-slate-700 hover:bg-slate-100'
+                                    : 'text-muted-foreground hover:text-foreground hover:bg-muted'
                                 }`}
                               >
                                 <Copy className="h-3 w-3" />
@@ -658,116 +707,101 @@ export default function PlaygroundPage() {
                 </div>
               )}
 
-              {/* Template Variables */}
-              {templateVars.length > 0 && (
-                <div className="border-t border-border bg-muted/30">
-                  <div className="px-6 py-4">
-                    <Label className="text-sm font-medium mb-3 block">Template Variables</Label>
-                    <div className="space-y-3">
-                      {templateVars.map((varName) => (
-                        <div key={varName} className="space-y-1">
-                          <Label htmlFor={varName} className="text-sm">
-                            {varName}
-                          </Label>
-                          <Input
-                            id={varName}
-                            value={variables[varName] || ''}
-                            onChange={(e) => handleVariableChange(varName, e.target.value)}
-                            placeholder={`Enter ${varName}...`}
-                            className="text-sm"
-                          />
-                        </div>
-                      ))}
-                    </div>
-                  </div>
-                </div>
-              )}
+
 
               {/* Input Area */}
-              <div className="border-t border-border bg-card rounded-b-lg">
-                <div className="px-6 py-4">
-                  <div className="flex gap-3 items-end">
+              <div className="border-t border-border bg-card">
+                <div className="p-6">
+                  <div className="relative">
                     <Textarea
                       value={inputText}
                       onChange={(e) => setInputText(e.target.value)}
                       onKeyDown={handleKeyPress}
-                      placeholder="Type your message... (Shift + Enter for new line)"
-                      className="flex-1 min-h-[60px] max-h-[120px] resize-none border-border focus:border-red-500 focus:ring-red-500 bg-background text-foreground"
+                      placeholder="Type your message..."
+                      className="pr-16 min-h-[60px] resize-none rounded-lg border-border focus:border-red-500 focus:ring-red-500 bg-background text-foreground"
+                      rows={2}
                     />
-                    <div className="flex gap-2">
-                      {messages.length > 0 && (
-                        <Button
-                          onClick={clearConversation}
-                          variant="outline"
-                          size="lg"
-                          className="px-4 border-border hover:bg-muted"
-                        >
-                          <RotateCcw className="h-4 w-4" />
-                        </Button>
-                      )}
-                                          <Button
+                    <Button
                       onClick={(e) => {
                         e.preventDefault();
                         e.stopPropagation();
                         handleSendMessage();
                       }}
                       disabled={loading || !inputText.trim()}
-                      size="lg"
-                      className="bg-red-600 hover:bg-red-700 text-white px-4 shadow-sm"
+                      size="icon"
+                      className="absolute right-3 top-1/2 -translate-y-1/2 bg-red-600 hover:bg-red-700 text-white rounded-lg h-10 w-10 transition-transform active:scale-95"
                       type="button"
                     >
-                        {loading ? (
-                          <Loader2 className="h-4 w-4 animate-spin" />
-                        ) : (
-                          <Send className="h-4 w-4" />
-                        )}
-                      </Button>
-                    </div>
+                      {loading ? (
+                        <Loader2 className="h-5 w-5 animate-spin" />
+                      ) : (
+                        <Send className="h-5 w-5" />
+                      )}
+                    </Button>
                   </div>
-                  <div className="flex items-center justify-between mt-3">
-                    <p className="text-xs text-muted-foreground">
-                      Press <kbd className="px-1 py-0.5 bg-muted rounded text-xs">Enter</kbd> to send, <kbd className="px-1 py-0.5 bg-muted rounded text-xs">Shift + Enter</kbd> for new line
-                    </p>
-                    {messages.length > 0 && (
-                      <span className="text-xs text-muted-foreground">
-                        {messages.length} message{messages.length !== 1 ? 's' : ''}
-                      </span>
-                    )}
-                  </div>
+                  <p className="text-xs text-muted-foreground mt-2 text-center">
+                    Press Enter to send, Shift + Enter for new line.
+                  </p>
                 </div>
               </div>
             </div>
           </div>
         </div>
 
-        {/* Right Panel - Settings */}
-        <div className="w-1/3 bg-background overflow-y-auto">
-          <div className="p-6">
-            <Accordion type="multiple" defaultValue={["system-prompt", "model-settings"]} className="w-full space-y-3">
+                    {/* Right Panel - Settings */}
+          <div className="w-2/5 bg-muted/30 border-l border-border">
+            <TooltipProvider>
+              <ScrollArea className="h-full">
+                <div className="p-6 space-y-6">
+                  <Accordion type="multiple" defaultValue={["system-prompt", "model-settings"]} className="w-full space-y-6">
               <AccordionItem value="system-prompt" className="border border-border rounded-lg bg-card shadow-sm">
                 <AccordionTrigger className="px-5 py-4 hover:no-underline hover:bg-muted/50 rounded-t-lg">
                   <div className="flex items-center justify-between w-full">
                     <div className="flex items-center gap-2">
-                      <Bot className="h-4 w-4 text-red-600" />
-                      <span className="font-medium text-sm">System Prompt</span>
+                      <Bot className="h-5 w-5 text-red-600" />
+                      <span className="font-semibold">System Prompt</span>
                     </div>
-                    {variablesFilled && (
-                      <Badge variant="secondary" className="text-xs bg-green-100 text-green-800 dark:bg-green-900/20 dark:text-green-400">
-                        Variables Filled ✓
-                      </Badge>
-                    )}
+                    <Tooltip>
+                      <TooltipTrigger asChild>
+                        <Info className="h-4 w-4 text-muted-foreground cursor-help" />
+                      </TooltipTrigger>
+                      <TooltipContent>
+                        <p>Define the AI's role, personality, and instructions.</p>
+                      </TooltipContent>
+                    </Tooltip>
                   </div>
                 </AccordionTrigger>
-                <AccordionContent className="px-5 pb-5">
-                  <div className="space-y-2">
-                    {variablesFilled && (
-                      <div className="mb-2 text-sm text-green-600 dark:text-green-400">
-                        ✓ Template variables have been filled with your values. You can now run the prompt.
-                      </div>
-                    )}
-                    <div className="w-full min-h-[200px] text-sm rounded-md border border-input bg-background px-3 py-2">
-                      <PromptContentRenderer content={systemPrompt} />
-                    </div>
+                <AccordionContent className="px-5 pt-4 pb-5">
+                  <div className="space-y-3">
+                    <div
+                      contentEditable
+                      onInput={(e) => {
+                        const target = e.currentTarget;
+                        setSystemPrompt(target.textContent || '');
+                      }}
+                      onFocus={(e) => {
+                        const target = e.currentTarget;
+                        if (target.textContent === '' && target.innerHTML.includes('Enter your system prompt')) {
+                          target.innerHTML = '';
+                        }
+                      }}
+                      onBlur={(e) => {
+                        const target = e.currentTarget;
+                        if (target.textContent === '') {
+                          target.innerHTML = '<span class="text-muted-foreground">Enter your system prompt...</span>';
+                        }
+                      }}
+                      dangerouslySetInnerHTML={{ 
+                        __html: systemPrompt || '<span class="text-muted-foreground">Enter your system prompt...</span>' 
+                      }}
+                      className="w-full h-[100px] max-h-[600px] text-sm rounded-md border border-input bg-background px-3 py-2 overflow-auto focus:outline-none focus:ring-1 focus:ring-red-500 [&_mark.filled-variable]:font-bold [&_mark.filled-variable]:text-red-600 [&_mark.filled-variable]:bg-red-50 [&_mark.filled-variable]:px-1 [&_mark.filled-variable]:py-0.5 [&_mark.filled-variable]:rounded [&_mark.filled-variable]:dark:bg-red-950 [&_mark.filled-variable]:dark:text-red-400"
+                      style={{
+                        whiteSpace: 'pre-wrap',
+                        resize: 'vertical',
+                        height: '100px',
+                        maxHeight: '600px'
+                      }}
+                    />
                   </div>
                 </AccordionContent>
               </AccordionItem>
@@ -775,30 +809,39 @@ export default function PlaygroundPage() {
               <AccordionItem value="model-settings" className="border border-border rounded-lg bg-card shadow-sm">
                 <AccordionTrigger className="px-5 py-4 hover:no-underline hover:bg-muted/50 rounded-t-lg">
                   <div className="flex items-center gap-2">
-                    <Cpu className="h-4 w-4" />
+                    <Cpu className="h-5 w-5 text-red-600" />
                     <span className="font-semibold">Model Settings</span>
                   </div>
                 </AccordionTrigger>
-                <AccordionContent className="px-5 pb-5 space-y-4">
+                <AccordionContent className="px-5 pb-5 space-y-5">
                   <div>
                     <div className="flex items-center justify-between mb-2">
-                      <Label className="text-sm font-medium">AI Model</Label>
+                      <Label htmlFor="ai-model" className="text-sm font-medium text-muted-foreground">
+                        AI Model
+                      </Label>
                       <div className="flex items-center gap-2">
                         <span className="text-xs text-muted-foreground">
                           {!modelPrefsLoading ? availableModels.length : '...'} available
                         </span>
-                        <Button
-                          variant="ghost"
-                          size="sm"
-                          onClick={() => setShowModelPreferences(true)}
-                          className="h-6 w-6 p-0"
-                        >
-                          <Settings className="h-3 w-3" />
-                        </Button>
+                        <Tooltip>
+                          <TooltipTrigger asChild>
+                            <Button
+                              variant="ghost"
+                              size="sm"
+                              onClick={() => setShowModelPreferences(true)}
+                              className="h-6 w-6 p-0"
+                            >
+                              <Settings className="h-3 w-3" />
+                            </Button>
+                          </TooltipTrigger>
+                          <TooltipContent>
+                            <p>Configure model preferences</p>
+                          </TooltipContent>
+                        </Tooltip>
                       </div>
                     </div>
                     <Select value={selectedModel} onValueChange={setSelectedModel}>
-                      <SelectTrigger className="w-full border-border bg-background text-foreground">
+                      <SelectTrigger id="ai-model" className="w-full border-border bg-background text-foreground">
                         <SelectValue />
                       </SelectTrigger>
                       <SelectContent>
@@ -814,45 +857,66 @@ export default function PlaygroundPage() {
                     </Select>
                   </div>
 
-                  <div className="flex items-center justify-between">
-                    <div className="flex items-center gap-2">
-                      <Label htmlFor="web-search" className="text-sm font-medium">Web Search</Label>
-                    </div>
-                    <Switch
-                      id="web-search"
-                      checked={webSearchEnabled}
-                      onCheckedChange={setWebSearchEnabled}
-                    />
-                  </div>
+
                 </AccordionContent>
               </AccordionItem>
 
               <AccordionItem value="generation-settings" className="border border-border rounded-lg bg-card shadow-sm">
                 <AccordionTrigger className="px-5 py-4 hover:no-underline hover:bg-muted/50 rounded-t-lg">
                   <div className="flex items-center gap-2">
-                    <Sliders className="h-4 w-4 text-red-600" />
-                    <span className="font-medium text-sm">Generation Settings</span>
+                    <SlidersHorizontal className="h-5 w-5 text-red-600" />
+                    <span className="font-semibold">Generation Settings</span>
                   </div>
                 </AccordionTrigger>
-                <AccordionContent className="px-5 pb-5 space-y-4">
-                  <div>
-                    <div className="flex justify-between mb-2">
-                      <Label className="text-sm font-medium">Temperature</Label>
-                      <span className="text-sm text-muted-foreground">{temperature}</span>
+                <AccordionContent className="px-5 pb-5 space-y-6">
+                  {/* Temperature - First */}
+                  <div className="space-y-2">
+                    <div className="flex justify-between items-center">
+                      <Label htmlFor="temperature" className="text-sm font-medium text-muted-foreground">
+                        Temperature
+                      </Label>
+                      <Tooltip>
+                        <TooltipTrigger asChild>
+                          <Info className="h-3 w-3 text-muted-foreground cursor-help" />
+                        </TooltipTrigger>
+                        <TooltipContent>
+                          <p>Controls randomness in responses</p>
+                        </TooltipContent>
+                      </Tooltip>
                     </div>
-                    <Slider
-                      value={[temperature]}
-                      onValueChange={([value]) => setTemperature(value)}
-                      min={0}
-                      max={2}
-                      step={0.1}
-                      className="w-full"
-                    />
+                    <div className="flex items-center space-x-3">
+                      <Slider
+                        id="temperature"
+                        min={0}
+                        max={2}
+                        step={0.01}
+                        value={[temperature]}
+                        onValueChange={([value]) => setTemperature(value)}
+                        className="flex-1"
+                      />
+                      <span className="text-sm text-foreground w-12 text-center border border-border rounded-md py-1 bg-muted">
+                        {temperature.toFixed(2)}
+                      </span>
+                    </div>
                   </div>
-
-                  <div>
-                    <Label className="text-sm font-medium mb-2 block">Max Tokens</Label>
+                  
+                  {/* Max Tokens - Second */}
+                  <div className="space-y-2">
+                    <div className="flex justify-between items-center">
+                      <Label htmlFor="maxTokens" className="text-sm font-medium text-muted-foreground">
+                        Max Tokens
+                      </Label>
+                      <Tooltip>
+                        <TooltipTrigger asChild>
+                          <Info className="h-3 w-3 text-muted-foreground cursor-help" />
+                        </TooltipTrigger>
+                        <TooltipContent>
+                          <p>Maximum response length</p>
+                        </TooltipContent>
+                      </Tooltip>
+                    </div>
                     <Input
+                      id="maxTokens"
                       type="number"
                       value={maxTokens}
                       onChange={(e) => setMaxTokens(parseInt(e.target.value) || 0)}
@@ -861,9 +925,76 @@ export default function PlaygroundPage() {
                       className="w-full border-border bg-background text-foreground"
                     />
                   </div>
+
+                  {/* Other parameters as sliders */}
+                  {[
+                    {
+                      id: "topP",
+                      label: "Top P",
+                      value: topP,
+                      setValue: setTopP,
+                      min: 0,
+                      max: 1,
+                      step: 0.01,
+                      desc: "Nucleus sampling threshold"
+                    },
+                    {
+                      id: "frequencyPenalty",
+                      label: "Frequency Penalty",
+                      value: frequencyPenalty,
+                      setValue: setFrequencyPenalty,
+                      min: 0,
+                      max: 2,
+                      step: 0.01,
+                      desc: "Reduces word repetition"
+                    },
+                    {
+                      id: "presencePenalty",
+                      label: "Presence Penalty",
+                      value: presencePenalty,
+                      setValue: setPresencePenalty,
+                      min: 0,
+                      max: 2,
+                      step: 0.01,
+                      desc: "Reduces topic repetition"
+                    }
+                  ].map((param) => (
+                    <div key={param.id} className="space-y-2">
+                      <div className="flex justify-between items-center">
+                        <Label htmlFor={param.id} className="text-sm font-medium text-muted-foreground">
+                          {param.label}
+                        </Label>
+                        <Tooltip>
+                          <TooltipTrigger asChild>
+                            <Info className="h-3 w-3 text-muted-foreground cursor-help" />
+                          </TooltipTrigger>
+                          <TooltipContent>
+                            <p>{param.desc}</p>
+                          </TooltipContent>
+                        </Tooltip>
+                      </div>
+                      <div className="flex items-center space-x-3">
+                        <Slider
+                          id={param.id}
+                          min={param.min}
+                          max={param.max}
+                          step={param.step}
+                          value={[param.value]}
+                          onValueChange={([value]) => param.setValue(value)}
+                          className="flex-1"
+                        />
+                        <span className="text-sm text-foreground w-12 text-center border border-border rounded-md py-1 bg-muted">
+                          {param.value.toFixed(param.step < 1 ? 2 : 0)}
+                        </span>
+                      </div>
+                    </div>
+                  ))}
                 </AccordionContent>
               </AccordionItem>
             </Accordion>
+                </div>
+              </ScrollArea>
+            </TooltipProvider>
           </div>
         </div>
       </div>
@@ -876,7 +1007,7 @@ export default function PlaygroundPage() {
               <Save className="h-5 w-5" />
               Submit a New Prompt
             </DialogTitle>
-            <p className="text-sm text-slate-500">All fields marked with * are required</p>
+            <p className="text-sm text-muted-foreground">All fields marked with * are required</p>
           </DialogHeader>
           
           <div className="space-y-6">
@@ -892,7 +1023,7 @@ export default function PlaygroundPage() {
                 onChange={(e) => setSavePromptTitle(e.target.value)}
                 maxLength={100}
               />
-              <p className="text-xs text-slate-500">A clear, concise title (max 100 characters)</p>
+              <p className="text-xs text-muted-foreground">A clear, concise title (max 100 characters)</p>
             </div>
 
             {/* Description */}
@@ -908,7 +1039,7 @@ export default function PlaygroundPage() {
                 className="min-h-[80px]"
                 maxLength={500}
               />
-              <p className="text-xs text-slate-500">Brief description of your prompt (max 500 characters). Drag the bottom-right corner to resize.</p>
+              <p className="text-xs text-muted-foreground">Brief description of your prompt (max 500 characters). Drag the bottom-right corner to resize.</p>
             </div>
 
             {/* Prompt Content */}
@@ -923,7 +1054,7 @@ export default function PlaygroundPage() {
                 onChange={(e) => setSavePromptContent(e.target.value)}
                 className="min-h-[150px]"
               />
-              <p className="text-xs text-slate-500">The full prompt content with markdown formatting support. Drag the bottom-right corner to resize.</p>
+              <p className="text-xs text-muted-foreground">The full prompt content with markdown formatting support. Drag the bottom-right corner to resize.</p>
             </div>
 
             {/* Category */}
@@ -945,7 +1076,7 @@ export default function PlaygroundPage() {
                   </Button>
                 ))}
               </div>
-              <p className="text-xs text-slate-500">Choose the most appropriate category for your prompt or create a new one</p>
+              <p className="text-xs text-muted-foreground">Choose the most appropriate category for your prompt or create a new one</p>
             </div>
 
             {/* Tags */}
@@ -976,8 +1107,8 @@ export default function PlaygroundPage() {
                     ))}
                   </div>
                 )}
-                <p className="text-xs text-slate-500">{savePromptTags.length}/5 tags. Type and press Enter to add tags.</p>
-                <p className="text-xs text-slate-500">Add 1-5 tags to help others find your prompt. Start typing to see suggestions.</p>
+                <p className="text-xs text-muted-foreground">{savePromptTags.length}/5 tags. Type and press Enter to add tags.</p>
+                <p className="text-xs text-muted-foreground">Add 1-5 tags to help others find your prompt. Start typing to see suggestions.</p>
               </div>
             </div>
           </div>

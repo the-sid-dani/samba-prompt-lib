@@ -156,11 +156,11 @@ export default async function PromptDetailPage({ params }: { params: Promise<{ i
                     <span className="text-sm sm:text-base font-semibold text-foreground">{bookmarkCount}</span>
                   </div>
                 )}
-                <PromptForksDropdown promptId={promptId} forkCount={forkCount} />
                 <div className="flex items-center gap-1 sm:gap-2">
                   <Copy className="w-4 h-4 sm:w-5 sm:h-5 text-muted-foreground" />
                   <span className="text-sm sm:text-base font-semibold text-foreground">{copyCount}</span>
                 </div>
+                <PromptForksDropdown promptId={promptId} forkCount={forkCount} />
               </div>
 
               {/* Action Buttons */}
