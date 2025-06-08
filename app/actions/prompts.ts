@@ -125,19 +125,30 @@ const reviewImprovementSchema = z.object({
 // Cached function to get categories
 export const getCategories = unstable_cache(
   async () => {
-    const supabase = createSupabaseAdminClient()
-    
-    const { data: categories, error } = await supabase
-      .from('categories')
-      .select('*')
-      .order('display_order', { ascending: true })
-    
-    if (error) {
-      console.error('Error fetching categories:', error)
+    try {
+      // Check if Supabase is configured
+      if (!process.env.NEXT_PUBLIC_SUPABASE_URL || !process.env.SUPABASE_SERVICE_ROLE_KEY) {
+        console.warn('Supabase not configured, returning empty categories array')
+        return []
+      }
+
+      const supabase = createSupabaseAdminClient()
+      
+      const { data: categories, error } = await supabase
+        .from('categories')
+        .select('*')
+        .order('display_order', { ascending: true })
+      
+      if (error) {
+        console.error('Error fetching categories:', error)
+        return []
+      }
+      
+      return categories || []
+    } catch (error) {
+      console.error('Error in getCategories:', error)
       return []
     }
-    
-    return categories || []
   },
   ['categories'],
   {
@@ -149,41 +160,52 @@ export const getCategories = unstable_cache(
 // Cached function to get categories with prompt counts
 export const getCategoriesWithCounts = unstable_cache(
   async () => {
-    const supabase = createSupabaseAdminClient()
-    
-    // First get all categories
-    const { data: categories, error: categoriesError } = await supabase
-      .from('categories')
-      .select('*')
-      .order('display_order', { ascending: true })
-    
-    if (categoriesError) {
-      console.error('Error fetching categories:', categoriesError)
+    try {
+      // Check if Supabase is configured
+      if (!process.env.NEXT_PUBLIC_SUPABASE_URL || !process.env.SUPABASE_SERVICE_ROLE_KEY) {
+        console.warn('Supabase not configured, returning empty categories array')
+        return []
+      }
+
+      const supabase = createSupabaseAdminClient()
+      
+      // First get all categories
+      const { data: categories, error: categoriesError } = await supabase
+        .from('categories')
+        .select('*')
+        .order('display_order', { ascending: true })
+      
+      if (categoriesError) {
+        console.error('Error fetching categories:', categoriesError)
+        return []
+      }
+      
+      if (!categories || categories.length === 0) {
+        return []
+      }
+      
+      // Get prompt counts for each category
+      const categoriesWithCounts = await Promise.all(
+        categories.map(async (category) => {
+          const { count, error: countError } = await supabase
+            .from('prompt')
+            .select('*', { count: 'exact', head: true })
+            .eq('category_id', category.id)
+          
+          if (countError) {
+            console.error(`Error counting prompts for category ${category.id}:`, countError)
+            return { ...category, prompt_count: 0 }
+          }
+          
+          return { ...category, prompt_count: count || 0 }
+        })
+      )
+      
+      return categoriesWithCounts
+    } catch (error) {
+      console.error('Error in getCategoriesWithCounts:', error)
       return []
     }
-    
-    if (!categories || categories.length === 0) {
-      return []
-    }
-    
-    // Get prompt counts for each category
-    const categoriesWithCounts = await Promise.all(
-      categories.map(async (category) => {
-        const { count, error: countError } = await supabase
-          .from('prompt')
-          .select('*', { count: 'exact', head: true })
-          .eq('category_id', category.id)
-        
-        if (countError) {
-          console.error(`Error counting prompts for category ${category.id}:`, countError)
-          return { ...category, prompt_count: 0 }
-        }
-        
-        return { ...category, prompt_count: count || 0 }
-      })
-    )
-    
-    return categoriesWithCounts
   },
   ['categories-with-counts'],
   {
@@ -310,6 +332,21 @@ export async function fetchPrompts(input?: Partial<z.infer<typeof fetchPromptsSc
   const getCachedPrompts = unstable_cache(
     async () => {
       try {
+        // Check if Supabase is configured
+        if (!process.env.NEXT_PUBLIC_SUPABASE_URL || !process.env.SUPABASE_SERVICE_ROLE_KEY) {
+          console.warn('Supabase not configured, returning empty prompts array')
+          return {
+            prompts: [] as PromptWithCategory[],
+            pagination: {
+              page: params.page,
+              limit: params.limit,
+              total: 0,
+              totalPages: 1,
+              hasMore: false,
+            },
+          }
+        }
+
         const supabase = createSupabaseAdminClient()
         
         // Build the query
