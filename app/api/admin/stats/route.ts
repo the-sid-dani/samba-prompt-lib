@@ -144,6 +144,9 @@ export async function GET(request: NextRequest) {
 
     // Get analytics data
     const analyticsData = await Analytics.getAnalyticsData(30)
+    
+    // Get cost analysis
+    const costAnalysis = await Analytics.getCostAnalysis(30)
 
     const stats = {
       totalPrompts: totalPrompts || 0,
@@ -161,7 +164,8 @@ export async function GET(request: NextRequest) {
         promptsToday: promptsToday || 0,
         popularPrompts
       },
-      analyticsData
+      analyticsData,
+      costAnalysis
     }
 
     return NextResponse.json(stats)

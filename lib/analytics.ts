@@ -1,4 +1,5 @@
 import { createSupabaseAdminClient } from '@/utils/supabase/server'
+import { calculateModelCost, formatCost, type CostCalculation } from '@/lib/ai-cost-utils'
 
 export interface AnalyticsEvent {
   userId?: string
@@ -7,6 +8,9 @@ export interface AnalyticsEvent {
   eventData?: Record<string, any>
   sessionId?: string
   pageUrl?: string
+  ipAddress?: string
+  userAgent?: string
+  referrer?: string
 }
 
 export interface ApiUsageLog {
@@ -16,7 +20,7 @@ export interface ApiUsageLog {
   model: string
   tokensInput: number
   tokensOutput: number
-  costUsd: number
+  costUsd?: number
   requestDurationMs?: number
   status?: 'success' | 'error' | 'timeout'
   errorMessage?: string
@@ -29,18 +33,22 @@ export interface UserSession {
   endedAt?: Date
   pageViews?: number
   actionsPerformed?: number
+  ipAddress?: string
+  userAgent?: string
+  referrer?: string
 }
 
 export class Analytics {
   /**
    * Track a user interaction event
    * Uses the existing user_interactions table for basic tracking
+   * TODO: Will use analytics_events table after migration
    */
   static async trackEvent(event: AnalyticsEvent): Promise<void> {
     try {
       const supabase = await createSupabaseAdminClient()
 
-      // Only track events that have both user and prompt for the current table structure
+      // Track in the existing user_interactions table for now
       if (event.userId && event.promptId && ['view', 'copy', 'fork', 'share', 'test'].includes(event.eventType)) {
         await supabase
           .from('user_interactions')
@@ -51,20 +59,51 @@ export class Analytics {
           })
       }
 
-      console.log(`Analytics event tracked: ${event.eventType}`)
+      // Log additional event data for future analytics table
+      console.log(`Analytics event tracked: ${event.eventType}`, {
+        userId: event.userId,
+        promptId: event.promptId,
+        eventData: event.eventData,
+        sessionId: event.sessionId,
+        pageUrl: event.pageUrl
+      })
     } catch (error) {
       console.error('Failed to track analytics event:', error)
     }
   }
 
   /**
-   * Log API usage for cost tracking
-   * For now, we'll store this in a simple way until the full analytics tables are ready
+   * Log API usage for cost tracking with automatic cost calculation
    */
   static async logApiUsage(usage: ApiUsageLog): Promise<void> {
     try {
-      // For now, we'll just log this to console until we have the proper table
-      console.log(`API usage: ${usage.provider}/${usage.model} - Input: ${usage.tokensInput}, Output: ${usage.tokensOutput}, Cost: $${usage.costUsd}`)
+      // Calculate cost if not provided
+      let costUsd = usage.costUsd
+      if (costUsd === undefined) {
+        const costCalculation = calculateModelCost(
+          usage.provider,
+          usage.model,
+          usage.tokensInput,
+          usage.tokensOutput
+        )
+        costUsd = costCalculation.totalCost
+      }
+
+      // Log to console with cost information (will be database later)
+      console.log(`API usage logged: ${usage.provider}/${usage.model}`, {
+        inputTokens: usage.tokensInput,
+        outputTokens: usage.tokensOutput,
+        totalTokens: usage.tokensInput + usage.tokensOutput,
+        cost: formatCost(costUsd),
+        duration: usage.requestDurationMs ? `${usage.requestDurationMs}ms` : 'unknown',
+        status: usage.status || 'success',
+        userId: usage.userId,
+        promptId: usage.promptId
+      })
+
+      // TODO: Store in api_usage_logs table after migration
+      // const supabase = await createSupabaseAdminClient()
+      // await supabase.from('api_usage_logs').insert({...})
     } catch (error) {
       console.error('Failed to log API usage:', error)
     }
@@ -72,11 +111,15 @@ export class Analytics {
 
   /**
    * Start a user session
+   * TODO: Will use user_sessions table after migration
    */
   static async startSession(session: UserSession): Promise<void> {
     try {
-      // For now, we'll just log this until we have the proper session table
-      console.log(`Session started: ${session.sessionId} for user ${session.userId}`)
+      console.log(`Session started: ${session.sessionId} for user ${session.userId}`, {
+        startedAt: session.startedAt || new Date(),
+        pageViews: session.pageViews || 0,
+        actionsPerformed: session.actionsPerformed || 0
+      })
     } catch (error) {
       console.error('Failed to start session:', error)
     }
@@ -87,7 +130,10 @@ export class Analytics {
    */
   static async endSession(sessionId: string, actionsPerformed?: number): Promise<void> {
     try {
-      console.log(`Session ended: ${sessionId}`)
+      console.log(`Session ended: ${sessionId}`, {
+        actionsPerformed: actionsPerformed || 0,
+        endedAt: new Date()
+      })
     } catch (error) {
       console.error('Failed to end session:', error)
     }
@@ -133,22 +179,113 @@ export class Analytics {
       }, {} as Record<string, any>) || {}
 
       const dailyMetrics = Object.values(dailyActivity).map((day: any) => ({
-        ...day,
-        unique_users: day.unique_users.size
+        date: day.date,
+        total_users: 0,
+        new_users: 0,
+        active_users: day.unique_users.size,
+        total_prompts: 0,
+        new_prompts: 0,
+        total_api_calls: 0,
+        total_tokens_used: 0,
+        total_api_cost_usd: 0,
+        interactions: day.interactions
       }))
+
+      // Mock API usage data (will be real after migration)
+      const apiUsage = {
+        totalCalls: 0,
+        totalCost: 0,
+        totalTokens: 0,
+        byProvider: {}
+      }
 
       return {
         dailyMetrics,
         topEvents,
-        apiUsage: [] // Will be populated after migration
+        apiUsage
       }
     } catch (error) {
       console.error('Failed to get analytics data:', error)
       return {
         dailyMetrics: [],
         topEvents: [],
-        apiUsage: []
+        apiUsage: {
+          totalCalls: 0,
+          totalCost: 0,
+          totalTokens: 0,
+          byProvider: {}
+        }
       }
+    }
+  }
+
+  /**
+   * Get cost analysis for API usage
+   * This will work with real data after migration
+   */
+  static async getCostAnalysis(days: number = 30): Promise<{
+    totalCost: number
+    totalTokens: number
+    totalCalls: number
+    averageCostPerCall: number
+    averageCostPerToken: number
+    costByProvider: Record<string, { cost: number; calls: number; tokens: number }>
+    costByModel: Record<string, { cost: number; calls: number; tokens: number }>
+    dailyCosts: Array<{ date: string; cost: number; calls: number }>
+  }> {
+    try {
+      // TODO: Replace with real database query after migration
+      // For now, return mock data structure
+      return {
+        totalCost: 0,
+        totalTokens: 0,
+        totalCalls: 0,
+        averageCostPerCall: 0,
+        averageCostPerToken: 0,
+        costByProvider: {},
+        costByModel: {},
+        dailyCosts: []
+      }
+    } catch (error) {
+      console.error('Failed to get cost analysis:', error)
+      return {
+        totalCost: 0,
+        totalTokens: 0,
+        totalCalls: 0,
+        averageCostPerCall: 0,
+        averageCostPerToken: 0,
+        costByProvider: {},
+        costByModel: {},
+        dailyCosts: []
+      }
+    }
+  }
+
+  /**
+   * Helper method to create API usage log with cost calculation
+   */
+  static createApiUsageLog(
+    provider: string,
+    model: string,
+    inputTokens: number,
+    outputTokens: number,
+    options: {
+      userId?: string
+      promptId?: number
+      requestDurationMs?: number
+      status?: 'success' | 'error' | 'timeout'
+      errorMessage?: string
+    } = {}
+  ): ApiUsageLog {
+    const costCalculation = calculateModelCost(provider, model, inputTokens, outputTokens)
+    
+    return {
+      provider,
+      model,
+      tokensInput: inputTokens,
+      tokensOutput: outputTokens,
+      costUsd: costCalculation.totalCost,
+      ...options
     }
   }
 }
@@ -204,9 +341,20 @@ export const trackPlaygroundUsage = (userId: string, promptId?: number, sessionI
 
 // For events without prompts, we'll just log them for now
 export const trackSearch = (userId: string, query: string, resultsCount: number, sessionId?: string) => {
-  console.log(`Search tracked: ${query} (${resultsCount} results) by ${userId}`)
+  Analytics.trackEvent({
+    userId,
+    eventType: 'search',
+    eventData: { query, resultsCount },
+    sessionId
+  })
 }
 
 export const trackPageView = (userId?: string, pageUrl?: string, sessionId?: string) => {
-  console.log(`Page view tracked: ${pageUrl} by ${userId}`)
+  Analytics.trackEvent({
+    userId,
+    eventType: 'page_view',
+    eventData: { pageUrl },
+    sessionId,
+    pageUrl
+  })
 } 

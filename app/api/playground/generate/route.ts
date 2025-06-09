@@ -2,6 +2,8 @@ import { NextRequest, NextResponse } from 'next/server';
 import { auth } from '@/lib/auth';
 import { z } from 'zod';
 import { aiClient } from '@/lib/ai';
+import { Analytics } from '@/lib/analytics';
+import { calculateModelCost, formatCost } from '@/lib/ai-cost-utils';
 
 // Validation schema for generation request
 const generateRequestSchema = z.object({
@@ -82,6 +84,8 @@ async function generateWithModel(
 }
 
 export async function POST(request: NextRequest) {
+  const startTime = Date.now();
+  
   try {
     // Check authentication
     const session = await auth();
@@ -110,12 +114,79 @@ export async function POST(request: NextRequest) {
       validatedData.parameters
     );
 
+    const requestDuration = Date.now() - startTime;
+
     // Handle errors from AI generation
     if (result.error) {
+      // Log failed API usage
+      if (result.usage) {
+        const apiUsageLog = Analytics.createApiUsageLog(
+          aiClient.getProviderForModel(validatedData.model),
+          validatedData.model,
+          result.usage.promptTokens || 0,
+          result.usage.completionTokens || 0,
+          {
+            userId: session.user?.id,
+            requestDurationMs: requestDuration,
+            status: 'error',
+            errorMessage: result.error
+          }
+        );
+        await Analytics.logApiUsage(apiUsageLog);
+      }
+
       return NextResponse.json(
         { error: result.error },
         { status: 400 }
       );
+    }
+
+    // Calculate cost and log successful API usage
+    let costInfo = null;
+    if (result.usage) {
+      const provider = aiClient.getProviderForModel(validatedData.model);
+      const costCalculation = calculateModelCost(
+        provider,
+        validatedData.model,
+        result.usage.promptTokens || 0,
+        result.usage.completionTokens || 0
+      );
+
+      costInfo = {
+        totalCost: costCalculation.totalCost,
+        inputCost: costCalculation.inputCost,
+        outputCost: costCalculation.outputCost,
+        formattedCost: formatCost(costCalculation.totalCost),
+        provider: provider
+      };
+
+      // Log API usage with cost
+      const apiUsageLog = Analytics.createApiUsageLog(
+        provider,
+        validatedData.model,
+        result.usage.promptTokens || 0,
+        result.usage.completionTokens || 0,
+        {
+          userId: session.user?.id,
+          requestDurationMs: requestDuration,
+          status: 'success'
+        }
+      );
+      await Analytics.logApiUsage(apiUsageLog);
+
+      // Track playground usage event
+      await Analytics.trackEvent({
+        userId: session.user?.id,
+        eventType: 'playground_generate',
+        eventData: {
+          model: validatedData.model,
+          provider: provider,
+          inputTokens: result.usage.promptTokens || 0,
+          outputTokens: result.usage.completionTokens || 0,
+          cost: costCalculation.totalCost,
+          duration: requestDuration
+        }
+      });
     }
 
     // TODO: Save to playground_sessions table for history
@@ -124,6 +195,7 @@ export async function POST(request: NextRequest) {
       output: result.output,
       model: validatedData.model,
       usage: result.usage,
+      cost: costInfo,
       timestamp: new Date().toISOString(),
     });
   } catch (error) {

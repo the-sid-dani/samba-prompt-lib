@@ -123,6 +123,13 @@ export class AIClient {
   }
 
   /**
+   * Get the provider name for a given model
+   */
+  getProviderForModel(modelId: string): string {
+    return this.providers.get(modelId) || 'unknown';
+  }
+
+  /**
    * Validate generation parameters
    */
   validateParams(params: GenerationParams): { valid: boolean; error?: string } {
