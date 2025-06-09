@@ -223,6 +223,8 @@ export function TemplateVariables({ content, promptId, className, onContentChang
             </Button>
             {promptId && (
               <Button
+                variant="default"
+                size="sm"
                 className="text-xs h-8 px-3 flex-1 sm:flex-none min-w-0"
                 onClick={handleTestInPlayground}
               >
