@@ -25,6 +25,54 @@ export async function GET(request: NextRequest) {
     const costAnalysis = await Analytics.getCostAnalysis(30)
     console.log('💰 [Admin Stats] Cost analysis:', JSON.stringify(costAnalysis, null, 2))
 
+    // Get recent activity from analytics_events
+    console.log('📋 [Admin Stats] Fetching recent activity...')
+    const { data: recentEvents, error: eventsError } = await supabase
+      .from('analytics_events')
+      .select('*')
+      .order('created_at', { ascending: false })
+      .limit(10)
+
+    if (eventsError) {
+      console.error('❌ [Admin Stats] Error fetching recent events:', eventsError)
+    }
+
+    // Format recent events for the frontend
+    const recentActivity = (recentEvents || []).map(event => {
+      const eventTypeMap: Record<string, string> = {
+        'prompt_create': 'prompt_created',
+        'user_signin': 'user_registered',
+        'prompt_favorite': 'prompt_favorited'
+      }
+
+      const descriptionMap: Record<string, string> = {
+        'prompt_create': 'Created a new prompt',
+        'user_signin': 'User signed in',
+        'prompt_favorite': 'Favorited a prompt',
+        'prompt_view': 'Viewed a prompt',
+        'prompt_copy': 'Copied a prompt',
+        'prompt_use': 'Used a prompt',
+        'prompt_vote': 'Voted on a prompt',
+        'playground_generate': 'Generated AI response',
+        'playground_use': 'Used the playground'
+      }
+
+      // Get user email from event data or profiles
+      const eventData = event.event_data as Record<string, any> | null
+      const userEmail = eventData?.email || eventData?.user_email || 'Anonymous'
+      const userName = eventData?.name || userEmail.split('@')[0]
+
+      return {
+        id: event.id,
+        type: eventTypeMap[event.event_type] || event.event_type,
+        description: descriptionMap[event.event_type] || event.event_type.replace(/_/g, ' '),
+        user: userName,
+        timestamp: new Date(event.created_at).toLocaleString()
+      }
+    })
+
+    console.log('📋 [Admin Stats] Recent activity:', recentActivity.length, 'events')
+
     // Get basic stats from database
     const { data: promptsData } = await supabase
       .from('prompt')
@@ -90,7 +138,7 @@ export async function GET(request: NextRequest) {
         }))
       },
       costs: costAnalysis,
-      recentActivity: [], // TODO: Add recent activity
+      recentActivity: recentActivity,
       systemHealth: {
         status: 'healthy',
         uptime: '99.9%',
