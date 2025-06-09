@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from 'next/server'
 import { auth } from '@/lib/auth'
 import { createSupabaseAdminClient } from '@/utils/supabase/server'
 import { Analytics } from '@/lib/analytics'
+import { getHumanReadableModelName, getProviderDisplayName } from '@/lib/model-utils'
 
 export async function GET(request: NextRequest) {
   try {
@@ -129,13 +130,19 @@ export async function GET(request: NextRequest) {
           total_tokens_used: costAnalysis.totalTokens,
           total_api_cost_usd: costAnalysis.totalCost
         })),
-        apiUsage: Object.entries(costAnalysis.costByProvider).map(([provider, data]) => ({
-          provider,
-          model: 'various',
-          request_count: data.calls,
-          total_tokens: data.tokens,
-          total_cost: data.cost
-        }))
+        apiUsage: Object.entries(costAnalysis.costByModel).map(([modelId, data]) => {
+          const modelData = data as { cost: number; calls: number; tokens: number; provider: string }
+          return {
+            provider: getProviderDisplayName(modelData.provider),
+            model: getHumanReadableModelName(modelId),
+            modelId: modelId,
+            request_count: modelData.calls,
+            total_tokens: modelData.tokens,
+            total_cost: modelData.cost,
+            average_cost_per_call: modelData.cost / modelData.calls,
+            average_tokens_per_call: Math.round(modelData.tokens / modelData.calls)
+          }
+        }).sort((a, b) => b.total_cost - a.total_cost) // Sort by cost descending
       },
       costs: costAnalysis,
       recentActivity: recentActivity,

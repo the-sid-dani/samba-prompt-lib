@@ -57,6 +57,16 @@ interface DashboardStats {
   userStats: UserStats;
   contentStats: ContentStats;
   analyticsData: AnalyticsData;
+  costs?: {
+    totalCost: number;
+    totalTokens: number;
+    totalCalls: number;
+    averageCostPerCall: number;
+    averageCostPerToken: number;
+    costByProvider: Record<string, { cost: number; calls: number; tokens: number }>;
+    costByModel: Record<string, { cost: number; calls: number; tokens: number; provider: string }>;
+    dailyCosts: Array<{ date: string; cost: number; calls: number }>;
+  };
 }
 
 interface ActivityItem {
@@ -107,9 +117,12 @@ interface AnalyticsData {
   apiUsage: Array<{
     provider: string;
     model: string;
+    modelId?: string;
     request_count: number;
     total_tokens: number;
     total_cost: number;
+    average_cost_per_call?: number;
+    average_tokens_per_call?: number;
   }>;
 }
 
@@ -363,12 +376,14 @@ export default function AdminDashboard() {
 
               <Card>
                 <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-                  <CardTitle className="text-sm font-medium">Categories</CardTitle>
-                  <Tags className="w-4 h-4 text-muted-foreground" />
+                  <CardTitle className="text-sm font-medium">API Usage & Costs</CardTitle>
+                  <DollarSign className="w-4 h-4 text-muted-foreground" />
                 </CardHeader>
                 <CardContent>
-                  <div className="text-2xl font-bold">{stats?.totalCategories || 0}</div>
-                  <p className="text-xs text-muted-foreground">Active categories</p>
+                  <div className="text-2xl font-bold">${stats?.costs?.totalCost?.toFixed(4) || '0.00'}</div>
+                  <p className="text-xs text-muted-foreground">
+                    {stats?.costs?.totalCalls || 0} requests • {stats?.costs?.totalTokens?.toLocaleString() || 0} tokens
+                  </p>
                 </CardContent>
               </Card>
 
@@ -443,6 +458,45 @@ export default function AdminDashboard() {
                 </Card>
               </div>
             </div>
+
+            {/* API Costs by Provider */}
+            {stats?.costs && Object.keys(stats.costs.costByProvider).length > 0 && (
+              <Card>
+                <CardHeader>
+                  <CardTitle className="flex items-center gap-2">
+                    <DollarSign className="w-5 h-5" />
+                    API Usage & Costs
+                  </CardTitle>
+                  <CardDescription>
+                    Track API usage and costs across different providers and models
+                  </CardDescription>
+                </CardHeader>
+                <CardContent>
+                  <div className="space-y-4">
+                    {Object.entries(stats.costs.costByProvider)
+                      .sort(([, a], [, b]) => b.cost - a.cost)
+                      .map(([provider, data]) => (
+                        <div key={provider} className="flex items-center justify-between">
+                          <div className="flex items-center gap-2">
+                            <div className="w-2 h-2 rounded-full bg-primary"></div>
+                            <span className="capitalize">{provider}</span>
+                            <span className="text-sm text-muted-foreground">
+                              {data.calls} requests • {data.tokens.toLocaleString()} tokens
+                            </span>
+                          </div>
+                          <span className="font-mono font-medium">${data.cost.toFixed(4)}</span>
+                        </div>
+                      ))}
+                    <div className="pt-4 border-t">
+                      <div className="flex items-center justify-between font-medium">
+                        <span>Total</span>
+                        <span className="font-mono">${stats.costs.totalCost.toFixed(4)}</span>
+                      </div>
+                    </div>
+                  </div>
+                </CardContent>
+              </Card>
+            )}
 
             {/* Recent Activity */}
             <Card>
@@ -722,24 +776,67 @@ export default function AdminDashboard() {
                   </CardDescription>
                 </CardHeader>
                 <CardContent>
-                                     {stats?.analyticsData?.apiUsage && stats.analyticsData.apiUsage.length > 0 ? (
-                     <div className="space-y-4">
-                       {stats.analyticsData.apiUsage.map((usage, index) => (
-                        <div key={index} className="flex items-center justify-between p-4 border rounded-lg">
-                          <div>
-                            <p className="font-medium">{usage.provider} - {usage.model}</p>
-                            <p className="text-sm text-muted-foreground">
-                              {usage.request_count} requests • {usage.total_tokens} tokens
-                            </p>
-                          </div>
-                          <div className="text-right">
-                            <p className="font-medium">${usage.total_cost.toFixed(4)}</p>
-                            <p className="text-sm text-muted-foreground">
-                              ${(usage.total_cost / usage.request_count).toFixed(6)}/req
-                            </p>
-                          </div>
-                        </div>
-                      ))}
+                  {stats?.analyticsData?.apiUsage && stats.analyticsData.apiUsage.length > 0 ? (
+                    <div className="overflow-x-auto">
+                      <table className="w-full">
+                        <thead>
+                          <tr className="border-b">
+                            <th className="text-left py-3 px-4 font-medium text-muted-foreground">Provider</th>
+                            <th className="text-left py-3 px-4 font-medium text-muted-foreground">Model</th>
+                            <th className="text-right py-3 px-4 font-medium text-muted-foreground">Requests</th>
+                            <th className="text-right py-3 px-4 font-medium text-muted-foreground">Tokens</th>
+                            <th className="text-right py-3 px-4 font-medium text-muted-foreground">Total Cost</th>
+                            <th className="text-right py-3 px-4 font-medium text-muted-foreground">Avg Cost/Request</th>
+                            <th className="text-right py-3 px-4 font-medium text-muted-foreground">Avg Tokens/Request</th>
+                          </tr>
+                        </thead>
+                        <tbody>
+                          {stats.analyticsData.apiUsage.map((usage, index) => (
+                            <tr key={index} className="border-b hover:bg-muted/50">
+                              <td className="py-4 px-4">
+                                <span className="font-medium">{usage.provider}</span>
+                              </td>
+                              <td className="py-4 px-4">
+                                <span className="text-sm">{usage.model}</span>
+                              </td>
+                              <td className="py-4 px-4 text-right">
+                                <span className="font-mono text-sm">{usage.request_count}</span>
+                              </td>
+                              <td className="py-4 px-4 text-right">
+                                <span className="font-mono text-sm">{usage.total_tokens.toLocaleString()}</span>
+                              </td>
+                              <td className="py-4 px-4 text-right">
+                                <span className="font-mono font-medium">${usage.total_cost.toFixed(4)}</span>
+                              </td>
+                              <td className="py-4 px-4 text-right">
+                                <span className="font-mono text-sm text-muted-foreground">
+                                  ${usage.average_cost_per_call?.toFixed(6) || '0.00'}
+                                </span>
+                              </td>
+                              <td className="py-4 px-4 text-right">
+                                <span className="font-mono text-sm text-muted-foreground">
+                                  {usage.average_tokens_per_call || '0'}
+                                </span>
+                              </td>
+                            </tr>
+                          ))}
+                        </tbody>
+                        <tfoot>
+                          <tr className="border-t">
+                            <td colSpan={2} className="py-4 px-4 font-medium">Total</td>
+                            <td className="py-4 px-4 text-right font-medium">
+                              {stats.analyticsData.apiUsage.reduce((sum, u) => sum + u.request_count, 0)}
+                            </td>
+                            <td className="py-4 px-4 text-right font-medium">
+                              {stats.analyticsData.apiUsage.reduce((sum, u) => sum + u.total_tokens, 0).toLocaleString()}
+                            </td>
+                            <td className="py-4 px-4 text-right font-medium">
+                              ${stats.analyticsData.apiUsage.reduce((sum, u) => sum + u.total_cost, 0).toFixed(4)}
+                            </td>
+                            <td colSpan={2}></td>
+                          </tr>
+                        </tfoot>
+                      </table>
                     </div>
                   ) : (
                     <div className="text-center py-8">

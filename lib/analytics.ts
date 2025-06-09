@@ -319,7 +319,7 @@ export class Analytics {
       let totalTokens = 0
       const totalCalls = apiUsageData.length
       const costByProvider: Record<string, { cost: number; calls: number; tokens: number }> = {}
-      const costByModel: Record<string, { cost: number; calls: number; tokens: number }> = {}
+      const costByModel: Record<string, { cost: number; calls: number; tokens: number; provider: string }> = {}
       const dailyCosts: Record<string, { cost: number; calls: number }> = {}
 
       apiUsageData.forEach(usage => {
@@ -340,7 +340,7 @@ export class Analytics {
 
         // Group by model
         if (!costByModel[usage.model]) {
-          costByModel[usage.model] = { cost: 0, calls: 0, tokens: 0 }
+          costByModel[usage.model] = { cost: 0, calls: 0, tokens: 0, provider: usage.provider }
         }
         costByModel[usage.model].cost += cost
         costByModel[usage.model].calls += 1
