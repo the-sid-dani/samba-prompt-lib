@@ -1357,7 +1357,7 @@ export async function fetchTags(query?: string): Promise<string[]> {
     // Use a more efficient approach: get tags directly from a materialized view or aggregated query
     // For now, we'll optimize by limiting the data we fetch and using better filtering
     
-    let dbQuery = supabase
+    const dbQuery = supabase
       .from('prompt')
       .select('tags')
       .not('tags', 'is', null)
