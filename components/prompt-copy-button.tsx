@@ -23,7 +23,12 @@ export function PromptCopyButton({
   const { execute } = useAsyncOperation()
   const [isProcessing, setIsProcessing] = useState(false)
   
+  // Debug logging
+  console.log('PromptCopyButton render - promptId:', promptId, 'text length:', text?.length || 0)
+  
   const handleCopy = async () => {
+    console.log('PromptCopyButton handleCopy called - promptId:', promptId, 'text:', text?.substring(0, 50) + '...')
+    
     // Simple state check to prevent rapid double-clicks
     if (isProcessing) {
       console.log('Copy already in progress, ignoring')
