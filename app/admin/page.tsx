@@ -42,7 +42,9 @@ import {
   Calendar,
   ArrowUpRight,
   Zap,
-  DollarSign
+  DollarSign,
+  ChevronDown,
+  ChevronUp
 } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
 import Navigation from '@/components/navigation/Navigation';
@@ -135,6 +137,14 @@ interface User {
   status: 'active' | 'inactive' | 'new';
   lastActive: string;
   promptCount: number;
+  modelUsage?: Array<{
+    provider: string;
+    model: string;
+    modelId: string;
+    calls: number;
+    totalTokens: number;
+    totalCost: number;
+  }>;
 }
 
 export default function AdminDashboard() {
@@ -149,6 +159,7 @@ export default function AdminDashboard() {
   const [userSearch, setUserSearch] = useState('');
   const [userFilter, setUserFilter] = useState('all');
   const [refreshing, setRefreshing] = useState(false);
+  const [expandedUserId, setExpandedUserId] = useState<string | null>(null);
 
   // Check if user is admin
   useEffect(() => {
@@ -571,57 +582,114 @@ export default function AdminDashboard() {
                         <th className="text-left py-3 px-4 font-medium text-muted-foreground">Prompts Created</th>
                         <th className="text-left py-3 px-4 font-medium text-muted-foreground">Last Active</th>
                         <th className="text-left py-3 px-4 font-medium text-muted-foreground">Role</th>
+                        <th className="text-left py-3 px-4 font-medium text-muted-foreground">Model Usage</th>
                       </tr>
                     </thead>
                     <tbody>
                       {filteredUsers.map((user) => {
+                        const isExpanded = expandedUserId === user.id;
                         return (
-                          <tr key={user.id} className="border-b hover:bg-muted/50">
-                            <td className="py-4 px-4">
-                              <div className="flex items-center gap-3">
-                                <div className="w-10 h-10 rounded-full bg-primary/10 flex items-center justify-center">
-                                  {user.avatar ? (
-                                    <img src={user.avatar} alt={user.name} className="w-10 h-10 rounded-full" />
+                          <>
+                            <tr key={user.id} className="border-b hover:bg-muted/50">
+                              <td className="py-4 px-4">
+                                <div className="flex items-center gap-3">
+                                  <div className="w-10 h-10 rounded-full bg-primary/10 flex items-center justify-center">
+                                    {user.avatar ? (
+                                      <img src={user.avatar} alt={user.name} className="w-10 h-10 rounded-full" />
+                                    ) : (
+                                      <span className="text-sm font-medium">
+                                        {user.name.charAt(0).toUpperCase()}
+                                      </span>
+                                    )}
+                                  </div>
+                                  <div>
+                                    <p className="font-medium">{user.name}</p>
+                                    <p className="text-sm text-muted-foreground">{user.email}</p>
+                                  </div>
+                                </div>
+                              </td>
+                              <td className="py-4 px-4">
+                                <Badge variant={user.status === 'active' ? 'default' : user.status === 'inactive' ? 'secondary' : 'outline'}>
+                                  {user.status === 'active' ? 'Active' : user.status === 'inactive' ? 'Inactive' : 'New'}
+                                </Badge>
+                              </td>
+                              <td className="py-4 px-4">
+                                <span className="text-sm font-medium">{user.promptCount}</span>
+                              </td>
+                              <td className="py-4 px-4">
+                                <span className="text-sm text-muted-foreground">
+                                  {user.lastActive ? new Date(user.lastActive).toLocaleDateString() : 'Never'}
+                                </span>
+                              </td>
+                              <td className="py-4 px-4">
+                                <Select 
+                                  value={user.role} 
+                                  onValueChange={(value) => handleRoleChange(user.id, value)}
+                                >
+                                  <SelectTrigger className="w-[120px]">
+                                    <SelectValue />
+                                  </SelectTrigger>
+                                  <SelectContent>
+                                    <SelectItem value="admin">Admin</SelectItem>
+                                    <SelectItem value="member">Member</SelectItem>
+                                  </SelectContent>
+                                </Select>
+                              </td>
+                              <td className="py-4 px-4">
+                                <Button
+                                  variant="ghost"
+                                  size="sm"
+                                  onClick={() => setExpandedUserId(isExpanded ? null : user.id)}
+                                  className="flex items-center gap-2"
+                                >
+                                  {user.modelUsage && user.modelUsage.length > 0 ? (
+                                    <>
+                                      <span className="text-sm">{user.modelUsage.length} models</span>
+                                      {isExpanded ? <ChevronUp className="w-4 h-4" /> : <ChevronDown className="w-4 h-4" />}
+                                    </>
                                   ) : (
-                                    <span className="text-sm font-medium">
-                                      {user.name.charAt(0).toUpperCase()}
-                                    </span>
+                                    <span className="text-sm text-muted-foreground">No usage</span>
                                   )}
-                                </div>
-                                <div>
-                                  <p className="font-medium">{user.name}</p>
-                                  <p className="text-sm text-muted-foreground">{user.email}</p>
-                                </div>
-                              </div>
-                            </td>
-                            <td className="py-4 px-4">
-                              <Badge variant={user.status === 'active' ? 'default' : user.status === 'inactive' ? 'secondary' : 'outline'}>
-                                {user.status === 'active' ? 'Active' : user.status === 'inactive' ? 'Inactive' : 'New'}
-                              </Badge>
-                            </td>
-                            <td className="py-4 px-4">
-                              <span className="text-sm font-medium">{user.promptCount}</span>
-                            </td>
-                            <td className="py-4 px-4">
-                              <span className="text-sm text-muted-foreground">
-                                {user.lastActive ? new Date(user.lastActive).toLocaleDateString() : 'Never'}
-                              </span>
-                            </td>
-                            <td className="py-4 px-4">
-                              <Select 
-                                value={user.role} 
-                                onValueChange={(value) => handleRoleChange(user.id, value)}
-                              >
-                                <SelectTrigger className="w-[120px]">
-                                  <SelectValue />
-                                </SelectTrigger>
-                                <SelectContent>
-                                  <SelectItem value="admin">Admin</SelectItem>
-                                  <SelectItem value="member">Member</SelectItem>
-                                </SelectContent>
-                              </Select>
-                            </td>
-                          </tr>
+                                </Button>
+                              </td>
+                            </tr>
+                            {isExpanded && user.modelUsage && user.modelUsage.length > 0 && (
+                              <tr key={`${user.id}-models`}>
+                                <td colSpan={6} className="p-0">
+                                  <div className="bg-muted/30 p-4">
+                                    <h4 className="text-sm font-medium mb-3">Model Usage Details</h4>
+                                    <div className="grid grid-cols-1 gap-2">
+                                      {user.modelUsage.map((model, index) => (
+                                        <div key={index} className="bg-background rounded-lg p-3 border">
+                                          <div className="flex items-center justify-between">
+                                            <div>
+                                              <p className="font-medium text-sm">{model.model}</p>
+                                              <p className="text-xs text-muted-foreground">{model.provider}</p>
+                                            </div>
+                                            <div className="text-right">
+                                              <p className="text-sm font-medium">{model.calls} requests</p>
+                                              <p className="text-xs text-muted-foreground">
+                                                {model.totalTokens.toLocaleString()} tokens • ${model.totalCost.toFixed(4)}
+                                              </p>
+                                            </div>
+                                          </div>
+                                        </div>
+                                      ))}
+                                      <div className="mt-2 pt-2 border-t">
+                                        <div className="flex justify-between text-sm font-medium">
+                                          <span>Total Usage</span>
+                                          <span>
+                                            {user.modelUsage.reduce((sum, m) => sum + m.calls, 0)} requests • 
+                                            ${user.modelUsage.reduce((sum, m) => sum + m.totalCost, 0).toFixed(4)}
+                                          </span>
+                                        </div>
+                                      </div>
+                                    </div>
+                                  </div>
+                                </td>
+                              </tr>
+                            )}
+                          </>
                         );
                       })}
                     </tbody>

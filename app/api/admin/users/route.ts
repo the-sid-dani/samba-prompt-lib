@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { auth } from '@/lib/auth'
 import { createSupabaseAdminClient } from '@/utils/supabase/server'
+import { getHumanReadableModelName, getProviderDisplayName } from '@/lib/model-utils'
 
 export async function GET(request: NextRequest) {
   try {
@@ -70,6 +71,39 @@ export async function GET(request: NextRequest) {
       return acc
     }, {} as Record<string, string>) || {}
 
+    // Get model usage data for each user
+    const { data: modelUsageData } = await supabase
+      .from('api_usage_logs')
+      .select('user_id, provider, model, tokens_input, tokens_output, cost_usd')
+      .not('user_id', 'is', null)
+
+    // Aggregate model usage by user
+    const userModelUsage = modelUsageData?.reduce((acc, usage) => {
+      const userId = usage.user_id
+      if (!userId) return acc
+      
+      if (!acc[userId]) {
+        acc[userId] = {}
+      }
+      
+      const modelKey = `${usage.provider}:${usage.model}`
+      if (!acc[userId][modelKey]) {
+        acc[userId][modelKey] = {
+          provider: usage.provider,
+          model: usage.model,
+          calls: 0,
+          totalTokens: 0,
+          totalCost: 0
+        }
+      }
+      
+      acc[userId][modelKey].calls += 1
+      acc[userId][modelKey].totalTokens += (usage.tokens_input || 0) + (usage.tokens_output || 0)
+      acc[userId][modelKey].totalCost += usage.cost_usd || 0
+      
+      return acc
+    }, {} as Record<string, Record<string, { provider: string; model: string; calls: number; totalTokens: number; totalCost: number }>>)
+
     // Format users data
     const users = profiles.map(profile => {
       const lastActivity = userLastActivity[profile.id] || profile.updated_at || profile.created_at
@@ -88,6 +122,18 @@ export async function GET(request: NextRequest) {
       // Use stored role from database (fallback to email-based calculation if role column doesn't exist yet)
       const role = (profile as any).role || (profile.email?.endsWith('@samba.tv') ? 'admin' : 'member')
 
+      // Format model usage for this user
+      const modelUsage = userModelUsage?.[profile.id] 
+        ? Object.values(userModelUsage[profile.id]).map(usage => ({
+            provider: getProviderDisplayName(usage.provider),
+            model: getHumanReadableModelName(usage.model),
+            modelId: usage.model,
+            calls: usage.calls,
+            totalTokens: usage.totalTokens,
+            totalCost: usage.totalCost
+          })).sort((a, b) => b.calls - a.calls) // Sort by most used
+        : []
+
       const user = {
         id: profile.id,
         name: profile.name || 'Unknown',
@@ -99,7 +145,8 @@ export async function GET(request: NextRequest) {
         promptCount: userPromptCounts[profile.id] || 0,
         favoriteCount: userFavoriteCounts[profile.id] || 0,
         joinedAt: profile.created_at,
-        daysSinceLastActivity
+        daysSinceLastActivity,
+        modelUsage
       }
 
       // Debug logging for the first few users
