@@ -34,11 +34,8 @@ export function PromptCopyButton({
     console.log('Starting copy operation for prompt:', promptId)
 
     try {
-      // Copy text to clipboard first (synchronous operation)
-      await navigator.clipboard.writeText(text)
-      console.log('Text copied to clipboard successfully')
-      
-      // Then increment usage count (asynchronous operation)
+      // Don't handle clipboard here - let CopyButton handle it with fallback
+      // Just increment usage count (asynchronous operation)
       // Database-level atomic operation handles race conditions
       await execute(async () => {
         console.log('Calling incrementPromptUses for prompt:', promptId)
@@ -47,7 +44,7 @@ export function PromptCopyButton({
       
       console.log('Copy operation completed successfully')
     } catch (error) {
-      console.error('Copy operation failed:', error)
+      console.error('Usage increment failed:', error)
       // Even if increment fails, the copy to clipboard still worked
       // So we don't need to show an error to the user
     } finally {

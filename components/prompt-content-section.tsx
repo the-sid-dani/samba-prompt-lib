@@ -55,8 +55,8 @@ export function PromptContentSection({ prompt, user, isOwner }: PromptContentSec
               showVariables={true}
             />
           </div>
-          <div className="mt-3 sm:mt-4 flex items-center justify-between">
-            <div className="text-xs text-muted-foreground">
+          <div className="mt-3 sm:mt-4 flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3 sm:gap-4">
+            <div className="text-xs text-muted-foreground flex-1">
               {processedContent ? (
                 <span>Variables filled! The prompt above shows your customized version.</span>
               ) : (
@@ -71,7 +71,7 @@ export function PromptContentSection({ prompt, user, isOwner }: PromptContentSec
                 promptContent={prompt.content}
                 categoryId={prompt.category_id || 1}
                 tags={prompt.tags || []}
-                className="bg-primary text-white hover:bg-primary/90"
+                className="bg-primary text-white hover:bg-primary/90 w-full sm:w-auto shrink-0"
               />
             )}
           </div>

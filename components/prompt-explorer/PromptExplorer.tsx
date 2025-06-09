@@ -62,14 +62,17 @@ export default function PromptExplorer({
   const [isPending, startTransition] = useTransition();
   
   // Initialize filters from URL parameters or props
-  const [filters, setFilters] = useState<FilterState>({
-    search: searchParams.get('search') || initialFilters.search || "",
-    selectedCategory: searchParams.get('category') || initialFilters.category || "all",
-    selectedTags: searchParams.getAll('tag') || initialFilters.tags || [],
-    dateRange: initialFilters.dateRange,
-    popularityRange: [0, 1000], // Default range
-    selectedAuthor: searchParams.get('author') || initialFilters.author || "",
-    sortBy: searchParams.get('sort') || initialFilters.sort || "popular"
+  const [filters, setFilters] = useState<FilterState>(() => {
+    const initialSearch = searchParams.get('search') || initialFilters.search || "";
+    return {
+      search: initialSearch,
+      selectedCategory: searchParams.get('category') || initialFilters.category || "all",
+      selectedTags: searchParams.getAll('tag') || initialFilters.tags || [],
+      dateRange: initialFilters.dateRange,
+      popularityRange: [0, 1000], // Default range
+      selectedAuthor: searchParams.get('author') || initialFilters.author || "",
+      sortBy: searchParams.get('sort') || initialFilters.sort || "popular"
+    };
   });
 
   // Debounce search for better performance
@@ -209,12 +212,21 @@ export default function PromptExplorer({
     });
   }, [filters, updateURL, fetchFilteredPrompts]);
 
-  // Handle search
+  // Handle search with debouncing
   useEffect(() => {
-    if (debouncedSearchQuery !== filters.search) {
-      handleFilterChange({ search: debouncedSearchQuery });
-    }
-  }, [debouncedSearchQuery, filters.search, handleFilterChange]);
+    // Only trigger search when debounced value is different from what we last searched
+    const updatedFilters = { ...filters, search: debouncedSearchQuery };
+    updateURL(updatedFilters);
+    
+    startTransition(() => {
+      fetchFilteredPrompts(updatedFilters);
+    });
+  }, [debouncedSearchQuery]);
+
+  // Handle direct search input changes
+  const handleSearchChange = (value: string) => {
+    setFilters(prev => ({ ...prev, search: value }));
+  };
 
   // Toggle tag filter
   const toggleTag = (tag: string) => {
@@ -242,9 +254,8 @@ export default function PromptExplorer({
     });
   };
 
-  // Check if any filters are active
-  const hasActiveFilters = filters.search || 
-    filters.selectedCategory !== 'all' || 
+  // Check if any filters are active (excluding search from badge display)
+  const hasActiveFilters = filters.selectedCategory !== 'all' || 
     filters.selectedTags.length > 0;
 
   return (
@@ -271,9 +282,11 @@ export default function PromptExplorer({
             <Input
               type="text"
               placeholder="Search by title, description, category or prompt text..."
-              className="pl-[70px] sm:pl-[62px] md:pl-[62px] pr-4 py-3 sm:py-4 md:py-6 text-[11px] sm:text-xs md:text-sm rounded-full border-2 border-border focus:border-primary bg-background text-foreground"
-              value={filters.search}
-              onChange={(e) => setFilters(prev => ({ ...prev, search: e.target.value }))}
+              className="pl-[70px] sm:pl-[62px] md:pl-[62px] pr-4 py-3 sm:py-4 md:py-6 text-sm sm:text-base md:text-base rounded-full border-2 border-border focus:border-primary bg-background text-foreground placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-primary/20"
+              value={filters.search || ""}
+              onChange={(e) => handleSearchChange(e.target.value)}
+              autoComplete="off"
+              spellCheck="false"
             />
           </div>
         </div>
@@ -308,12 +321,12 @@ export default function PromptExplorer({
             {availableTags.length > 0 && (
               <div>
                 <h3 className="text-sm font-medium text-foreground mb-2">Filter by tags</h3>
-                <div className="flex flex-wrap gap-2">
+                <div className="flex gap-2 overflow-x-auto scrollbar-hide pb-2 md:flex-wrap md:overflow-x-visible md:pb-0">
                   {availableTags.slice(0, 20).map((tag) => (
                     <button
                       key={tag}
                       onClick={() => toggleTag(tag)}
-                      className={`px-3 py-1.5 rounded-full text-sm font-medium whitespace-nowrap transition-colors flex items-center gap-1 ${
+                      className={`px-3 py-1.5 rounded-full text-sm font-medium whitespace-nowrap transition-colors flex items-center gap-1 shrink-0 ${
                         filters.selectedTags.includes(tag)
                           ? "bg-primary text-primary-foreground"
                           : "bg-muted text-muted-foreground hover:bg-muted/80"
@@ -333,14 +346,6 @@ export default function PromptExplorer({
           {hasActiveFilters && (
             <div className="mb-3 flex flex-wrap items-center justify-between gap-2">
               <div className="flex flex-wrap gap-2">
-                {filters.search && (
-                  <Badge variant="secondary" className="flex items-center gap-1">
-                    Search: "{filters.search}"
-                    <button onClick={() => handleFilterChange({ search: "" })} className="ml-1">
-                      <X className="w-3 h-3" />
-                    </button>
-                  </Badge>
-                )}
                 {filters.selectedCategory !== 'all' && (
                   <Badge variant="secondary" className="flex items-center gap-1">
                     Category: {displayCategories.find(c => c.id === filters.selectedCategory)?.name}

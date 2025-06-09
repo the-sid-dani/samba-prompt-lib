@@ -428,10 +428,32 @@ function PlaygroundContent() {
     setError('');
   };
 
-  // Copy message to clipboard
+  // Copy message to clipboard with mobile fallback
   const copyMessage = async (content: string) => {
     try {
-      await navigator.clipboard.writeText(content);
+      // Modern clipboard API with fallback
+      if (navigator.clipboard && window.isSecureContext) {
+        await navigator.clipboard.writeText(content);
+      } else {
+        // Fallback method for older browsers or non-secure contexts
+        const textArea = document.createElement('textarea');
+        textArea.value = content;
+        textArea.style.position = 'fixed';
+        textArea.style.left = '-999999px';
+        textArea.style.top = '-999999px';
+        document.body.appendChild(textArea);
+        textArea.focus();
+        textArea.select();
+        
+        try {
+          document.execCommand('copy');
+        } catch (err) {
+          throw new Error('Failed to copy using fallback method');
+        } finally {
+          textArea.remove();
+        }
+      }
+      
       toast({
         title: "Copied!",
         description: "Message copied to clipboard",
@@ -573,15 +595,15 @@ function PlaygroundContent() {
     <div className="min-h-screen bg-background transition-[background-color] duration-300">
       <Navigation />
       
-      <div className="container mx-auto px-4 py-8">
-        <div className="flex min-h-[calc(100vh-12rem)] bg-card rounded-xl overflow-hidden shadow-2xl shadow-black/10 dark:shadow-black/50">
+      <div className="container mx-auto px-2 sm:px-4 py-4 sm:py-8">
+        <div className="flex flex-col lg:flex-row min-h-[calc(100vh-8rem)] sm:min-h-[calc(100vh-12rem)] bg-card rounded-xl overflow-hidden shadow-2xl shadow-black/10 dark:shadow-black/50">
           {/* Left Panel - Conversation */}
-          <div className="w-3/5 flex flex-col bg-card">
-                      <div className="flex-1 flex flex-col">
+          <div className="w-full lg:w-3/5 flex flex-col bg-card order-2 lg:order-1">
+            <div className="flex-1 flex flex-col">
             {/* Header */}
             <div className="border-b border-border">
-              <div className="p-6">
-                <div className="flex items-center justify-between">
+              <div className="p-3 sm:p-6">
+                <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3 sm:gap-0">
                   <div className="flex items-center gap-3">
                     <MessageSquare className="h-5 w-5 text-muted-foreground" />
                     <h1 className="text-lg font-semibold text-foreground">Conversation</h1>
@@ -589,7 +611,7 @@ function PlaygroundContent() {
                       Estimated tokens: {estimatedTokens}
                     </Badge>
                   </div>
-                  <div className="flex items-center gap-2">
+                  <div className="flex items-center gap-2 flex-wrap">
                     {messages.length > 0 && (
                       <Button variant="outline" size="sm" onClick={clearConversation}>
                         <RotateCcw className="h-4 w-4 mr-2" />
@@ -616,17 +638,17 @@ function PlaygroundContent() {
                 className="flex-1 overflow-y-auto scroll-smooth"
                 style={{ maxHeight: 'calc(100vh - 300px)' }}
               >
-                <div className="px-6 py-4">
+                <div className="px-3 sm:px-6 py-4">
                   {messages.length === 0 ? (
-                    <div className="flex items-center justify-center h-full min-h-[400px]">
+                    <div className="flex items-center justify-center h-full min-h-[200px] sm:min-h-[400px]">
                       <div className="text-center text-muted-foreground">
-                        <MessageSquare className="h-16 w-16 mx-auto mb-4 text-muted" />
-                        <p className="text-lg font-medium mb-2">No messages yet</p>
-                        <p>Start a conversation by typing below</p>
+                        <MessageSquare className="h-12 w-12 sm:h-16 sm:w-16 mx-auto mb-4 text-muted" />
+                        <p className="text-base sm:text-lg font-medium mb-2">No messages yet</p>
+                        <p className="text-sm sm:text-base">Start a conversation by typing below</p>
                       </div>
                     </div>
                   ) : (
-                    <div className="space-y-8">
+                    <div className="space-y-4 sm:space-y-8">
                       {messages.map((message) => (
                         <div
                           key={message.id}
@@ -635,14 +657,14 @@ function PlaygroundContent() {
                           <div className="relative group">
                             {/* Message Bubble */}
                             <div
-                              className={`max-w-[70vw] min-w-[60px] rounded-lg px-4 py-3 shadow-sm relative ${
+                              className={`max-w-[85vw] sm:max-w-[70vw] min-w-[60px] rounded-lg px-3 sm:px-4 py-2 sm:py-3 shadow-sm relative ${
                                 message.role === 'user'
                                   ? 'bg-slate-100 text-slate-900 border border-slate-200 rounded-br-none dark:bg-slate-800 dark:text-slate-100 dark:border-slate-700'
                                   : 'bg-muted text-foreground border border-border rounded-bl-none'
                               }`}
                               style={{ wordBreak: 'break-word', overflowWrap: 'break-word' }}
                             >
-                              <div className="prose max-w-none text-sm leading-relaxed">
+                              <div className="prose max-w-none text-xs sm:text-sm leading-relaxed">
                                 <PromptContentRenderer content={message.content.trim()} />
                               </div>
                               
@@ -666,10 +688,10 @@ function PlaygroundContent() {
                       
                       {loading && (
                         <div className="flex justify-start">
-                          <div className="bg-muted border border-border rounded-lg rounded-bl-none p-4 shadow-sm">
+                          <div className="bg-muted border border-border rounded-lg rounded-bl-none p-3 sm:p-4 shadow-sm">
                             <div className="flex items-center gap-2">
                               <Loader2 className="h-4 w-4 animate-spin text-muted-foreground" />
-                              <span className="text-sm text-muted-foreground">Generating response...</span>
+                              <span className="text-xs sm:text-sm text-muted-foreground">Generating response...</span>
                             </div>
                           </div>
                         </div>
@@ -685,7 +707,7 @@ function PlaygroundContent() {
               {/* Error Alert */}
               {error && (
                 <div className="border-t border-border bg-muted/30">
-                  <div className="px-6 py-4">
+                  <div className="px-3 sm:px-6 py-4">
                     <Alert variant="destructive">
                       <AlertCircle className="h-4 w-4" />
                       <AlertDescription>{error}</AlertDescription>
@@ -694,18 +716,16 @@ function PlaygroundContent() {
                 </div>
               )}
 
-
-
               {/* Input Area */}
               <div className="border-t border-border bg-card">
-                <div className="p-6">
+                <div className="p-3 sm:p-6">
                   <div className="relative">
                     <Textarea
                       value={inputText}
                       onChange={(e) => setInputText(e.target.value)}
                       onKeyDown={handleKeyPress}
                       placeholder="Type your message..."
-                      className="pr-16 min-h-[60px] resize-none rounded-lg border-border focus:border-red-500 focus:ring-red-500 bg-background text-foreground"
+                      className="pr-12 sm:pr-16 min-h-[50px] sm:min-h-[60px] resize-none rounded-lg border-border focus:border-red-500 focus:ring-red-500 bg-background text-foreground text-sm sm:text-base"
                       rows={2}
                     />
                     <Button
@@ -716,13 +736,13 @@ function PlaygroundContent() {
                       }}
                       disabled={loading || !inputText.trim()}
                       size="icon"
-                      className="absolute right-3 top-1/2 -translate-y-1/2 bg-red-600 hover:bg-red-700 text-white rounded-lg h-10 w-10 transition-transform active:scale-95"
+                      className="absolute right-2 sm:right-3 top-1/2 -translate-y-1/2 bg-red-600 hover:bg-red-700 text-white rounded-lg h-8 w-8 sm:h-10 sm:w-10 transition-transform active:scale-95"
                       type="button"
                     >
                       {loading ? (
-                        <Loader2 className="h-5 w-5 animate-spin" />
+                        <Loader2 className="h-4 w-4 sm:h-5 sm:w-5 animate-spin" />
                       ) : (
-                        <Send className="h-5 w-5" />
+                        <Send className="h-4 w-4 sm:h-5 sm:w-5" />
                       )}
                     </Button>
                   </div>
@@ -735,22 +755,22 @@ function PlaygroundContent() {
           </div>
         </div>
 
-                    {/* Right Panel - Settings */}
-          <div className="w-2/5 bg-muted/30 border-l border-border">
+          {/* Right Panel - Settings */}
+          <div className="w-full lg:w-2/5 bg-muted/30 border-b lg:border-b-0 lg:border-l border-border order-1 lg:order-2">
             <TooltipProvider>
-              <ScrollArea className="h-full">
-                <div className="p-6 space-y-6">
-                  <Accordion type="multiple" defaultValue={["system-prompt", "model-settings"]} className="w-full space-y-6">
+              <ScrollArea className="h-full max-h-[50vh] lg:max-h-none">
+                <div className="p-3 sm:p-6 space-y-4 sm:space-y-6">
+                  <Accordion type="multiple" defaultValue={["system-prompt", "model-settings"]} className="w-full space-y-4 sm:space-y-6">
               <AccordionItem value="system-prompt" className="border border-border rounded-lg bg-card shadow-sm">
-                <AccordionTrigger className="px-5 py-4 hover:no-underline hover:bg-muted/50 rounded-t-lg">
+                <AccordionTrigger className="px-3 sm:px-5 py-3 sm:py-4 hover:no-underline hover:bg-muted/50 rounded-t-lg">
                   <div className="flex items-center justify-between w-full">
                     <div className="flex items-center gap-2">
-                      <Bot className="h-5 w-5 text-red-600" />
-                      <span className="font-semibold">System Prompt</span>
+                      <Bot className="h-4 w-4 sm:h-5 sm:w-5 text-red-600" />
+                      <span className="font-semibold text-sm sm:text-base">System Prompt</span>
                     </div>
                     <Tooltip>
                       <TooltipTrigger asChild>
-                        <Info className="h-4 w-4 text-muted-foreground cursor-help" />
+                        <Info className="h-3 w-3 sm:h-4 sm:w-4 text-muted-foreground cursor-help" />
                       </TooltipTrigger>
                       <TooltipContent>
                         <p>Define the AI's role, personality, and instructions.</p>
@@ -758,23 +778,23 @@ function PlaygroundContent() {
                     </Tooltip>
                   </div>
                 </AccordionTrigger>
-                <AccordionContent className="px-5 pt-4 pb-5">
+                <AccordionContent className="px-3 sm:px-5 pt-3 sm:pt-4 pb-4 sm:pb-5">
                   <div className="space-y-3">
                     <Textarea
                       value={systemPrompt} // Use clean text directly
                       onChange={(e) => setSystemPrompt(e.target.value)}
                       placeholder="Enter your system prompt..."
-                      className="w-full min-h-[100px] max-h-[600px] text-sm rounded-md border border-input bg-background px-3 py-2 resize-y focus:outline-none focus:ring-1 focus:ring-red-500"
+                      className="w-full min-h-[80px] sm:min-h-[100px] max-h-[300px] sm:max-h-[600px] text-xs sm:text-sm rounded-md border border-input bg-background px-2 sm:px-3 py-2 resize-y focus:outline-none focus:ring-1 focus:ring-red-500"
                       style={{
                         whiteSpace: 'pre-wrap'
                       }}
                     />
                     {/* Display processed content with filled variables if any */}
                     {systemPromptDisplay && Object.keys(variables).some(key => variables[key].trim()) && (
-                      <div className="mt-2 p-3 bg-muted/50 rounded-md border">
+                      <div className="mt-2 p-2 sm:p-3 bg-muted/50 rounded-md border">
                         <p className="text-xs text-muted-foreground mb-2">Preview with filled variables:</p>
                         <div 
-                          className="text-sm [&_mark.filled-variable]:font-bold [&_mark.filled-variable]:text-red-600 [&_mark.filled-variable]:bg-red-50 [&_mark.filled-variable]:px-1 [&_mark.filled-variable]:py-0.5 [&_mark.filled-variable]:rounded [&_mark.filled-variable]:dark:bg-red-950 [&_mark.filled-variable]:dark:text-red-400"
+                          className="text-xs sm:text-sm [&_mark.filled-variable]:font-bold [&_mark.filled-variable]:text-red-600 [&_mark.filled-variable]:bg-red-50 [&_mark.filled-variable]:px-1 [&_mark.filled-variable]:py-0.5 [&_mark.filled-variable]:rounded [&_mark.filled-variable]:dark:bg-red-950 [&_mark.filled-variable]:dark:text-red-400"
                           dangerouslySetInnerHTML={{ __html: systemPromptDisplay }}
                         />
                       </div>
@@ -784,16 +804,16 @@ function PlaygroundContent() {
               </AccordionItem>
 
               <AccordionItem value="model-settings" className="border border-border rounded-lg bg-card shadow-sm">
-                <AccordionTrigger className="px-5 py-4 hover:no-underline hover:bg-muted/50 rounded-t-lg">
+                <AccordionTrigger className="px-3 sm:px-5 py-3 sm:py-4 hover:no-underline hover:bg-muted/50 rounded-t-lg">
                   <div className="flex items-center gap-2">
-                    <Cpu className="h-5 w-5 text-red-600" />
-                    <span className="font-semibold">Model Settings</span>
+                    <Cpu className="h-4 w-4 sm:h-5 sm:w-5 text-red-600" />
+                    <span className="font-semibold text-sm sm:text-base">Model Settings</span>
                   </div>
                 </AccordionTrigger>
-                <AccordionContent className="px-5 pb-5 space-y-5">
+                <AccordionContent className="px-3 sm:px-5 pb-4 sm:pb-5 space-y-4 sm:space-y-5">
                   <div>
                     <div className="flex items-center justify-between mb-2">
-                      <Label htmlFor="ai-model" className="text-sm font-medium text-muted-foreground">
+                      <Label htmlFor="ai-model" className="text-xs sm:text-sm font-medium text-muted-foreground">
                         AI Model
                       </Label>
                       <div className="flex items-center gap-2">
@@ -806,7 +826,7 @@ function PlaygroundContent() {
                               variant="ghost"
                               size="sm"
                               onClick={() => setShowModelPreferences(true)}
-                              className="h-6 w-6 p-0"
+                              className="h-5 w-5 sm:h-6 sm:w-6 p-0"
                             >
                               <Settings className="h-3 w-3" />
                             </Button>
@@ -818,14 +838,14 @@ function PlaygroundContent() {
                       </div>
                     </div>
                     <Select value={selectedModel} onValueChange={setSelectedModel}>
-                      <SelectTrigger id="ai-model" className="w-full border-border bg-background text-foreground">
+                      <SelectTrigger id="ai-model" className="w-full border-border bg-background text-foreground text-xs sm:text-sm">
                         <SelectValue />
                       </SelectTrigger>
                       <SelectContent>
                         {!modelPrefsLoading && availableModels.map((model) => (
                           <SelectItem key={model.id} value={model.id}>
                             <div className="flex items-center justify-between w-full">
-                              <span>{model.name}</span>
+                              <span className="text-xs sm:text-sm">{model.name}</span>
                               <span className="text-xs text-muted-foreground ml-2">{model.provider.toLowerCase()}</span>
                             </div>
                           </SelectItem>
@@ -833,23 +853,21 @@ function PlaygroundContent() {
                       </SelectContent>
                     </Select>
                   </div>
-
-
                 </AccordionContent>
               </AccordionItem>
 
               <AccordionItem value="generation-settings" className="border border-border rounded-lg bg-card shadow-sm">
-                <AccordionTrigger className="px-5 py-4 hover:no-underline hover:bg-muted/50 rounded-t-lg">
+                <AccordionTrigger className="px-3 sm:px-5 py-3 sm:py-4 hover:no-underline hover:bg-muted/50 rounded-t-lg">
                   <div className="flex items-center gap-2">
-                    <SlidersHorizontal className="h-5 w-5 text-red-600" />
-                    <span className="font-semibold">Generation Settings</span>
+                    <SlidersHorizontal className="h-4 w-4 sm:h-5 sm:w-5 text-red-600" />
+                    <span className="font-semibold text-sm sm:text-base">Generation Settings</span>
                   </div>
                 </AccordionTrigger>
-                <AccordionContent className="px-5 pb-5 space-y-6">
+                <AccordionContent className="px-3 sm:px-5 pb-4 sm:pb-5 space-y-4 sm:space-y-6">
                   {/* Temperature - First */}
                   <div className="space-y-2">
                     <div className="flex justify-between items-center">
-                      <Label htmlFor="temperature" className="text-sm font-medium text-muted-foreground">
+                      <Label htmlFor="temperature" className="text-xs sm:text-sm font-medium text-muted-foreground">
                         Temperature
                       </Label>
                       <Tooltip>
@@ -861,7 +879,7 @@ function PlaygroundContent() {
                         </TooltipContent>
                       </Tooltip>
                     </div>
-                    <div className="flex items-center space-x-3">
+                    <div className="flex items-center space-x-2 sm:space-x-3">
                       <Slider
                         id="temperature"
                         min={0}
@@ -871,7 +889,7 @@ function PlaygroundContent() {
                         onValueChange={([value]) => setTemperature(value)}
                         className="flex-1"
                       />
-                      <span className="text-sm text-foreground w-12 text-center border border-border rounded-md py-1 bg-muted">
+                      <span className="text-xs sm:text-sm text-foreground w-10 sm:w-12 text-center border border-border rounded-md py-1 bg-muted">
                         {temperature.toFixed(2)}
                       </span>
                     </div>
@@ -880,7 +898,7 @@ function PlaygroundContent() {
                   {/* Max Tokens - Second */}
                   <div className="space-y-2">
                     <div className="flex justify-between items-center">
-                      <Label htmlFor="maxTokens" className="text-sm font-medium text-muted-foreground">
+                      <Label htmlFor="maxTokens" className="text-xs sm:text-sm font-medium text-muted-foreground">
                         Max Tokens
                       </Label>
                       <Tooltip>
@@ -899,7 +917,7 @@ function PlaygroundContent() {
                       onChange={(e) => setMaxTokens(parseInt(e.target.value) || 0)}
                       min={1}
                       max={4000}
-                      className="w-full border-border bg-background text-foreground"
+                      className="w-full border-border bg-background text-foreground text-xs sm:text-sm"
                     />
                   </div>
 
@@ -938,7 +956,7 @@ function PlaygroundContent() {
                   ].map((param) => (
                     <div key={param.id} className="space-y-2">
                       <div className="flex justify-between items-center">
-                        <Label htmlFor={param.id} className="text-sm font-medium text-muted-foreground">
+                        <Label htmlFor={param.id} className="text-xs sm:text-sm font-medium text-muted-foreground">
                           {param.label}
                         </Label>
                         <Tooltip>
@@ -950,7 +968,7 @@ function PlaygroundContent() {
                           </TooltipContent>
                         </Tooltip>
                       </div>
-                      <div className="flex items-center space-x-3">
+                      <div className="flex items-center space-x-2 sm:space-x-3">
                         <Slider
                           id={param.id}
                           min={param.min}
@@ -960,7 +978,7 @@ function PlaygroundContent() {
                           onValueChange={([value]) => param.setValue(value)}
                           className="flex-1"
                         />
-                        <span className="text-sm text-foreground w-12 text-center border border-border rounded-md py-1 bg-muted">
+                        <span className="text-xs sm:text-sm text-foreground w-10 sm:w-12 text-center border border-border rounded-md py-1 bg-muted">
                           {param.value.toFixed(param.step < 1 ? 2 : 0)}
                         </span>
                       </div>
@@ -1014,9 +1032,8 @@ function PlaygroundContent() {
                 value={savePromptDescription}
                 onChange={(e) => setSavePromptDescription(e.target.value)}
                 className="min-h-[80px]"
-                maxLength={500}
               />
-              <p className="text-xs text-muted-foreground">Brief description of your prompt (max 500 characters). Drag the bottom-right corner to resize.</p>
+                                      <p className="text-xs text-muted-foreground">Brief description of your prompt. Drag the bottom-right corner to resize.</p>
             </div>
 
             {/* Prompt Content */}

@@ -164,12 +164,12 @@ export default async function PromptDetailPage({ params }: { params: Promise<{ i
               </div>
 
               {/* Action Buttons */}
-              <div className="flex flex-wrap gap-2 sm:gap-3">
+              <div className="flex flex-col sm:flex-row gap-2 sm:gap-3">
                 <PromptCopyButton
                   promptId={promptId}
                   text={prompt.content}
                   label="Copy"
-                  className="bg-primary hover:bg-primary/90"
+                  className="bg-primary hover:bg-primary/90 w-full sm:w-auto"
                 />
                 {user && (
                   <ForkButton
@@ -179,6 +179,7 @@ export default async function PromptDetailPage({ params }: { params: Promise<{ i
                     promptContent={prompt.content}
                     categoryId={prompt.category_id || 1}
                     tags={prompt.tags || []}
+                    className="w-full sm:w-auto"
                   />
                 )}
               </div>
@@ -204,7 +205,7 @@ export default async function PromptDetailPage({ params }: { params: Promise<{ i
           />
 
           {/* Additional Actions */}
-          <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3 sm:gap-4 mb-4 sm:mb-6">
+          <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4 sm:gap-4 mb-4 sm:mb-6">
             <div className="flex flex-wrap gap-2">
               {user && !isOwner && (
                 <ImprovementModal
@@ -214,7 +215,7 @@ export default async function PromptDetailPage({ params }: { params: Promise<{ i
                 />
               )}
             </div>
-            <div className="flex items-center gap-2 sm:gap-4">
+            <div className="flex items-center gap-3 sm:gap-4 w-full sm:w-auto justify-center sm:justify-end">
               {user ? (
                 <FavoriteButton
                   promptId={promptId}
@@ -241,7 +242,7 @@ export default async function PromptDetailPage({ params }: { params: Promise<{ i
                 size="sm"
                 className="text-muted-foreground hover:text-foreground text-xs sm:text-sm"
               >
-                <Share2 className="w-3 h-3 sm:w-4 sm:h-4 mr-0 sm:mr-2" />
+                <Share2 className="w-3 h-3 sm:w-4 sm:h-4 mr-1 sm:mr-2" />
                 <span className="hidden sm:inline">Share</span>
               </Button>
               <Button
@@ -249,7 +250,7 @@ export default async function PromptDetailPage({ params }: { params: Promise<{ i
                 size="sm"
                 className="text-muted-foreground hover:text-foreground text-xs sm:text-sm"
               >
-                <Flag className="w-3 h-3 sm:w-4 sm:h-4 mr-0 sm:mr-2" />
+                <Flag className="w-3 h-3 sm:w-4 sm:h-4 mr-1 sm:mr-2" />
                 <span className="hidden sm:inline">Report</span>
               </Button>
             </div>
@@ -257,18 +258,21 @@ export default async function PromptDetailPage({ params }: { params: Promise<{ i
 
           {/* Tabs Section */}
           <Tabs defaultValue="improvements" className="space-y-4 sm:space-y-6">
-            <TabsList className="w-full sm:w-auto grid grid-cols-3 sm:flex">
-              <TabsTrigger value="improvements" className="text-xs sm:text-sm">
+            <TabsList className="w-full sm:w-auto grid grid-cols-3 sm:flex gap-1 sm:gap-0">
+              <TabsTrigger value="improvements" className="text-xs sm:text-sm px-2 sm:px-4">
                 <Lightbulb className="w-3 h-3 sm:w-4 sm:h-4 mr-1 sm:mr-2" />
-                <span className="hidden sm:inline">Improvements</span>
-                <span className="sm:hidden">Improve</span>
+                <span className="hidden xs:inline sm:inline">Improvements</span>
+                <span className="xs:hidden sm:hidden">Ideas</span>
               </TabsTrigger>
-              <TabsTrigger value="comments" className="text-xs sm:text-sm">
+              <TabsTrigger value="comments" className="text-xs sm:text-sm px-2 sm:px-4">
                 <MessageSquare className="w-3 h-3 sm:w-4 sm:h-4 mr-1 sm:mr-2" />
-                <span className="hidden sm:inline">Comments</span>
-                <span className="sm:hidden">Comment</span>
+                <span className="hidden xs:inline sm:inline">Comments</span>
+                <span className="xs:hidden sm:hidden">Chat</span>
               </TabsTrigger>
-              <TabsTrigger value="versions" className="text-xs sm:text-sm">Version History</TabsTrigger>
+              <TabsTrigger value="versions" className="text-xs sm:text-sm px-2 sm:px-4">
+                <span className="hidden xs:inline sm:inline">Version History</span>
+                <span className="xs:hidden sm:hidden">Versions</span>
+              </TabsTrigger>
             </TabsList>
 
             {/* Improvements Tab */}

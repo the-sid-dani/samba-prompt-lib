@@ -169,9 +169,11 @@ async function CategoryPageContent({ categoryId }: { categoryId: string }) {
                     All Categories
                   </Link>
                 </Button>
-                <div className="mb-2">
-                  <CategoryEditModal category={category} />
-                </div>
+                {session?.user && (
+                  <div className="mb-2">
+                    <CategoryEditModal category={category} />
+                  </div>
+                )}
               </div>
               
               <div className="flex items-center gap-3">

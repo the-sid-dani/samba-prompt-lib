@@ -48,8 +48,7 @@ const formSchema = z.object({
     .min(1, 'Title is required')
     .max(100, 'Title must be less than 100 characters'),
   description: z.string()
-    .min(1, 'Description is required')
-    .max(500, 'Description must be less than 500 characters'),
+    .min(1, 'Description is required'),
   content: z.string()
     .min(1, 'Prompt content is required')
     .min(10, 'Prompt content must be at least 10 characters'),
@@ -385,13 +384,13 @@ export default function SubmitPromptPage() {
                         <FormControl>
                           <Textarea 
                             placeholder="Explain what your prompt does and when someone would use it..."
-                            className="resize-y border-muted-foreground/20 focus:border-primary transition-colors min-h-[80px] max-h-[300px]"
-                            rows={3}
+                            className="resize-y border-muted-foreground/20 focus:border-primary transition-colors min-h-[60px] max-h-[250px]"
+                            rows={2}
                             {...field} 
                           />
                         </FormControl>
                         <FormDescription>
-                          Brief description of your prompt (max 500 characters). Drag the bottom-right corner to resize.
+                          Brief description of your prompt. Drag the bottom-right corner to resize.
                         </FormDescription>
                         <FormMessage />
                       </FormItem>
@@ -408,7 +407,7 @@ export default function SubmitPromptPage() {
                         <FormControl>
                           <Textarea 
                             placeholder="Enter your full prompt content here. You can use markdown for formatting."
-                            className="resize-y border-muted-foreground/20 focus:border-primary transition-colors min-h-[300px] max-h-[600px]"
+                            className="resize-y border-muted-foreground/20 focus:border-primary transition-colors min-h-[350px] max-h-[700px]"
                             {...field} 
                           />
                         </FormControl>

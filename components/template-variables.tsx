@@ -8,6 +8,9 @@ import { Label } from '@/components/ui/label'
 import { Copy, RotateCcw, Beaker } from 'lucide-react'
 import { useDebouncedToast } from '@/hooks/use-debounced-toast'
 import { useRouter } from 'next/navigation'
+import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
+import { useToast } from '@/hooks/use-toast'
+import { cn } from '@/lib/utils'
 
 interface TemplateVariable {
   name: string
@@ -22,12 +25,44 @@ interface TemplateVariablesProps {
   onContentChange?: (content: string | undefined) => void
 }
 
+// Robust clipboard function with fallback for mobile
+const copyToClipboard = async (text: string): Promise<void> => {
+  try {
+    // Modern clipboard API with fallback
+    if (navigator.clipboard && window.isSecureContext) {
+      await navigator.clipboard.writeText(text)
+    } else {
+      // Fallback method for older browsers or non-secure contexts
+      const textArea = document.createElement('textarea')
+      textArea.value = text
+      textArea.style.position = 'fixed'
+      textArea.style.left = '-999999px'
+      textArea.style.top = '-999999px'
+      document.body.appendChild(textArea)
+      textArea.focus()
+      textArea.select()
+      
+      try {
+        document.execCommand('copy')
+      } catch (err) {
+        throw new Error('Failed to copy using fallback method')
+      } finally {
+        textArea.remove()
+      }
+    }
+  } catch (error) {
+    console.error('Failed to copy to clipboard:', error)
+    throw error
+  }
+}
+
 export function TemplateVariables({ content, promptId, className, onContentChange }: TemplateVariablesProps) {
   const [variables, setVariables] = useState<TemplateVariable[]>([])
   const [variableValues, setVariableValues] = useState<Record<string, string>>({})
   const [processedContent, setProcessedContent] = useState(content)
   const router = useRouter()
   const { showToast } = useDebouncedToast()
+  const { toast: showToastToast } = useToast()
 
   // Extract template variables from content
   useEffect(() => {
@@ -99,7 +134,7 @@ export function TemplateVariables({ content, promptId, className, onContentChang
     setVariableValues({})
   }
 
-  const handleCopyProcessed = () => {
+  const handleCopyProcessed = async () => {
     // Create clean content without highlight markers for copying
     let cleanContent = content
     let hasFilledVars = false
@@ -121,18 +156,26 @@ export function TemplateVariables({ content, promptId, className, onContentChang
       })
     })
     
-    navigator.clipboard.writeText(cleanContent)
-    
-    // Only show notification if variables were actually customized
-    if (hasFilledVars) {
-      showToast({
-        title: "Copied!",
-        description: "Customized prompt copied to clipboard",
-      })
-    } else {
-      showToast({
-        title: "Copied!",
-        description: "Prompt copied to clipboard",
+    try {
+      await copyToClipboard(cleanContent)
+      
+      // Only show notification if variables were actually customized
+      if (hasFilledVars) {
+        showToastToast({
+          title: "Copied!",
+          description: "Customized prompt copied to clipboard",
+        })
+      } else {
+        showToastToast({
+          title: "Copied!",
+          description: "Prompt copied to clipboard",
+        })
+      }
+    } catch (error) {
+      showToastToast({
+        title: "Error",
+        description: "Failed to copy to clipboard",
+        variant: "destructive",
       })
     }
   }
@@ -172,69 +215,71 @@ export function TemplateVariables({ content, promptId, className, onContentChang
   )
 
   return (
-    <div className={`space-y-4 ${className || ''}`}>
-      <div className="flex items-center justify-between">
-        <div>
-          <h3 className="text-sm font-medium">Template Variables</h3>
-          <p className="text-xs text-muted-foreground">Fill in the variables to customize this prompt</p>
-        </div>
-        <div className="flex gap-2">
-          <Button
-            onClick={handleReset}
-            className="text-xs h-8 px-3"
-          >
-            <RotateCcw className="w-3 h-3 mr-1" />
-            Reset
-          </Button>
-          <Button
-            onClick={handleCopyProcessed}
-            className="text-xs h-8 px-3"
-          >
-            <Copy className="w-3 h-3 mr-1" />
-            Copy Filled
-          </Button>
-          {promptId && (
+    <Card className={cn("mb-4 sm:mb-6", className)}>
+      <CardHeader>
+        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 sm:gap-4">
+          <CardTitle className="text-lg">Customize Variables</CardTitle>
+          <div className="flex flex-wrap gap-2 sm:gap-2">
             <Button
-              className="text-xs h-8 px-3"
-              onClick={handleTestInPlayground}
+              variant="outline"
+              size="sm"
+              onClick={handleReset}
+              className="text-xs h-8 px-3 flex-1 sm:flex-none min-w-0"
             >
-              <Beaker className="w-3 h-3 mr-1" />
-              Test in Playground
+              <RotateCcw className="w-3 h-3 mr-1 shrink-0" />
+              <span className="truncate">Reset</span>
             </Button>
-          )}
+            <Button
+              variant="default"
+              size="sm"
+              onClick={handleCopyProcessed}
+              className="text-xs h-8 px-3 flex-1 sm:flex-none min-w-0"
+            >
+              <Copy className="w-3 h-3 mr-1 shrink-0" />
+              <span className="truncate">Copy</span>
+            </Button>
+            {promptId && (
+              <Button
+                className="text-xs h-8 px-3 flex-1 sm:flex-none min-w-0"
+                onClick={handleTestInPlayground}
+              >
+                <Beaker className="w-3 h-3 mr-1 shrink-0" />
+                <span className="truncate sm:inline">Test</span>
+                <span className="hidden sm:inline"> in Playground</span>
+              </Button>
+            )}
+          </div>
         </div>
-      </div>
-      
-      <div className="grid gap-3">
-        {variables.map(variable => (
+      </CardHeader>
+      <CardContent className="space-y-4">
+        {variables.map((variable) => (
           <div key={variable.name} className="space-y-2">
-            <div className="flex items-center gap-2">
-              <Label htmlFor={variable.name} className="text-sm">
-                {variable.name}
-              </Label>
+            <Label htmlFor={variable.name} className="text-sm font-medium">
+              {variable.name}
               {variable.defaultValue && (
-                <Badge variant="secondary" className="text-xs">
-                  {variable.defaultValue}
-                </Badge>
+                <span className="text-xs text-muted-foreground ml-2">
+                  (default: {variable.defaultValue})
+                </span>
               )}
-            </div>
+            </Label>
             <Input
               id={variable.name}
-              type="text"
-              placeholder={variable.defaultValue || `Enter ${variable.name}`}
               value={variableValues[variable.name] || ''}
               onChange={(e) => handleVariableChange(variable.name, e.target.value)}
+              placeholder={variable.defaultValue || `Enter ${variable.name}`}
               className="text-sm"
             />
           </div>
         ))}
-      </div>
-      
-      {hasFilledVariables && (
-        <div className="text-xs text-muted-foreground">
-          Variables filled! The prompt above shows your customized version.
+        
+        {/* Preview */}
+        <div className="mt-6 p-4 bg-muted rounded-lg">
+          <Label className="text-sm font-medium mb-2 block">Preview:</Label>
+          <div className="text-sm whitespace-pre-wrap break-words">
+            {processedContent}
+          </div>
         </div>
-      )}
-    </div>
+      </CardContent>
+    </Card>
   )
 }

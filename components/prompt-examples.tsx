@@ -20,6 +20,37 @@ interface PromptExamplesProps {
   className?: string
 }
 
+// Robust clipboard function with fallback for mobile
+const copyToClipboard = async (text: string): Promise<void> => {
+  try {
+    // Modern clipboard API with fallback
+    if (navigator.clipboard && window.isSecureContext) {
+      await navigator.clipboard.writeText(text)
+    } else {
+      // Fallback method for older browsers or non-secure contexts
+      const textArea = document.createElement('textarea')
+      textArea.value = text
+      textArea.style.position = 'fixed'
+      textArea.style.left = '-999999px'
+      textArea.style.top = '-999999px'
+      document.body.appendChild(textArea)
+      textArea.focus()
+      textArea.select()
+      
+      try {
+        document.execCommand('copy')
+      } catch (err) {
+        throw new Error('Failed to copy using fallback method')
+      } finally {
+        textArea.remove()
+      }
+    }
+  } catch (error) {
+    console.error('Failed to copy to clipboard:', error)
+    throw error
+  }
+}
+
 export function PromptExamples({ examples, className }: PromptExamplesProps) {
   const { toast } = useToast()
   const [expandedIndex, setExpandedIndex] = useState<number | null>(0)
@@ -28,12 +59,20 @@ export function PromptExamples({ examples, className }: PromptExamplesProps) {
     return null
   }
 
-  const handleCopy = (text: string, type: 'input' | 'output') => {
-    navigator.clipboard.writeText(text)
-    toast({
-      title: "Copied!",
-      description: `Example ${type} copied to clipboard`,
-    })
+  const handleCopy = async (text: string, type: 'input' | 'output') => {
+    try {
+      await copyToClipboard(text)
+      toast({
+        title: "Copied!",
+        description: `Example ${type} copied to clipboard`,
+      })
+    } catch (error) {
+      toast({
+        title: "Error",
+        description: "Failed to copy to clipboard",
+        variant: "destructive",
+      })
+    }
   }
 
   return (

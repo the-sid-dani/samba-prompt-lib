@@ -1349,50 +1349,65 @@ async function updatePromptVoteCount(promptId: number, voteType: 'up' | 'down', 
   }
 }
 
-// Fetch existing tags for autocomplete
+// Fetch existing tags for autocomplete - optimized version
 export async function fetchTags(query?: string): Promise<string[]> {
   try {
     const supabase = createSupabaseAdminClient()
-    console.log('Fetching tags with query:', query)
     
-    // Get all prompts to extract unique tags
-    const { data: prompts, error } = await supabase
+    // Use a more efficient approach: get tags directly from a materialized view or aggregated query
+    // For now, we'll optimize by limiting the data we fetch and using better filtering
+    
+    let dbQuery = supabase
       .from('prompt')
       .select('tags')
       .not('tags', 'is', null)
+      .limit(1000) // Limit to recent prompts for better performance
+      .order('created_at', { ascending: false })
+    
+    const { data: prompts, error } = await dbQuery
     
     if (error) {
       console.error('Error fetching tags:', error)
       throw new Error(`Failed to fetch tags: ${error.message}`)
     }
     
-    // Extract and count unique tags
+    // Extract and count unique tags more efficiently
     const tagCounts = new Map<string, number>()
     
     prompts?.forEach(prompt => {
       if (prompt.tags && Array.isArray(prompt.tags)) {
         prompt.tags.forEach(tag => {
-          if (typeof tag === 'string') {
-            const lowerTag = tag.toLowerCase()
-            tagCounts.set(lowerTag, (tagCounts.get(lowerTag) || 0) + 1)
+          if (typeof tag === 'string' && tag.trim()) {
+            const normalizedTag = tag.toLowerCase().trim()
+            // Pre-filter during extraction if query is provided
+            if (!query || query.length < 2 || normalizedTag.includes(query.toLowerCase())) {
+              tagCounts.set(normalizedTag, (tagCounts.get(normalizedTag) || 0) + 1)
+            }
           }
         })
       }
     })
     
-    // Convert to array and sort by popularity
+    // Convert to array and sort by popularity, then alphabetically
     let uniqueTags = Array.from(tagCounts.entries())
-      .sort((a, b) => b[1] - a[1]) // Sort by count descending
+      .sort((a, b) => {
+        // First sort by popularity (descending)
+        if (b[1] !== a[1]) {
+          return b[1] - a[1]
+        }
+        // Then sort alphabetically for tags with same popularity
+        return a[0].localeCompare(b[0])
+      })
       .map(([tag]) => tag)
     
-    // Filter by query if provided
+    // Additional filtering if query is provided and wasn't pre-filtered
     if (query && query.length >= 2) {
       const lowerQuery = query.toLowerCase()
       uniqueTags = uniqueTags.filter(tag => tag.includes(lowerQuery))
     }
     
-    console.log('Found tags:', uniqueTags.length)
-    return uniqueTags.slice(0, 20) // Return top 20 tags
+    // Return top 15 tags for better UX (not too overwhelming)
+    return uniqueTags.slice(0, 15)
   } catch (error) {
     console.error('Error in fetchTags:', error)
     return []

@@ -37,8 +37,7 @@ const formSchema = z.object({
     .min(1, 'Title is required')
     .max(100, 'Title must be less than 100 characters'),
   description: z.string()
-    .min(1, 'Description is required')
-    .max(500, 'Description must be less than 500 characters'),
+    .min(1, 'Description is required'),
   content: z.string()
     .min(1, 'Prompt content is required')
     .min(10, 'Prompt content must be at least 10 characters'),
@@ -210,7 +209,7 @@ export default function EditPromptForm({ prompt }: EditPromptFormProps) {
                           />
                         </FormControl>
                         <FormDescription className="text-muted-foreground">
-                          Brief description of your prompt (max 500 characters). Drag the bottom-right corner to resize.
+                          Brief description of your prompt. Drag the bottom-right corner to resize.
                         </FormDescription>
                         <FormMessage />
                       </FormItem>
