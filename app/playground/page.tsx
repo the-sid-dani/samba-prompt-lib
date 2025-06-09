@@ -590,7 +590,7 @@ function PlaygroundContent() {
       <div className="container mx-auto px-2 sm:px-4 py-4 sm:py-8">
         <div className="flex flex-col lg:flex-row min-h-[calc(100vh-8rem)] sm:min-h-[calc(100vh-12rem)] bg-card rounded-xl overflow-hidden shadow-2xl shadow-black/10 dark:shadow-black/50">
           {/* Left Panel - Conversation */}
-          <div className="w-full lg:w-3/5 flex flex-col bg-card order-2 lg:order-1">
+          <div className="w-full lg:w-3/5 flex flex-col bg-card order-1 lg:order-1 min-h-[60vh] lg:min-h-0">
             <div className="flex-1 flex flex-col">
               {/* Header */}
               <div className="border-b border-border">
@@ -748,9 +748,9 @@ function PlaygroundContent() {
           </div>
 
           {/* Right Panel - Settings */}
-          <div className="w-full lg:w-2/5 bg-muted/30 border-b lg:border-b-0 lg:border-l border-border order-1 lg:order-2">
+          <div className="w-full lg:w-2/5 bg-muted/30 border-t lg:border-t-0 lg:border-l border-border order-2 lg:order-2">
             <TooltipProvider>
-              <div className="h-full max-h-[50vh] lg:max-h-none overflow-y-auto">
+                              <div className="h-full max-h-[40vh] lg:max-h-none overflow-y-auto">
                 <div className="p-3 sm:p-6 space-y-3 sm:space-y-4">
                   <Accordion type="multiple" defaultValue={["system-prompt", "model-settings"]} className="w-full space-y-3 sm:space-y-4">
                     <AccordionItem value="system-prompt" className="border border-border rounded-lg bg-card shadow-sm">
