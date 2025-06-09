@@ -750,11 +750,11 @@ function PlaygroundContent() {
           {/* Right Panel - Settings */}
           <div className="w-full lg:w-2/5 bg-muted/30 border-b lg:border-b-0 lg:border-l border-border order-1 lg:order-2">
             <TooltipProvider>
-              <ScrollArea className="h-full max-h-[50vh] lg:max-h-none">
+              <div className="h-full max-h-[50vh] lg:max-h-none overflow-y-auto">
                 <div className="p-3 sm:p-6 space-y-3 sm:space-y-4">
                   <Accordion type="multiple" defaultValue={["system-prompt", "model-settings"]} className="w-full space-y-3 sm:space-y-4">
                     <AccordionItem value="system-prompt" className="border border-border rounded-lg bg-card shadow-sm">
-                      <AccordionTrigger className="px-3 sm:px-4 py-2.5 sm:py-3 hover:no-underline hover:bg-muted/50 rounded-t-lg">
+                      <AccordionTrigger className="px-3 sm:px-4 py-2.5 sm:py-3 hover:no-underline hover:bg-muted/50 rounded-t-lg touch-manipulation">
                         <div className="flex items-center justify-between w-full">
                           <div className="flex items-center gap-2">
                             <Bot className="h-4 w-4 sm:h-5 sm:w-5 text-red-600" />
@@ -796,7 +796,7 @@ function PlaygroundContent() {
                     </AccordionItem>
 
                     <AccordionItem value="model-settings" className="border border-border rounded-lg bg-card shadow-sm">
-                      <AccordionTrigger className="px-3 sm:px-4 py-2.5 sm:py-3 hover:no-underline hover:bg-muted/50 rounded-t-lg">
+                      <AccordionTrigger className="px-3 sm:px-4 py-2.5 sm:py-3 hover:no-underline hover:bg-muted/50 rounded-t-lg touch-manipulation">
                         <div className="flex items-center gap-2">
                           <Cpu className="h-4 w-4 sm:h-5 sm:w-5 text-red-600" />
                           <span className="font-semibold text-sm sm:text-base">Model Settings</span>
@@ -849,13 +849,13 @@ function PlaygroundContent() {
                     </AccordionItem>
 
                     <AccordionItem value="generation-settings" className="border border-border rounded-lg bg-card shadow-sm">
-                      <AccordionTrigger className="px-3 sm:px-4 py-2.5 sm:py-3 hover:no-underline hover:bg-muted/50 rounded-t-lg">
+                      <AccordionTrigger className="px-3 sm:px-4 py-2.5 sm:py-3 hover:no-underline hover:bg-muted/50 rounded-t-lg touch-manipulation">
                         <div className="flex items-center gap-2">
                           <SlidersHorizontal className="h-4 w-4 sm:h-5 sm:w-5 text-red-600" />
                           <span className="font-semibold text-sm sm:text-base">Generation Settings</span>
                         </div>
                       </AccordionTrigger>
-                      <AccordionContent className="px-3 sm:px-5 pb-3 sm:pb-4">
+                      <AccordionContent className="px-3 sm:px-4 pb-3 sm:pb-4">
                         <div className="space-y-3">
                           {/* Temperature - First */}
                           <div className="space-y-1.5">
@@ -982,7 +982,7 @@ function PlaygroundContent() {
                     </AccordionItem>
                   </Accordion>
                 </div>
-              </ScrollArea>
+              </div>
             </TooltipProvider>
           </div>
         </div>
