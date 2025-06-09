@@ -428,38 +428,30 @@ function PlaygroundContent() {
     setError('');
   };
 
-  // Copy message to clipboard with mobile fallback
+  // Copy message to clipboard using centralized utility
   const copyMessage = async (content: string) => {
-    try {
-      // Modern clipboard API with fallback
-      if (navigator.clipboard && window.isSecureContext) {
-        await navigator.clipboard.writeText(content);
-      } else {
-        // Fallback method for older browsers or non-secure contexts
-        const textArea = document.createElement('textarea');
-        textArea.value = content;
-        textArea.style.position = 'fixed';
-        textArea.style.left = '-999999px';
-        textArea.style.top = '-999999px';
-        document.body.appendChild(textArea);
-        textArea.focus();
-        textArea.select();
-        
-        try {
-          document.execCommand('copy');
-        } catch (err) {
-          throw new Error('Failed to copy using fallback method');
-        } finally {
-          textArea.remove();
-        }
+    const { copyToClipboard } = await import('@/lib/clipboard');
+    
+    const success = await copyToClipboard(content, {
+      onSuccess: () => {
+        toast({
+          title: "Copied!",
+          description: "Message copied to clipboard",
+        });
+      },
+      onError: (error) => {
+        console.error('[Playground] Copy error:', error);
+        toast({
+          title: "Error",
+          description: "Failed to copy to clipboard",
+          variant: "destructive",
+        });
       }
-      
-      toast({
-        title: "Copied!",
-        description: "Message copied to clipboard",
-      });
-    } catch (error) {
-      console.error('[Playground] Copy error:', error);
+    });
+    
+    // Handle case where utility returns false but doesn't call onError
+    if (!success) {
+      console.error('[Playground] Copy failed silently');
       toast({
         title: "Error",
         description: "Failed to copy to clipboard",

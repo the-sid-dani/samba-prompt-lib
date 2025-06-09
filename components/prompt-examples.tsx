@@ -20,36 +20,8 @@ interface PromptExamplesProps {
   className?: string
 }
 
-// Robust clipboard function with fallback for mobile
-const copyToClipboard = async (text: string): Promise<void> => {
-  try {
-    // Modern clipboard API with fallback
-    if (navigator.clipboard && window.isSecureContext) {
-      await navigator.clipboard.writeText(text)
-    } else {
-      // Fallback method for older browsers or non-secure contexts
-      const textArea = document.createElement('textarea')
-      textArea.value = text
-      textArea.style.position = 'fixed'
-      textArea.style.left = '-999999px'
-      textArea.style.top = '-999999px'
-      document.body.appendChild(textArea)
-      textArea.focus()
-      textArea.select()
-      
-      try {
-        document.execCommand('copy')
-      } catch (err) {
-        throw new Error('Failed to copy using fallback method')
-      } finally {
-        textArea.remove()
-      }
-    }
-  } catch (error) {
-    console.error('Failed to copy to clipboard:', error)
-    throw error
-  }
-}
+// Import centralized clipboard utility
+import { copyToClipboard } from '@/lib/clipboard'
 
 export function PromptExamples({ examples, className }: PromptExamplesProps) {
   const { toast } = useToast()
@@ -60,13 +32,25 @@ export function PromptExamples({ examples, className }: PromptExamplesProps) {
   }
 
   const handleCopy = async (text: string, type: 'input' | 'output') => {
-    try {
-      await copyToClipboard(text)
-      toast({
-        title: "Copied!",
-        description: `Example ${type} copied to clipboard`,
-      })
-    } catch (error) {
+    const success = await copyToClipboard(text, {
+      onSuccess: () => {
+        toast({
+          title: "Copied!",
+          description: `Example ${type} copied to clipboard`,
+        })
+      },
+      onError: (error) => {
+        console.error('Prompt examples copy error:', error)
+        toast({
+          title: "Error",
+          description: "Failed to copy to clipboard",
+          variant: "destructive",
+        })
+      }
+    })
+    
+    // Handle case where utility returns false but doesn't call onError
+    if (!success) {
       toast({
         title: "Error",
         description: "Failed to copy to clipboard",

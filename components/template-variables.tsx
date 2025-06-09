@@ -25,36 +25,8 @@ interface TemplateVariablesProps {
   onContentChange?: (content: string | undefined) => void
 }
 
-// Robust clipboard function with fallback for mobile
-const copyToClipboard = async (text: string): Promise<void> => {
-  try {
-    // Modern clipboard API with fallback
-    if (navigator.clipboard && window.isSecureContext) {
-      await navigator.clipboard.writeText(text)
-    } else {
-      // Fallback method for older browsers or non-secure contexts
-      const textArea = document.createElement('textarea')
-      textArea.value = text
-      textArea.style.position = 'fixed'
-      textArea.style.left = '-999999px'
-      textArea.style.top = '-999999px'
-      document.body.appendChild(textArea)
-      textArea.focus()
-      textArea.select()
-      
-      try {
-        document.execCommand('copy')
-      } catch (err) {
-        throw new Error('Failed to copy using fallback method')
-      } finally {
-        textArea.remove()
-      }
-    }
-  } catch (error) {
-    console.error('Failed to copy to clipboard:', error)
-    throw error
-  }
-}
+// Import centralized clipboard utility
+import { copyToClipboard } from '@/lib/clipboard'
 
 export function TemplateVariables({ content, promptId, className, onContentChange }: TemplateVariablesProps) {
   const [variables, setVariables] = useState<TemplateVariable[]>([])
@@ -156,22 +128,33 @@ export function TemplateVariables({ content, promptId, className, onContentChang
       })
     })
     
-    try {
-      await copyToClipboard(cleanContent)
-      
-      // Only show notification if variables were actually customized
-      if (hasFilledVars) {
+    const success = await copyToClipboard(cleanContent, {
+      onSuccess: () => {
+        // Only show notification if variables were actually customized
+        if (hasFilledVars) {
+          showToastToast({
+            title: "Copied!",
+            description: "Customized prompt copied to clipboard",
+          })
+        } else {
+          showToastToast({
+            title: "Copied!",
+            description: "Prompt copied to clipboard",
+          })
+        }
+      },
+      onError: (error) => {
+        console.error('Template variables copy error:', error)
         showToastToast({
-          title: "Copied!",
-          description: "Customized prompt copied to clipboard",
-        })
-      } else {
-        showToastToast({
-          title: "Copied!",
-          description: "Prompt copied to clipboard",
+          title: "Error",
+          description: "Failed to copy to clipboard",
+          variant: "destructive",
         })
       }
-    } catch (error) {
+    })
+    
+    // Handle case where utility returns false but doesn't call onError
+    if (!success) {
       showToastToast({
         title: "Error",
         description: "Failed to copy to clipboard",
