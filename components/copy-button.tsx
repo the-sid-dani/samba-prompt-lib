@@ -62,12 +62,7 @@ export function CopyButton({
     setIsLoading(true)
     
     try {
-      // Call the onCopy callback if provided (for analytics, etc.)
-      if (onCopy) {
-        await onCopy()
-      }
-      
-      // Use our centralized clipboard utility
+      // Use our centralized clipboard utility FIRST
       const success = await copyToClipboard(text, {
         onSuccess: () => {
           console.log('Clipboard copy successful')
@@ -83,6 +78,22 @@ export function CopyButton({
           setTimeout(() => {
             setIsCopied(false)
           }, 2000)
+          
+          // Call the onCopy callback AFTER successful clipboard operation (for analytics, etc.)
+          if (onCopy) {
+            try {
+              const result = onCopy()
+              if (result instanceof Promise) {
+                result.catch((error: unknown) => {
+                  console.error('onCopy callback failed:', error)
+                  // Don't show error to user since clipboard operation succeeded
+                })
+              }
+            } catch (error) {
+              console.error('onCopy callback failed:', error)
+              // Don't show error to user since clipboard operation succeeded
+            }
+          }
         },
         onError: (error) => {
           console.error('Clipboard copy failed:', error)

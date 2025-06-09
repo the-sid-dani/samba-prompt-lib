@@ -23,31 +23,20 @@ export function PromptCopyButton({
   const { execute } = useAsyncOperation()
   const [isProcessing, setIsProcessing] = useState(false)
   
-  // Debug logging
-  console.log('PromptCopyButton render - promptId:', promptId, 'text length:', text?.length || 0)
-  
   const handleCopy = async () => {
-    console.log('PromptCopyButton handleCopy called - promptId:', promptId, 'text:', text?.substring(0, 50) + '...')
-    
     // Simple state check to prevent rapid double-clicks
     if (isProcessing) {
-      console.log('Copy already in progress, ignoring')
       return
     }
 
     setIsProcessing(true)
-    console.log('Starting copy operation for prompt:', promptId)
 
     try {
-      // Don't handle clipboard here - let CopyButton handle it with fallback
-      // Just increment usage count (asynchronous operation)
+      // Increment usage count (asynchronous operation)
       // Database-level atomic operation handles race conditions
       await execute(async () => {
-        console.log('Calling incrementPromptUses for prompt:', promptId)
         return await incrementPromptUses(promptId)
       })
-      
-      console.log('Copy operation completed successfully')
     } catch (error) {
       console.error('Usage increment failed:', error)
       // Even if increment fails, the copy to clipboard still worked
