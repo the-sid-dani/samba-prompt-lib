@@ -1,6 +1,6 @@
 "use client";
 
-import { Search, Sparkles } from "lucide-react";
+import { Sparkles } from "lucide-react";
 import { Input } from "@/components/ui/input";
 
 interface HeroSectionProps {
@@ -24,11 +24,10 @@ export function HeroSection({ searchValue, onSearchChange }: HeroSectionProps) {
         
         {/* Search Bar */}
         <div className="max-w-2xl mx-auto relative px-4 sm:px-0">
-          <Search className="absolute left-[40px] sm:left-[28px] md:left-[28px] top-1/2 transform -translate-y-1/2 text-muted-foreground w-4 h-4 pointer-events-none z-10" />
           <Input
             type="text"
             placeholder="Search by title, description, category or prompt text..."
-            className="pl-[70px] sm:pl-[62px] md:pl-[62px] pr-4 py-3 sm:py-4 md:py-6 text-[11px] sm:text-xs md:text-sm rounded-full border-2 border-border focus:border-primary bg-background text-foreground"
+            className="pl-4 pr-4 py-3 sm:py-4 md:py-6 text-[11px] sm:text-xs md:text-sm rounded-full border-2 border-border focus:border-primary bg-background text-foreground"
             value={searchValue}
             onChange={(e) => onSearchChange(e.target.value)}
           />

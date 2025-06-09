@@ -256,14 +256,7 @@ export function TemplateVariables({ content, promptId, className, onContentChang
             />
           </div>
         ))}
-        
-        {/* Preview */}
-        <div className="mt-6 p-4 bg-muted rounded-lg">
-          <Label className="text-sm font-medium mb-2 block">Preview:</Label>
-          <div className="text-sm whitespace-pre-wrap break-words">
-            {processedContent}
-          </div>
-        </div>
+
       </CardContent>
     </Card>
   )
