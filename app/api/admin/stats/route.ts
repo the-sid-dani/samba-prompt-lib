@@ -85,6 +85,15 @@ export async function GET(request: NextRequest) {
       .select('id, created_at')
       .order('created_at', { ascending: false })
 
+    // Get categories and tags count
+    const { data: categoriesData } = await supabase
+      .from('categories')
+      .select('id')
+    
+    const { data: tagsData } = await supabase
+      .from('tags')
+      .select('id')
+
     const totalPrompts = promptsData?.length || 0
     const featuredPrompts = promptsData?.filter(p => p.featured).length || 0
     const totalUsers = usersData?.length || 0
@@ -101,12 +110,72 @@ export async function GET(request: NextRequest) {
       u.created_at && new Date(u.created_at) > thirtyDaysAgo
     ).length || 0
 
+    // Get popular prompts based on interactions
+    console.log('📊 [Admin Stats] Fetching popular prompts...')
+    const { data: promptInteractions } = await supabase
+      .from('user_interactions')
+      .select('prompt_id, interaction_type')
+      .not('prompt_id', 'is', null)
+
+    const { data: promptFavorites } = await supabase
+      .from('user_favorites')
+      .select('prompt_id')
+
+    // Count interactions and favorites per prompt
+    const promptStats: Record<string, { uses: number; favorites: number }> = {}
+    
+    if (promptInteractions) {
+      promptInteractions.forEach(interaction => {
+        if (interaction.prompt_id) {
+          if (!promptStats[interaction.prompt_id]) {
+            promptStats[interaction.prompt_id] = { uses: 0, favorites: 0 }
+          }
+          promptStats[interaction.prompt_id].uses++
+        }
+      })
+    }
+    
+    if (promptFavorites) {
+      promptFavorites.forEach(fav => {
+        if (fav.prompt_id) {
+          if (!promptStats[fav.prompt_id]) {
+            promptStats[fav.prompt_id] = { uses: 0, favorites: 0 }
+          }
+          promptStats[fav.prompt_id].favorites++
+        }
+      })
+    }
+
+    // Get top 10 prompts by combined score (uses + favorites)
+    const topPromptIds = Object.entries(promptStats)
+      .sort(([, a], [, b]) => (b.uses + b.favorites) - (a.uses + a.favorites))
+      .slice(0, 10)
+      .map(([id]) => parseInt(id))
+
+    // Fetch prompt details for popular prompts
+    let popularPrompts: any[] = []
+    if (topPromptIds.length > 0) {
+      const { data: promptDetails } = await supabase
+        .from('prompt')
+        .select('id, title')
+        .in('id', topPromptIds)
+
+      popularPrompts = promptDetails?.map(prompt => ({
+        id: prompt.id,
+        title: prompt.title,
+        uses: promptStats[prompt.id]?.uses || 0,
+        favorites: promptStats[prompt.id]?.favorites || 0
+      })).sort((a, b) => (b.uses + b.favorites) - (a.uses + a.favorites)) || []
+    }
+
+    console.log('📊 [Admin Stats] Popular prompts:', popularPrompts.length)
+
     // Combine all stats in the format expected by the frontend
     const stats = {
       totalUsers,
       totalPrompts,
-      totalCategories: 0, // TODO: Add categories count
-      totalTags: 0, // TODO: Add tags count
+      totalCategories: categoriesData?.length || 0,
+      totalTags: tagsData?.length || 0,
       overview: {
         totalUsers,
         newUsers,
@@ -160,7 +229,8 @@ export async function GET(request: NextRequest) {
       contentStats: {
         promptsToday: newPrompts,
         totalViews: analyticsData.topEvents.find(e => e.event_type === 'view')?.count || 0,
-        totalShares: analyticsData.topEvents.find(e => e.event_type === 'share')?.count || 0
+        totalShares: analyticsData.topEvents.find(e => e.event_type === 'share')?.count || 0,
+        popularPrompts: popularPrompts
       }
     }
 

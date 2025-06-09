@@ -701,34 +701,115 @@ export default function AdminDashboard() {
 
           {/* Content Tab */}
           <TabsContent value="content" className="space-y-6">
-            <div className="grid grid-cols-1 gap-6">
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+              {/* Content Overview Cards */}
               <Card>
+                <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+                  <CardTitle className="text-sm font-medium">Total Prompts</CardTitle>
+                  <FileText className="w-4 h-4 text-muted-foreground" />
+                </CardHeader>
+                <CardContent>
+                  <div className="text-2xl font-bold">{stats?.totalPrompts || 0}</div>
+                  <p className="text-xs text-muted-foreground">
+                    +{stats?.contentStats?.promptsToday || 0} today
+                  </p>
+                </CardContent>
+              </Card>
+
+              <Card>
+                <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+                  <CardTitle className="text-sm font-medium">Categories</CardTitle>
+                  <Tags className="w-4 h-4 text-muted-foreground" />
+                </CardHeader>
+                <CardContent>
+                  <div className="text-2xl font-bold">{stats?.totalCategories || 0}</div>
+                  <p className="text-xs text-muted-foreground">Total categories</p>
+                </CardContent>
+              </Card>
+
+              {/* Popular Content */}
+              <Card className="md:col-span-2">
                 <CardHeader>
                   <CardTitle className="flex items-center gap-2">
                     <TrendingUp className="w-5 h-5" />
                     Popular Content
                   </CardTitle>
+                  <CardDescription>
+                    Most used and favorited prompts
+                  </CardDescription>
                 </CardHeader>
                 <CardContent>
-                  <div className="space-y-3">
-                    {stats?.contentStats?.popularPrompts?.map((prompt, index) => (
-                      <div key={prompt.id} className="flex items-center justify-between">
-                        <div className="flex-1">
-                          <p className="text-sm font-medium truncate">{prompt.title}</p>
-                          <div className="flex items-center gap-2 text-xs text-muted-foreground">
-                            <Copy className="w-3 h-3" />
-                            {prompt.uses} uses
-                            <Heart className="w-3 h-3" />
-                            {prompt.favorites} favorites
+                  {stats?.contentStats?.popularPrompts && stats.contentStats.popularPrompts.length > 0 ? (
+                    <div className="space-y-3">
+                      {stats.contentStats.popularPrompts.map((prompt, index) => (
+                        <div key={prompt.id} className="flex items-center justify-between p-3 rounded-lg border hover:bg-muted/50 transition-colors">
+                          <div className="flex-1">
+                            <p className="text-sm font-medium truncate">{prompt.title}</p>
+                            <div className="flex items-center gap-4 mt-1 text-xs text-muted-foreground">
+                              <span className="flex items-center gap-1">
+                                <Copy className="w-3 h-3" />
+                                {prompt.uses} uses
+                              </span>
+                              <span className="flex items-center gap-1">
+                                <Heart className="w-3 h-3" />
+                                {prompt.favorites} favorites
+                              </span>
+                            </div>
                           </div>
+                          <Badge variant={index < 3 ? 'default' : 'outline'}>
+                            #{index + 1}
+                          </Badge>
                         </div>
-                        <Badge variant="outline">#{index + 1}</Badge>
-                      </div>
-                    )) || (
-                      <p className="text-muted-foreground text-center py-4">
-                        No popular content data available
+                      ))}
+                    </div>
+                  ) : (
+                    <div className="text-center py-8">
+                      <TrendingUp className="w-12 h-12 text-muted-foreground mx-auto mb-4" />
+                      <p className="text-muted-foreground">
+                        No popular content data available yet
                       </p>
-                    )}
+                      <p className="text-sm text-muted-foreground mt-2">
+                        Popular prompts will appear here once users start interacting with content
+                      </p>
+                    </div>
+                  )}
+                </CardContent>
+              </Card>
+
+              {/* Quick Actions */}
+              <Card className="md:col-span-2">
+                <CardHeader>
+                  <CardTitle>Content Management</CardTitle>
+                  <CardDescription>
+                    Quick access to content management tools
+                  </CardDescription>
+                </CardHeader>
+                <CardContent>
+                  <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+                    <Button
+                      variant="outline"
+                      className="w-full justify-start"
+                      onClick={() => router.push('/admin/tags-categories')}
+                    >
+                      <Tags className="w-4 h-4 mr-2" />
+                      Manage Tags & Categories
+                    </Button>
+                    <Button
+                      variant="outline"
+                      className="w-full justify-start"
+                      onClick={() => router.push('/admin/cleanup')}
+                    >
+                      <Zap className="w-4 h-4 mr-2" />
+                      Cleanup Duplicates
+                    </Button>
+                    <Button
+                      variant="outline"
+                      className="w-full justify-start"
+                      onClick={() => router.push('/admin/fix-titles')}
+                    >
+                      <Edit className="w-4 h-4 mr-2" />
+                      Fix Titles
+                    </Button>
                   </div>
                 </CardContent>
               </Card>
