@@ -60,26 +60,93 @@ export function CopyButton({
         await onCopy()
       }
       
-      // Modern clipboard API with fallback
-      if (navigator.clipboard && window.isSecureContext) {
-        await navigator.clipboard.writeText(text)
+      // Detect iOS for special handling
+      const isIOS = /iPad|iPhone|iPod/.test(navigator.userAgent)
+      
+      // Try modern clipboard API first (but not on iOS in non-secure contexts)
+      if (navigator.clipboard && window.isSecureContext && !isIOS) {
+        try {
+          await navigator.clipboard.writeText(text)
+          console.log('Successfully copied using modern clipboard API')
+        } catch (clipboardError) {
+          console.warn('Modern clipboard API failed, trying fallback:', clipboardError)
+          throw clipboardError // Fall through to fallback
+        }
       } else {
-        // Fallback method for older browsers or non-secure contexts
+        // Enhanced fallback method for mobile browsers
+        console.log('Using fallback clipboard method for mobile/iOS')
+        
+        // Create a more mobile-friendly textarea
         const textArea = document.createElement('textarea')
         textArea.value = text
+        
+        // Enhanced styling for mobile compatibility
         textArea.style.position = 'fixed'
-        textArea.style.left = '-999999px'
-        textArea.style.top = '-999999px'
+        textArea.style.top = '0'
+        textArea.style.left = '0'
+        textArea.style.width = '2em'
+        textArea.style.height = '2em'
+        textArea.style.padding = '0'
+        textArea.style.border = 'none'
+        textArea.style.outline = 'none'
+        textArea.style.boxShadow = 'none'
+        textArea.style.background = 'transparent'
+        textArea.style.fontSize = '16px' // Prevent zoom on iOS
+        textArea.style.opacity = '0'
+        textArea.style.pointerEvents = 'none'
+        textArea.setAttribute('readonly', '')
+        
+        // iOS-specific attributes
+        if (isIOS) {
+          textArea.setAttribute('contenteditable', 'true')
+          textArea.style.userSelect = 'text'
+          textArea.style.webkitUserSelect = 'text'
+        }
+        
         document.body.appendChild(textArea)
-        textArea.focus()
-        textArea.select()
         
         try {
-          document.execCommand('copy')
-        } catch (err) {
-          throw new Error('Failed to copy using fallback method')
+          // Enhanced selection for mobile
+          textArea.focus()
+          
+          if (isIOS) {
+            // iOS-specific selection
+            const range = document.createRange()
+            range.selectNodeContents(textArea)
+            const selection = window.getSelection()
+            selection?.removeAllRanges()
+            selection?.addRange(range)
+            textArea.setSelectionRange(0, text.length)
+          } else {
+            // Standard selection
+            textArea.select()
+            textArea.setSelectionRange(0, text.length)
+          }
+          
+          // Try execCommand
+          const successful = document.execCommand('copy')
+          if (!successful) {
+            throw new Error('execCommand copy returned false')
+          }
+          
+          console.log('Successfully copied using fallback method')
+        } catch (execError) {
+          console.error('Fallback method failed:', execError)
+          
+          // Final fallback: try modern clipboard API even on iOS
+          if (navigator.clipboard && isIOS) {
+            try {
+              await navigator.clipboard.writeText(text)
+              console.log('iOS fallback to modern clipboard API succeeded')
+            } catch (finalError) {
+              console.error('All methods failed:', finalError)
+              throw new Error('All clipboard methods failed')
+            }
+          } else {
+            throw new Error('All clipboard methods failed')
+          }
         } finally {
-          textArea.remove()
+          document.body.removeChild(textArea)
         }
       }
       
@@ -99,7 +166,7 @@ export function CopyButton({
       console.error('Failed to copy to clipboard:', err)
       showToast({
         title: 'Error',
-        description: 'Failed to copy to clipboard',
+        description: 'Failed to copy to clipboard. Please try selecting and copying manually.',
         variant: 'destructive',
       })
     } finally {
