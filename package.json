@@ -16,7 +16,9 @@
     "migrate:rollback": "node scripts/migrate-database.js rollback",
     "rollback:emergency": "./scripts/emergency-rollback.sh",
     "rollback:verify": "./scripts/verify-rollback.sh",
-    "refresh:models": "tsx scripts/refreshModels.ts"
+    "refresh:models": "tsx scripts/refreshModels.ts",
+    "update:pricing": "node scripts/update-pricing.js",
+    "test:analytics": "node scripts/test-analytics.js"
   },
   "dependencies": {
     "@anthropic-ai/sdk": "^0.53.0",
@@ -64,6 +66,8 @@
     "framer-motion": "^12.4.7",
     "highlight.js": "^11.11.1",
     "jose": "^5.10.0",
+    "langfuse": "^3.37.4",
+    "langfuse-node": "^3.37.4",
     "lucide-react": "^0.475.0",
     "next": "15.1.7",
     "next-auth": "5.0.0-beta.25",
@@ -107,7 +111,7 @@
     "jsdom": "^26.1.0",
     "postcss": "^8",
     "prettier": "^3.4.2",
-    "supabase": "^2.23.4",
+    "supabase": "^2.24.3",
     "tailwindcss": "^3.4.1",
     "tsx": "^4.19.4",
     "typescript": "^5",

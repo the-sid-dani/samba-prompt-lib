@@ -1,6 +1,8 @@
 'use client'
 
 import { useState, useEffect } from 'react'
+import { useSession } from 'next-auth/react'
+import { useRouter } from 'next/navigation'
 import { Button } from '@/components/ui/button'
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card'
 import { Input } from '@/components/ui/input'
@@ -9,9 +11,10 @@ import { Textarea } from '@/components/ui/textarea'
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs'
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog'
 import { toast } from 'sonner'
-import { Trash2, Edit, Plus, Hash, GitMerge, Shuffle } from 'lucide-react'
+import { Trash2, Edit, Plus, Hash, GitMerge, Shuffle, ArrowLeft, RefreshCw } from 'lucide-react'
 import { getCategories, createCategory } from '@/app/actions/prompts'
 import { getTags, createTag, updateTag, deleteTag, updateCategory, deleteCategory, mergeTags, getRelatedTags } from '@/app/actions/tags'
+import Navigation from '@/components/navigation/Navigation'
 
 interface Category {
   id: number
@@ -27,6 +30,8 @@ interface Tag {
 }
 
 export default function TagsCategoriesManagementPage() {
+  const { data: session, status } = useSession()
+  const router = useRouter()
   const [categories, setCategories] = useState<Category[]>([])
   const [tags, setTags] = useState<Tag[]>([])
   const [isLoading, setIsLoading] = useState(true)
@@ -37,11 +42,27 @@ export default function TagsCategoriesManagementPage() {
   const [selectedTagsForMerge, setSelectedTagsForMerge] = useState<number[]>([])
   const [targetTagForMerge, setTargetTagForMerge] = useState<number | null>(null)
   const [showMergeDialog, setShowMergeDialog] = useState(false)
+  const [refreshing, setRefreshing] = useState(false)
 
-  // Fetch categories and tags on mount
+  // Check if user is admin
   useEffect(() => {
+    if (status === 'loading') return
+    
+    if (!session) {
+      router.push('/auth/signin')
+      return
+    }
+
+    // Check if user is admin (same logic as main admin page)
+    const isAdmin = session.user?.email?.endsWith('@samba.tv')
+    if (!isAdmin) {
+      toast.error("You don't have permission to access the admin dashboard.")
+      router.push('/')
+      return
+    }
+
     fetchData()
-  }, [])
+  }, [session, status, router])
 
   const fetchData = async () => {
     setIsLoading(true)
@@ -58,6 +79,13 @@ export default function TagsCategoriesManagementPage() {
     } finally {
       setIsLoading(false)
     }
+  }
+
+  const refreshData = async () => {
+    setRefreshing(true)
+    await fetchData()
+    setRefreshing(false)
+    toast.success('Data refreshed successfully')
   }
 
   // Category handlers
@@ -214,24 +242,52 @@ export default function TagsCategoriesManagementPage() {
 
   if (isLoading) {
     return (
-      <div className="container mx-auto py-10">
-        <div className="flex items-center justify-center">
-          <div className="text-lg">Loading...</div>
+      <div className="min-h-screen bg-background">
+        <Navigation />
+        <div className="flex items-center justify-center h-96">
+          <div className="text-center">
+            <RefreshCw className="w-8 h-8 animate-spin mx-auto mb-4 text-primary" />
+            <p className="text-muted-foreground">Loading tags and categories...</p>
+          </div>
         </div>
       </div>
     )
   }
 
   return (
-    <div className="container mx-auto py-10 max-w-6xl">
-      <Card>
-        <CardHeader>
-          <CardTitle>Tags & Categories Management</CardTitle>
-          <CardDescription>
-            Manage tags and categories for organizing prompts
-          </CardDescription>
-        </CardHeader>
-        <CardContent>
+    <div className="min-h-screen bg-background">
+      <Navigation />
+      
+      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+        {/* Header with back button */}
+        <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center mb-8">
+          <div className="flex items-center gap-4">
+            <Button
+              variant="ghost"
+              size="icon"
+              onClick={() => router.push('/admin')}
+              className="hover:bg-gray-100"
+            >
+              <ArrowLeft className="w-5 h-5" />
+            </Button>
+            <div>
+              <h1 className="text-3xl font-bold text-foreground">Tags & Categories Management</h1>
+              <p className="text-muted-foreground">Manage tags and categories for organizing prompts</p>
+            </div>
+          </div>
+          <Button 
+            variant="outline" 
+            onClick={refreshData}
+            disabled={refreshing}
+            className="flex items-center gap-2 mt-4 sm:mt-0"
+          >
+            <RefreshCw className={`w-4 h-4 ${refreshing ? 'animate-spin' : ''}`} />
+            Refresh
+          </Button>
+        </div>
+
+        <Card>
+          <CardContent className="pt-6">
                       <Tabs defaultValue="categories" className="w-full">
               <TabsList className="grid w-full grid-cols-3">
                 <TabsTrigger value="categories">Categories</TabsTrigger>
@@ -593,7 +649,8 @@ export default function TagsCategoriesManagementPage() {
               </TabsContent>
             </Tabs>
           </CardContent>
-      </Card>
+        </Card>
+      </div>
     </div>
   )
 } 

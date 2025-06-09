@@ -4,6 +4,7 @@ import { z } from 'zod';
 import { aiClient } from '@/lib/ai';
 import { Analytics } from '@/lib/analytics';
 import { calculateModelCost, formatCost } from '@/lib/ai-cost-utils';
+import { trackPlaygroundExecution, isLangfuseEnabled } from '@/lib/langfuse/client';
 
 // Validation schema for generation request
 const generateRequestSchema = z.object({
@@ -135,6 +136,27 @@ export async function POST(request: NextRequest) {
         await Analytics.logApiUsage(apiUsageLog);
       }
 
+      // Track error in Langfuse
+      if (isLangfuseEnabled()) {
+        const provider = aiClient.getProviderForModel(validatedData.model);
+        
+        trackPlaygroundExecution({
+          promptContent: validatedData.prompt,
+          model: validatedData.model,
+          provider: provider,
+          userId: session.user?.id,
+          error: result.error,
+          latencyMs: requestDuration,
+          tokenUsage: result.usage ? {
+            promptTokens: result.usage.promptTokens || 0,
+            completionTokens: result.usage.completionTokens || 0,
+            totalTokens: (result.usage.promptTokens || 0) + (result.usage.completionTokens || 0)
+          } : undefined
+        }).catch(error => {
+          console.error('[Langfuse] Failed to track error:', error);
+        });
+      }
+
       return NextResponse.json(
         { error: result.error },
         { status: 400 }
@@ -186,6 +208,28 @@ export async function POST(request: NextRequest) {
           cost: costCalculation.totalCost,
           duration: requestDuration
         }
+      });
+    }
+
+    // Track in Langfuse if enabled
+    if (isLangfuseEnabled() && result.output) {
+      const provider = aiClient.getProviderForModel(validatedData.model);
+      
+      trackPlaygroundExecution({
+        promptContent: validatedData.prompt,
+        model: validatedData.model,
+        provider: provider,
+        userId: session.user?.id,
+        response: result.output,
+        latencyMs: requestDuration,
+        tokenUsage: result.usage ? {
+          promptTokens: result.usage.promptTokens || 0,
+          completionTokens: result.usage.completionTokens || 0,
+          totalTokens: (result.usage.promptTokens || 0) + (result.usage.completionTokens || 0)
+        } : undefined,
+        cost: costInfo?.totalCost
+      }).catch(error => {
+        console.error('[Langfuse] Failed to track execution:', error);
       });
     }
 

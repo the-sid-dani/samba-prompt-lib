@@ -9,6 +9,113 @@ export type Json =
 export type Database = {
   public: {
     Tables: {
+      analytics_events: {
+        Row: {
+          id: number
+          user_id: string | null
+          event_type: string
+          event_data: Json | null
+          session_id: string | null
+          ip_address: string | null
+          user_agent: string | null
+          referrer: string | null
+          page_url: string | null
+          created_at: string
+        }
+        Insert: {
+          id?: never
+          user_id?: string | null
+          event_type: string
+          event_data?: Json | null
+          session_id?: string | null
+          ip_address?: string | null
+          user_agent?: string | null
+          referrer?: string | null
+          page_url?: string | null
+          created_at?: string
+        }
+        Update: {
+          id?: never
+          user_id?: string | null
+          event_type?: string
+          event_data?: Json | null
+          session_id?: string | null
+          ip_address?: string | null
+          user_agent?: string | null
+          referrer?: string | null
+          page_url?: string | null
+          created_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "analytics_events_user_id_fkey"
+            columns: ["user_id"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      api_usage_logs: {
+        Row: {
+          id: number
+          user_id: string | null
+          prompt_id: number | null
+          provider: string
+          model: string
+          tokens_input: number
+          tokens_output: number
+          cost_usd: number | null
+          request_duration_ms: number | null
+          status: string | null
+          error_message: string | null
+          created_at: string
+        }
+        Insert: {
+          id?: never
+          user_id?: string | null
+          prompt_id?: number | null
+          provider: string
+          model: string
+          tokens_input: number
+          tokens_output: number
+          cost_usd?: number | null
+          request_duration_ms?: number | null
+          status?: string | null
+          error_message?: string | null
+          created_at?: string
+        }
+        Update: {
+          id?: never
+          user_id?: string | null
+          prompt_id?: number | null
+          provider?: string
+          model?: string
+          tokens_input?: number
+          tokens_output?: number
+          cost_usd?: number | null
+          request_duration_ms?: number | null
+          status?: string | null
+          error_message?: string | null
+          created_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "api_usage_logs_user_id_fkey"
+            columns: ["user_id"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "api_usage_logs_prompt_id_fkey"
+            columns: ["prompt_id"]
+            isOneToOne: false
+            referencedRelation: "prompt"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       categories: {
         Row: {
           created_at: string

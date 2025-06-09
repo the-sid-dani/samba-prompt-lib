@@ -1,5 +1,5 @@
 import { createSupabaseAdminClient } from '@/utils/supabase/server'
-import { calculateModelCost, formatCost, type CostCalculation } from '@/lib/ai-cost-utils'
+import { calculateModelCost, formatCost, type CostBreakdown } from '@/lib/ai-cost-utils'
 
 export interface AnalyticsEvent {
   userId?: string
@@ -40,32 +40,38 @@ export interface UserSession {
 
 export class Analytics {
   /**
-   * Track a user interaction event
-   * Uses the existing user_interactions table for basic tracking
-   * TODO: Will use analytics_events table after migration
+   * Track a user interaction event using the analytics_events table
    */
   static async trackEvent(event: AnalyticsEvent): Promise<void> {
     try {
       const supabase = await createSupabaseAdminClient()
 
-      // Track in the existing user_interactions table for now
-      if (event.userId && event.promptId && ['view', 'copy', 'fork', 'share', 'test'].includes(event.eventType)) {
-        await supabase
-          .from('user_interactions')
-          .insert({
-            user_id: event.userId,
+      // Insert into analytics_events table
+      const { error } = await supabase
+        .from('analytics_events')
+        .insert({
+          user_id: event.userId || null,
+          event_type: event.eventType,
+          event_data: {
             prompt_id: event.promptId,
-            interaction_type: event.eventType as 'view' | 'copy' | 'fork' | 'share' | 'test'
-          })
+            ...event.eventData
+          },
+          session_id: event.sessionId || null,
+          ip_address: event.ipAddress || null,
+          user_agent: event.userAgent || null,
+          referrer: event.referrer || null,
+          page_url: event.pageUrl || null
+        })
+
+      if (error) {
+        console.error('Failed to insert analytics event:', error)
+        return
       }
 
-      // Log additional event data for future analytics table
       console.log(`Analytics event tracked: ${event.eventType}`, {
         userId: event.userId,
         promptId: event.promptId,
-        eventData: event.eventData,
-        sessionId: event.sessionId,
-        pageUrl: event.pageUrl
+        eventData: event.eventData
       })
     } catch (error) {
       console.error('Failed to track analytics event:', error)
@@ -77,6 +83,8 @@ export class Analytics {
    */
   static async logApiUsage(usage: ApiUsageLog): Promise<void> {
     try {
+      const supabase = await createSupabaseAdminClient()
+
       // Calculate cost if not provided
       let costUsd = usage.costUsd
       if (costUsd === undefined) {
@@ -89,7 +97,27 @@ export class Analytics {
         costUsd = costCalculation.totalCost
       }
 
-      // Log to console with cost information (will be database later)
+      // Insert into api_usage_logs table
+      const { error } = await supabase
+        .from('api_usage_logs')
+        .insert({
+          user_id: usage.userId || null,
+          prompt_id: usage.promptId || null,
+          provider: usage.provider,
+          model: usage.model,
+          tokens_input: usage.tokensInput,
+          tokens_output: usage.tokensOutput,
+          cost_usd: costUsd,
+          request_duration_ms: usage.requestDurationMs || null,
+          status: usage.status || 'success',
+          error_message: usage.errorMessage || null
+        })
+
+      if (error) {
+        console.error('Failed to insert API usage log:', error)
+        return
+      }
+
       console.log(`API usage logged: ${usage.provider}/${usage.model}`, {
         inputTokens: usage.tokensInput,
         outputTokens: usage.tokensOutput,
@@ -100,10 +128,6 @@ export class Analytics {
         userId: usage.userId,
         promptId: usage.promptId
       })
-
-      // TODO: Store in api_usage_logs table after migration
-      // const supabase = await createSupabaseAdminClient()
-      // await supabase.from('api_usage_logs').insert({...})
     } catch (error) {
       console.error('Failed to log API usage:', error)
     }
@@ -140,32 +164,49 @@ export class Analytics {
   }
 
   /**
-   * Get analytics data for admin dashboard
+   * Get analytics data for admin dashboard using real analytics_events table
    */
   static async getAnalyticsData(days: number = 30) {
     try {
+      console.log(`🔍 [Analytics] Getting analytics data for last ${days} days...`)
       const supabase = await createSupabaseAdminClient()
       const startDate = new Date()
       startDate.setDate(startDate.getDate() - days)
+      console.log(`📅 [Analytics] Start date: ${startDate.toISOString()}`)
 
-      // Get user interactions as analytics events
-      const { data: events } = await supabase
-        .from('user_interactions')
-        .select('interaction_type, created_at, user_id, prompt_id')
+      // Get analytics events from the analytics_events table
+      const { data: events, error } = await supabase
+        .from('analytics_events')
+        .select('event_type, event_data, created_at, user_id')
         .gte('created_at', startDate.toISOString())
         .order('created_at', { ascending: false })
         .limit(1000)
 
+      console.log(`📊 [Analytics] Raw events query result:`, { 
+        eventsCount: events?.length || 0, 
+        error: error?.message || 'none',
+        sampleEvent: events?.[0] || 'none'
+      })
+
+      if (error) {
+        console.error('❌ [Analytics] Error fetching analytics events:', error)
+        throw error
+      }
+
       // Count events by type
       const eventCounts = events?.reduce((acc, event) => {
-        acc[event.interaction_type] = (acc[event.interaction_type] || 0) + 1
+        acc[event.event_type] = (acc[event.event_type] || 0) + 1
         return acc
       }, {} as Record<string, number>) || {}
+
+      console.log(`📈 [Analytics] Event counts:`, eventCounts)
 
       const topEvents = Object.entries(eventCounts)
         .map(([type, count]) => ({ event_type: type, count }))
         .sort((a, b) => b.count - a.count)
         .slice(0, 10)
+
+      console.log(`🏆 [Analytics] Top events:`, topEvents)
 
       // Get daily activity counts
       const dailyActivity = events?.reduce((acc, event) => {
@@ -174,7 +215,9 @@ export class Analytics {
           acc[date] = { date, interactions: 0, unique_users: new Set() }
         }
         acc[date].interactions++
-        acc[date].unique_users.add(event.user_id)
+        if (event.user_id) {
+          acc[date].unique_users.add(event.user_id)
+        }
         return acc
       }, {} as Record<string, any>) || {}
 
@@ -191,37 +234,36 @@ export class Analytics {
         interactions: day.interactions
       }))
 
-      // Mock API usage data (will be real after migration)
-      const apiUsage = {
-        totalCalls: 0,
-        totalCost: 0,
-        totalTokens: 0,
-        byProvider: {}
-      }
+      console.log(`📅 [Analytics] Daily metrics:`, { 
+        daysWithActivity: dailyMetrics.length,
+        totalInteractions: dailyMetrics.reduce((sum, day) => sum + day.interactions, 0)
+      })
 
-      return {
+      const result = {
         dailyMetrics,
         topEvents,
-        apiUsage
+        totalEvents: events?.length || 0
       }
+
+      console.log(`✅ [Analytics] Final analytics result:`, {
+        totalEvents: result.totalEvents,
+        topEventsCount: result.topEvents.length,
+        dailyMetricsCount: result.dailyMetrics.length
+      })
+
+      return result
     } catch (error) {
-      console.error('Failed to get analytics data:', error)
+      console.error('❌ [Analytics] Failed to get analytics data:', error)
       return {
         dailyMetrics: [],
         topEvents: [],
-        apiUsage: {
-          totalCalls: 0,
-          totalCost: 0,
-          totalTokens: 0,
-          byProvider: {}
-        }
+        totalEvents: 0
       }
     }
   }
 
   /**
-   * Get cost analysis for API usage
-   * This will work with real data after migration
+   * Get cost analysis for API usage using real api_usage_logs table
    */
   static async getCostAnalysis(days: number = 30): Promise<{
     totalCost: number
@@ -234,20 +276,113 @@ export class Analytics {
     dailyCosts: Array<{ date: string; cost: number; calls: number }>
   }> {
     try {
-      // TODO: Replace with real database query after migration
-      // For now, return mock data structure
-      return {
-        totalCost: 0,
-        totalTokens: 0,
-        totalCalls: 0,
-        averageCostPerCall: 0,
-        averageCostPerToken: 0,
-        costByProvider: {},
-        costByModel: {},
-        dailyCosts: []
+      console.log(`💰 [Analytics] Getting cost analysis for last ${days} days...`)
+      const supabase = await createSupabaseAdminClient()
+      const startDate = new Date()
+      startDate.setDate(startDate.getDate() - days)
+      console.log(`📅 [Analytics] Cost analysis start date: ${startDate.toISOString()}`)
+
+      // Get API usage data from the api_usage_logs table
+      const { data: apiUsageData, error } = await supabase
+        .from('api_usage_logs')
+        .select('provider, model, tokens_input, tokens_output, cost_usd, created_at, status')
+        .gte('created_at', startDate.toISOString())
+        .order('created_at', { ascending: false })
+
+      console.log(`💰 [Analytics] Raw API usage query result:`, { 
+        usageCount: apiUsageData?.length || 0, 
+        error: error?.message || 'none',
+        sampleUsage: apiUsageData?.[0] || 'none'
+      })
+
+      if (error) {
+        console.error('❌ [Analytics] Error fetching API usage data:', error)
+        throw error
       }
+
+      if (!apiUsageData || apiUsageData.length === 0) {
+        console.log('⚠️ [Analytics] No API usage data found')
+        return {
+          totalCost: 0,
+          totalTokens: 0,
+          totalCalls: 0,
+          averageCostPerCall: 0,
+          averageCostPerToken: 0,
+          costByProvider: {},
+          costByModel: {},
+          dailyCosts: []
+        }
+      }
+
+      // Calculate totals
+      let totalCost = 0
+      let totalTokens = 0
+      const totalCalls = apiUsageData.length
+      const costByProvider: Record<string, { cost: number; calls: number; tokens: number }> = {}
+      const costByModel: Record<string, { cost: number; calls: number; tokens: number }> = {}
+      const dailyCosts: Record<string, { cost: number; calls: number }> = {}
+
+      apiUsageData.forEach(usage => {
+        const cost = usage.cost_usd || 0
+        const tokens = (usage.tokens_input || 0) + (usage.tokens_output || 0)
+        const date = new Date(usage.created_at).toISOString().split('T')[0]
+
+        totalCost += cost
+        totalTokens += tokens
+
+        // Group by provider
+        if (!costByProvider[usage.provider]) {
+          costByProvider[usage.provider] = { cost: 0, calls: 0, tokens: 0 }
+        }
+        costByProvider[usage.provider].cost += cost
+        costByProvider[usage.provider].calls += 1
+        costByProvider[usage.provider].tokens += tokens
+
+        // Group by model
+        if (!costByModel[usage.model]) {
+          costByModel[usage.model] = { cost: 0, calls: 0, tokens: 0 }
+        }
+        costByModel[usage.model].cost += cost
+        costByModel[usage.model].calls += 1
+        costByModel[usage.model].tokens += tokens
+
+        // Group by date
+        if (!dailyCosts[date]) {
+          dailyCosts[date] = { cost: 0, calls: 0 }
+        }
+        dailyCosts[date].cost += cost
+        dailyCosts[date].calls += 1
+      })
+
+      const averageCostPerCall = totalCalls > 0 ? totalCost / totalCalls : 0
+      const averageCostPerToken = totalTokens > 0 ? totalCost / totalTokens : 0
+
+      const dailyCostsArray = Object.entries(dailyCosts)
+        .map(([date, data]) => ({ date, ...data }))
+        .sort((a, b) => a.date.localeCompare(b.date))
+
+      const result = {
+        totalCost,
+        totalTokens,
+        totalCalls,
+        averageCostPerCall,
+        averageCostPerToken,
+        costByProvider,
+        costByModel,
+        dailyCosts: dailyCostsArray
+      }
+
+      console.log(`✅ [Analytics] Final cost analysis result:`, {
+        totalCost: result.totalCost,
+        totalTokens: result.totalTokens,
+        totalCalls: result.totalCalls,
+        providersCount: Object.keys(result.costByProvider).length,
+        modelsCount: Object.keys(result.costByModel).length
+      })
+
+      return result
     } catch (error) {
-      console.error('Failed to get cost analysis:', error)
+      console.error('❌ [Analytics] Failed to get cost analysis:', error)
       return {
         totalCost: 0,
         totalTokens: 0,

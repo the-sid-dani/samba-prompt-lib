@@ -4,7 +4,7 @@ import { createSupabaseAdminClient } from '@/utils/supabase/server'
 
 export async function PATCH(
   request: NextRequest,
-  { params }: { params: { id: string } }
+  { params }: { params: Promise<{ id: string }> }
 ) {
   try {
     // Check authentication
@@ -17,7 +17,8 @@ export async function PATCH(
     // For now, any authenticated user can perform admin actions
 
     const { action } = await request.json()
-    const promptId = params.id
+    const { id } = await params
+    const promptId = parseInt(id, 10)
 
     const supabase = await createSupabaseAdminClient()
 

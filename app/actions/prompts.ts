@@ -833,6 +833,25 @@ export async function createPrompt(input: z.infer<typeof createPromptSchema>) {
     if (error) {
       throw new Error(`Failed to create prompt: ${error.message}`)
     }
+
+    // Track prompt creation analytics
+    try {
+      const { Analytics } = await import('@/lib/analytics')
+      await Analytics.trackEvent({
+        userId: session.user.id,
+        promptId: prompt.id,
+        eventType: 'prompt_create',
+        eventData: {
+          title: prompt.title,
+          category_id: prompt.category_id,
+          tags: prompt.tags,
+          is_fork: !!forked_from,
+          forked_from: forked_from
+        }
+      })
+    } catch (analyticsError) {
+      console.error('Failed to track prompt creation analytics:', analyticsError)
+    }
     
     // If this is a fork, create the fork relationship
     if (forked_from) {
@@ -859,6 +878,22 @@ export async function createPrompt(input: z.infer<typeof createPromptSchema>) {
       
       if (interactionError) {
         console.error('Failed to track fork interaction:', interactionError)
+      }
+
+      // Track fork analytics
+      try {
+        const { Analytics } = await import('@/lib/analytics')
+        await Analytics.trackEvent({
+          userId: session.user.id,
+          promptId: forked_from,
+          eventType: 'fork',
+          eventData: {
+            new_prompt_id: prompt.id,
+            new_prompt_title: prompt.title
+          }
+        })
+      } catch (analyticsError) {
+        console.error('Failed to track fork analytics:', analyticsError)
       }
       
       // Revalidate the original prompt's cache to update fork count
@@ -1211,6 +1246,19 @@ export async function toggleFavorite(promptId: number) {
         throw new Error(`Failed to remove favorite: ${deleteError.message}`)
       }
       
+      // Track unfavorite analytics
+      try {
+        const { Analytics } = await import('@/lib/analytics')
+        await Analytics.trackEvent({
+          userId: session.user.id,
+          promptId: promptId,
+          eventType: 'unfavorite',
+          eventData: {}
+        })
+      } catch (analyticsError) {
+        console.error('Failed to track unfavorite analytics:', analyticsError)
+      }
+
       // Revalidate caches
       revalidateAfterFavorite(promptId, session.user.id)
       
@@ -1225,6 +1273,19 @@ export async function toggleFavorite(promptId: number) {
         throw new Error(`Failed to add favorite: ${insertError.message}`)
       }
       
+      // Track favorite analytics
+      try {
+        const { Analytics } = await import('@/lib/analytics')
+        await Analytics.trackEvent({
+          userId: session.user.id,
+          promptId: promptId,
+          eventType: 'favorite',
+          eventData: {}
+        })
+      } catch (analyticsError) {
+        console.error('Failed to track favorite analytics:', analyticsError)
+      }
+
       // Revalidate caches
       revalidateAfterFavorite(promptId, session.user.id)
       
@@ -1272,6 +1333,21 @@ export async function voteOnPrompt(promptId: number, voteType: 'up' | 'down') {
         
         // Update prompt vote count
         await updatePromptVoteCount(promptId, voteType, -1)
+
+        // Track vote removal analytics
+        try {
+          const { Analytics } = await import('@/lib/analytics')
+          await Analytics.trackEvent({
+            userId: session.user.id,
+            promptId: promptId,
+            eventType: 'vote_remove',
+            eventData: {
+              previous_vote_type: voteType
+            }
+          })
+        } catch (analyticsError) {
+          console.error('Failed to track vote removal analytics:', analyticsError)
+        }
         
         // Revalidate caches
         revalidateAfterVote(promptId, session.user.id)
@@ -1291,6 +1367,22 @@ export async function voteOnPrompt(promptId: number, voteType: 'up' | 'down') {
         // Update prompt vote counts
         await updatePromptVoteCount(promptId, existing.vote_type as 'up' | 'down', -1)
         await updatePromptVoteCount(promptId, voteType, 1)
+
+        // Track vote change analytics
+        try {
+          const { Analytics } = await import('@/lib/analytics')
+          await Analytics.trackEvent({
+            userId: session.user.id,
+            promptId: promptId,
+            eventType: 'vote_change',
+            eventData: {
+              previous_vote_type: existing.vote_type,
+              new_vote_type: voteType
+            }
+          })
+        } catch (analyticsError) {
+          console.error('Failed to track vote change analytics:', analyticsError)
+        }
         
         // Revalidate caches
         revalidateAfterVote(promptId, session.user.id)
@@ -1309,6 +1401,21 @@ export async function voteOnPrompt(promptId: number, voteType: 'up' | 'down') {
       
       // Update prompt vote count
       await updatePromptVoteCount(promptId, voteType, 1)
+
+      // Track new vote analytics
+      try {
+        const { Analytics } = await import('@/lib/analytics')
+        await Analytics.trackEvent({
+          userId: session.user.id,
+          promptId: promptId,
+          eventType: 'vote',
+          eventData: {
+            vote_type: voteType
+          }
+        })
+      } catch (analyticsError) {
+        console.error('Failed to track new vote analytics:', analyticsError)
+      }
       
       // Revalidate caches
       revalidateAfterVote(promptId, session.user.id)
@@ -1468,6 +1575,21 @@ export async function incrementPromptUses(promptId: number) {
     }
     
     console.log('Successfully incremented uses for prompt:', promptId, 'new count:', data?.uses)
+
+    // Track prompt usage analytics
+    try {
+      const { Analytics } = await import('@/lib/analytics')
+      await Analytics.trackEvent({
+        userId: userId,
+        promptId: promptId,
+        eventType: 'prompt_use',
+        eventData: {
+          new_use_count: data?.uses || newUses
+        }
+      })
+    } catch (analyticsError) {
+      console.error('Failed to track prompt usage analytics:', analyticsError)
+    }
     
     // Revalidate caches to ensure updated counts are shown everywhere
     revalidateTag(CACHE_TAGS.prompt(promptId)) // Individual prompt cache

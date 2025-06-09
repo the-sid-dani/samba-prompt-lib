@@ -38,6 +38,24 @@ const authConfig = {
 			if (user.email && !user.email.endsWith('@samba.tv')) {
 				return false; // Reject sign-in
 			}
+
+			// Track analytics for user sign-in
+			try {
+				const { Analytics } = await import('@/lib/analytics')
+				
+				await Analytics.trackEvent({
+					userId: user.id,
+					eventType: 'user_signin',
+					eventData: {
+						email: user.email,
+						name: user.name,
+						provider: account?.provider || 'unknown'
+					}
+				})
+			} catch (analyticsError) {
+				console.error('Failed to track auth analytics:', analyticsError)
+			}
+
 			return true; // Allow sign-in
 		},
 		async session({ session, user }) {
