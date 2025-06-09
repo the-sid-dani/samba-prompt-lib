@@ -35,7 +35,13 @@ export function CopyButton({
   
   const hasContent = text && text.length > 0
   
-  const handleCopy = async () => {
+  const handleCopy = async (e?: React.MouseEvent) => {
+    // Prevent event propagation to parent elements (like card links)
+    if (e) {
+      e.preventDefault();
+      e.stopPropagation();
+    }
+    
     // Prevent rapid duplicate clicks
     if (isCopied || isLoading) {
       return

@@ -544,18 +544,13 @@ function PromptCard({ prompt, user, featured = false }: { prompt: any; user: any
                 }
               </p>
             </div>
-            <div onClick={(e) => {
-              e.preventDefault();
-              e.stopPropagation();
-            }}>
-              <PromptCopyButton
-                promptId={prompt.id}
-                text={prompt.content || ''}
-                label=""
-                variant="ghost"
-                className="text-primary touch-scale"
-              />
-            </div>
+            <PromptCopyButton
+              promptId={prompt.id}
+              text={prompt.content || ''}
+              label=""
+              variant="ghost"
+              className="text-primary touch-scale"
+            />
           </div>
         </CardContent>
       </Card>
