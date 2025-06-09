@@ -297,8 +297,8 @@ export default function PromptExplorer({
         <div className="w-full">
           {/* Filters */}
           <div className="mb-4 space-y-3">
-            {/* Category Filter */}
-            <div>
+            {/* Category Filter - Hidden for now */}
+            <div className="hidden">
               <h3 className="text-sm font-medium text-foreground mb-2">Filter by category</h3>
               <div className="flex gap-2 overflow-x-auto pb-2">
                 {displayCategories.map((category) => (
