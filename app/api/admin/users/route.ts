@@ -25,6 +25,10 @@ export async function GET(request: NextRequest) {
       `)
       .order('created_at', { ascending: false })
 
+    if (!profiles) {
+      return NextResponse.json({ users: [] })
+    }
+
     // Get prompt counts for each user
     const { data: promptCounts } = await supabase
       .from('prompt')
@@ -39,17 +43,78 @@ export async function GET(request: NextRequest) {
       return acc
     }, {} as Record<string, number>) || {}
 
+    // Get user favorites counts
+    const { data: favoriteCounts } = await supabase
+      .from('user_favorites')
+      .select('user_id')
+
+    const userFavoriteCounts = favoriteCounts?.reduce((acc, favorite) => {
+      const userId = favorite.user_id
+      if (userId) {
+        acc[userId] = (acc[userId] || 0) + 1
+      }
+      return acc
+    }, {} as Record<string, number>) || {}
+
+    // Get user interactions for activity tracking
+    const { data: recentInteractions } = await supabase
+      .from('user_interactions')
+      .select('user_id, created_at')
+      .order('created_at', { ascending: false })
+
+    const userLastActivity = recentInteractions?.reduce((acc, interaction) => {
+      const userId = interaction.user_id
+      if (userId && !acc[userId]) {
+        acc[userId] = interaction.created_at
+      }
+      return acc
+    }, {} as Record<string, string>) || {}
+
     // Format users data
-    const users = profiles?.map(profile => ({
-      id: profile.id,
-      name: profile.name || 'Unknown',
-      email: profile.email || '',
-      avatar: profile.avatar_url,
-      role: 'user', // TODO: Implement role system
-      status: 'active' as const, // TODO: Implement user status system
-      lastActive: profile.updated_at || profile.created_at,
-      promptCount: userPromptCounts[profile.id] || 0
-    })) || []
+    const users = profiles.map(profile => {
+      const lastActivity = userLastActivity[profile.id] || profile.updated_at || profile.created_at
+      const daysSinceLastActivity = lastActivity ? Math.floor(
+        (Date.now() - new Date(lastActivity).getTime()) / (1000 * 60 * 60 * 24)
+      ) : 0
+      
+      // Determine user status based on activity
+      let status: 'active' | 'inactive' | 'new' = 'active'
+      if (daysSinceLastActivity > 30) {
+        status = 'inactive'
+      } else if (daysSinceLastActivity <= 7 && userPromptCounts[profile.id] === undefined) {
+        status = 'new'
+      }
+
+      // Use stored role from database (fallback to email-based calculation if role column doesn't exist yet)
+      const role = (profile as any).role || (profile.email?.endsWith('@samba.tv') ? 'admin' : 'member')
+
+      const user = {
+        id: profile.id,
+        name: profile.name || 'Unknown',
+        email: profile.email || '',
+        avatar: profile.avatar_url,
+        role,
+        status,
+        lastActive: lastActivity,
+        promptCount: userPromptCounts[profile.id] || 0,
+        favoriteCount: userFavoriteCounts[profile.id] || 0,
+        joinedAt: profile.created_at,
+        daysSinceLastActivity
+      }
+
+      // Debug logging for the first few users
+      if (profiles.indexOf(profile) < 3) {
+        console.log(`User ${profile.email}:`, {
+          promptCount: userPromptCounts[profile.id],
+          lastActivity,
+          daysSinceLastActivity,
+          status,
+          role
+        })
+      }
+
+      return user
+    })
 
     return NextResponse.json({ users })
   } catch (error) {

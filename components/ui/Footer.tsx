@@ -3,7 +3,12 @@ import { ExternalLink, MessageSquare } from 'lucide-react';
 
 const Footer = () => {
 	return (
-		  <footer className="w-full border-t border-border bg-background transition-[background-color,border-color] duration-300 py-12">
+		  <footer 
+        id="footer"
+        className="w-full border-t border-border bg-background transition-[background-color,border-color] duration-300 py-12"
+        role="contentinfo"
+        aria-label="Site footer"
+      >
 			<div className="container mx-auto px-4">
 				<div className="grid grid-cols-1 lg:grid-cols-4 gap-8">
 					{/* Brand Section */}
@@ -12,7 +17,7 @@ const Footer = () => {
 							<div className="w-8 h-8 bg-red-600 rounded-lg flex items-center justify-center">
 								<span className="text-white font-bold text-sm">ATF</span>
 							</div>
-							<h3 className="text-lg font-semibold text-foreground">AI Task Force</h3>
+							<h2 className="text-lg font-semibold text-foreground">AI Task Force</h2>
 						</div>
 						<p className="text-sm text-muted-foreground leading-relaxed">
 							Empowering SambaTV with intelligent workflows.

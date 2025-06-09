@@ -3,7 +3,7 @@
 import { useState, useEffect } from 'react';
 import Link from 'next/link';
 import Image from 'next/image';
-import { Menu, X, Home, Search, Plus, User, LogOut, Beaker } from 'lucide-react';
+import { Menu, X, Home, Search, Plus, User, LogOut, Beaker, Shield } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { useSession, signOut } from 'next-auth/react';
 import SignIn from '@/components/sign-in';
@@ -38,16 +38,25 @@ export default function MobileNavigation() {
 
   const closeMenu = () => setIsOpen(false);
 
+  // Check if user is admin (has @samba.tv email)
+  const isAdmin = session?.user?.email?.endsWith('@samba.tv');
+
   return (
     <div className="md:hidden">
       {/* Mobile Header */}
-      <header className="sticky top-0 z-50 bg-background/95 backdrop-blur-sm border-b border-border/50 shadow-sm transition-[background-color,border-color] duration-300">
+      <header 
+        className="sticky top-0 z-50 bg-background/95 backdrop-blur-sm border-b border-border/50 shadow-sm transition-[background-color,border-color] duration-300"
+        role="banner"
+        aria-label="Mobile navigation header"
+      >
         <div className="flex items-center justify-between px-4 h-14">
           {/* Menu Button */}
           <button
             onClick={() => setIsOpen(!isOpen)}
             className="p-2 -ml-2 rounded-md hover:bg-gray-100 transition-colors"
-            aria-label="Toggle menu"
+            aria-label={isOpen ? "Close navigation menu" : "Open navigation menu"}
+            aria-expanded={isOpen}
+            aria-controls="mobile-menu"
           >
             {isOpen ? (
               <X className="h-5 w-5" />
@@ -105,9 +114,14 @@ export default function MobileNavigation() {
 
       {/* Mobile Menu Drawer */}
       <div
+        id="mobile-menu"
         className={`fixed top-0 left-0 h-full w-64 bg-background/95 backdrop-blur-sm shadow-xl transform transition-[transform,background-color] duration-300 ease-in-out z-50 ${
           isOpen ? 'translate-x-0' : '-translate-x-full'
         }`}
+        role="dialog"
+        aria-modal="true"
+        aria-label="Mobile navigation menu"
+        aria-hidden={!isOpen}
       >
         {/* Menu Header */}
         <div className="p-4 border-b">
@@ -128,7 +142,7 @@ export default function MobileNavigation() {
         </div>
 
         {/* Menu Content */}
-        <nav className="p-4">
+        <nav className="p-4" role="navigation" aria-label="Mobile menu navigation">
           {/* User Section */}
           {hasMounted && session?.user && (
             <div className="mb-6 pb-6 border-b">
@@ -190,6 +204,14 @@ export default function MobileNavigation() {
                     <Button variant="ghost" className="w-full justify-start">
                       <Plus className="h-4 w-4 mr-3" />
                       Create Prompt
+                    </Button>
+                  </Link>
+                )}
+                {session?.user && isAdmin && (
+                  <Link href="/admin" onClick={closeMenu}>
+                    <Button variant="ghost" className="w-full justify-start">
+                      <Shield className="h-4 w-4 mr-3" />
+                      Admin Dashboard
                     </Button>
                   </Link>
                 )}

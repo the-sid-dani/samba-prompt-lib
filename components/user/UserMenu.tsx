@@ -1,7 +1,7 @@
 "use client";
 import React from 'react';
 import Link from 'next/link';
-import { LogOut, User } from 'lucide-react';
+import { LogOut, User, Shield } from 'lucide-react';
 import { useSession, signOut } from 'next-auth/react';
 import {
 	DropdownMenu,
@@ -23,12 +23,18 @@ export default function UserMenu() {
 
 	if (!user) return null;
 
+	// Check if user is admin (has @samba.tv email)
+	const isAdmin = user.email?.endsWith('@samba.tv');
+
 	return (
 		<DropdownMenu>
 			<DropdownMenuTrigger asChild>
 				<Button 
 					variant="ghost" 
 					className="flex items-center space-x-3 hover:bg-transparent p-0 h-auto"
+					aria-label={`User menu for ${user.name || user.email || 'user'}`}
+					aria-expanded="false"
+					aria-haspopup="menu"
 				>
 					<Avatar className="h-8 w-8">
 						<AvatarImage 
@@ -56,6 +62,17 @@ export default function UserMenu() {
 						Profile
 					</Link>
 				</DropdownMenuItem>
+				{isAdmin && (
+					<DropdownMenuItem asChild>
+						<Link
+							href="/admin"
+							className="flex items-center cursor-pointer"
+						>
+							<Shield className="mr-3 h-4 w-4" />
+							Admin Dashboard
+						</Link>
+					</DropdownMenuItem>
+				)}
 				<DropdownMenuSeparator />
 				<DropdownMenuItem
 					onClick={handleSignOut}

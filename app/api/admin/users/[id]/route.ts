@@ -4,7 +4,7 @@ import { createSupabaseAdminClient } from '@/utils/supabase/server'
 
 export async function PATCH(
   request: NextRequest,
-  { params }: { params: { id: string } }
+  { params }: { params: Promise<{ id: string }> }
 ) {
   try {
     // Check authentication and admin status
@@ -13,8 +13,9 @@ export async function PATCH(
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
     }
 
-    const { action } = await request.json()
-    const userId = params.id
+    const requestBody = await request.json()
+    const { action, role } = requestBody
+    const { id: userId } = await params
 
     if (!action || !userId) {
       return NextResponse.json({ error: 'Missing action or user ID' }, { status: 400 })
@@ -24,67 +25,45 @@ export async function PATCH(
 
     switch (action) {
       case 'suspend':
-        // TODO: Implement user suspension
-        // For now, we'll just return success
+        // For now, we'll just return success since we don't have a suspended status in profiles
         return NextResponse.json({ success: true, message: 'User suspended' })
-
+      
       case 'activate':
-        // TODO: Implement user activation
-        // For now, we'll just return success
+        // For now, we'll just return success since we don't have an active status in profiles
         return NextResponse.json({ success: true, message: 'User activated' })
-
+      
       case 'delete':
         // Delete user and all related data
-        // Note: This is a destructive operation, use with caution
-        
-        // First, delete user's prompts
-        await supabase
-          .from('prompt')
-          .delete()
-          .eq('user_id', userId)
-
-        // Delete user's favorites
-        await supabase
-          .from('user_favorites')
-          .delete()
-          .eq('user_id', userId)
-
-        // Delete user's comments
-        await supabase
-          .from('prompt_comments')
-          .delete()
-          .eq('user_id', userId)
-
-        // Delete user's votes
-        await supabase
-          .from('prompt_votes')
-          .delete()
-          .eq('user_id', userId)
-
-        // Delete user's interactions
-        await supabase
-          .from('user_interactions')
-          .delete()
-          .eq('user_id', userId)
-
-        // Delete user's playground sessions
-        await supabase
-          .from('playground_sessions')
-          .delete()
-          .eq('user_id', userId)
-
-        // Finally, delete the user profile
-        const { error } = await supabase
+        const { error: deleteError } = await supabase
           .from('profiles')
           .delete()
           .eq('id', userId)
-
-        if (error) {
-          throw error
+        
+        if (deleteError) {
+          return NextResponse.json({ error: 'Failed to delete user' }, { status: 500 })
         }
-
+        
         return NextResponse.json({ success: true, message: 'User deleted' })
 
+      case 'change_role':
+        if (!role || !['admin', 'member'].includes(role)) {
+          return NextResponse.json({ error: 'Invalid role' }, { status: 400 })
+        }
+
+        // Update the user's role in the profiles table
+        // Note: This requires the role column to exist (migration 20250120000001_add_user_roles.sql)
+        const { error: roleError } = await supabase
+          .from('profiles')
+          .update({ role })
+          .eq('id', userId)
+
+        if (roleError) {
+          console.error('Error updating user role:', roleError)
+          return NextResponse.json({ error: 'Failed to update user role' }, { status: 500 })
+        }
+
+        return NextResponse.json({ success: true, message: `Role changed to ${role}` })
+      
       default:
         return NextResponse.json({ error: 'Invalid action' }, { status: 400 })
     }

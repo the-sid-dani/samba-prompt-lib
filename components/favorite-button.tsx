@@ -82,12 +82,14 @@ export function FavoriteButton({
           className
         )}
         aria-label={isFavorited ? 'Remove from favorites' : 'Add to favorites'}
+        aria-pressed={isFavorited}
       >
         <Heart 
           className={cn(
             'h-4 w-4',
             isFavorited && 'fill-current'
-          )} 
+          )}
+          aria-hidden="true"
         />
         {showCount && (
           <span className="ml-1">{count}</span>

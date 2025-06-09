@@ -22,7 +22,12 @@ export default function Navigation() {
   return (
     <>
       {/* Desktop Navigation */}
-      <nav className="hidden md:block sticky top-0 z-50 bg-background/95 backdrop-blur-sm border-b border-border/50 shadow-sm transition-[background-color,border-color] duration-300">
+      <nav 
+        id="navigation"
+        className="hidden md:block sticky top-0 z-50 bg-background/95 backdrop-blur-sm border-b border-border/50 shadow-sm transition-[background-color,border-color] duration-300"
+        role="navigation"
+        aria-label="Main navigation"
+      >
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           <div className="flex justify-between items-center h-16">
             <div className="flex items-center space-x-8">
@@ -43,35 +48,41 @@ export default function Navigation() {
               </Link>
 
               {/* Navigation Links */}
-              <div className="flex items-center space-x-1">
+              <ul className="flex items-center space-x-1" role="menubar">
                 {!hasMounted ? (
                   // Show loading placeholders during hydration
                   <>
-                    <div className="w-16 h-8 bg-muted animate-pulse rounded"></div>
-                    <div className="w-20 h-8 bg-muted animate-pulse rounded"></div>
-                    <div className="w-20 h-8 bg-muted animate-pulse rounded"></div>
-                    <div className="w-24 h-8 bg-muted animate-pulse rounded"></div>
+                    <li><div className="w-16 h-8 bg-muted animate-pulse rounded"></div></li>
+                    <li><div className="w-20 h-8 bg-muted animate-pulse rounded"></div></li>
+                    <li><div className="w-20 h-8 bg-muted animate-pulse rounded"></div></li>
+                    <li><div className="w-24 h-8 bg-muted animate-pulse rounded"></div></li>
                   </>
                 ) : (
                   <>
-                    <Link href="/">
-                      <Button variant="ghost" className="text-base font-medium h-10 px-4">
-                        Explore
-                      </Button>
-                    </Link>
-                    <Link href="/playground">
-                      <Button variant="ghost" className="text-base font-medium h-10 px-4">
-                        Playground
-                      </Button>
-                    </Link>
-                    <Link href="/categories">
-                      <Button variant="ghost" className="text-base font-medium h-10 px-4">
-                        Categories
-                      </Button>
-                    </Link>
+                    <li role="none">
+                      <Link href="/" aria-label="Explore prompts">
+                        <Button variant="ghost" className="text-base font-medium h-10 px-4" role="menuitem">
+                          Explore
+                        </Button>
+                      </Link>
+                    </li>
+                    <li role="none">
+                      <Link href="/playground" aria-label="AI Playground">
+                        <Button variant="ghost" className="text-base font-medium h-10 px-4" role="menuitem">
+                          Playground
+                        </Button>
+                      </Link>
+                    </li>
+                    <li role="none">
+                      <Link href="/categories" aria-label="Browse categories">
+                        <Button variant="ghost" className="text-base font-medium h-10 px-4" role="menuitem">
+                          Categories
+                        </Button>
+                      </Link>
+                    </li>
                   </>
                 )}
-              </div>
+              </ul>
             </div>
 
             {/* Right Side Actions */}
@@ -86,9 +97,9 @@ export default function Navigation() {
                 <>
                   {session?.user ? (
                     <>
-                      <Link href="/submit">
+                      <Link href="/submit" aria-label="Create a new prompt">
                         <Button className="bg-primary hover:bg-primary/90 text-base font-medium h-10 px-4">
-                          <Plus className="w-4 h-4 mr-2" />
+                          <Plus className="w-4 h-4 mr-2" aria-hidden="true" />
                           Create Prompt
                         </Button>
                       </Link>

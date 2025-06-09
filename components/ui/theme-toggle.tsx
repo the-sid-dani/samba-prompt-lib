@@ -61,7 +61,8 @@ export default function ThemeToggle({
             showLabel && 'gap-2',
             className
           )}
-          aria-label="Toggle theme"
+          aria-label={`Switch to ${theme === 'light' ? 'dark' : theme === 'dark' ? 'system' : 'light'} theme`}
+          aria-expanded="false"
         >
           <div className="relative flex items-center justify-center">
             {/* Animated background glow */}

@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { auth } from '@/lib/auth'
 import { createSupabaseAdminClient } from '@/utils/supabase/server'
+import { Analytics } from '@/lib/analytics'
 
 export async function GET(request: NextRequest) {
   try {
@@ -41,7 +42,7 @@ export async function GET(request: NextRequest) {
         .gte('created_at', today)
     ])
 
-    // Get recent activity
+    // Get recent activity - recent prompts created
     const { data: recentPrompts } = await supabase
       .from('prompt')
       .select(`
@@ -72,12 +73,13 @@ export async function GET(request: NextRequest) {
     }) || []
 
     // Get top contributors
-    const { data: allPrompts } = await supabase
+    const { data: promptsByUser } = await supabase
       .from('prompt')
       .select('user_id')
       .not('user_id', 'is', null)
 
-    const contributorCounts = allPrompts?.reduce((acc, prompt) => {
+    // Count prompts per user
+    const contributorCounts = promptsByUser?.reduce((acc, prompt) => {
       const userId = prompt.user_id
       if (userId) {
         acc[userId] = (acc[userId] || 0) + 1
@@ -85,17 +87,19 @@ export async function GET(request: NextRequest) {
       return acc
     }, {} as Record<string, number>) || {}
 
+    // Get top contributor IDs
     const topContributorIds = Object.entries(contributorCounts)
       .sort(([, a], [, b]) => b - a)
       .slice(0, 5)
       .map(([userId]) => userId)
 
+    // Get profiles for top contributors
     const { data: topContributorProfiles } = await supabase
       .from('profiles')
       .select('id, name, email, avatar_url')
       .in('id', topContributorIds)
 
-    const topContributorsList = topContributorIds.map(userId => {
+    const topContributors = topContributorIds.map(userId => {
       const profile = topContributorProfiles?.find(p => p.id === userId)
       return {
         name: profile?.name || profile?.email?.split('@')[0] || 'Unknown',
@@ -104,32 +108,42 @@ export async function GET(request: NextRequest) {
       }
     })
 
-    // Get popular prompts
-    const { data: popularPrompts } = await supabase
+    // Get popular prompts based on uses and favorites
+    const { data: popularPromptsData } = await supabase
       .from('prompt')
       .select(`
         id,
         title,
         uses,
-        user_favorites (count)
+        user_favorites(count)
       `)
       .order('uses', { ascending: false })
       .limit(5)
 
-    const popularPromptsFormatted = popularPrompts?.map(prompt => ({
+    const popularPrompts = popularPromptsData?.map(prompt => ({
       id: prompt.id.toString(),
       title: prompt.title,
       uses: prompt.uses || 0,
-      favorites: prompt.user_favorites?.length || 0
+      favorites: Array.isArray(prompt.user_favorites) ? prompt.user_favorites.length : 0
     })) || []
 
-    // System health (mock data for now)
+
+
+    // System health - check database connectivity
+    const { data: healthCheck } = await supabase
+      .from('prompt')
+      .select('id')
+      .limit(1)
+
     const systemHealth = {
-      database: 'healthy' as const,
+      database: healthCheck ? 'healthy' as const : 'error' as const,
       api: 'healthy' as const,
       storage: 'healthy' as const,
       lastChecked: new Date().toISOString()
     }
+
+    // Get analytics data
+    const analyticsData = await Analytics.getAnalyticsData(30)
 
     const stats = {
       totalPrompts: totalPrompts || 0,
@@ -141,14 +155,13 @@ export async function GET(request: NextRequest) {
       userStats: {
         activeUsers: totalUsers || 0,
         newUsersToday: newUsersToday || 0,
-        topContributors: topContributorsList
+        topContributors
       },
       contentStats: {
         promptsToday: promptsToday || 0,
-        popularPrompts: popularPromptsFormatted,
-        flaggedContent: 0, // TODO: Implement flagging system
-        pendingReviews: 0  // TODO: Implement review system
-      }
+        popularPrompts
+      },
+      analyticsData
     }
 
     return NextResponse.json(stats)

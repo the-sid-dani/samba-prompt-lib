@@ -130,15 +130,30 @@ export function CopyButton({
       onClick={handleCopy}
       disabled={isLoading || !hasContent}
       title={hasContent ? label : 'No content to copy'}
+      aria-label={
+        isLoading 
+          ? 'Copying content...' 
+          : isCopied 
+            ? 'Content copied to clipboard' 
+            : hasContent 
+              ? `Copy ${label.toLowerCase()}` 
+              : 'No content to copy'
+      }
     >
       {isLoading ? (
-        <Loader2 className="h-4 w-4 animate-spin" />
+        <Loader2 className="h-4 w-4 animate-spin" aria-hidden="true" />
       ) : isCopied ? (
-        <Check className="h-4 w-4" />
+        <Check className="h-4 w-4" aria-hidden="true" />
       ) : (
-        <Copy className="h-4 w-4" />
+        <Copy className="h-4 w-4" aria-hidden="true" />
       )}
       {showLabel && label}
+      {/* Screen reader announcement for copy status */}
+      {isCopied && (
+        <span className="sr-only" aria-live="polite">
+          Content copied to clipboard
+        </span>
+      )}
     </Button>
   )
 } 

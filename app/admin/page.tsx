@@ -41,7 +41,8 @@ import {
   Copy,
   Calendar,
   ArrowUpRight,
-  Zap
+  Zap,
+  DollarSign
 } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
 import Navigation from '@/components/navigation/Navigation';
@@ -55,6 +56,7 @@ interface DashboardStats {
   systemHealth: SystemHealth;
   userStats: UserStats;
   contentStats: ContentStats;
+  analyticsData: AnalyticsData;
 }
 
 interface ActivityItem {
@@ -90,8 +92,25 @@ interface ContentStats {
     uses: number;
     favorites: number;
   }>;
-  flaggedContent: number;
-  pendingReviews: number;
+}
+
+interface AnalyticsData {
+  topEvents: Array<{
+    event_type: string;
+    count: number;
+  }>;
+  dailyMetrics: Array<{
+    date: string;
+    interactions: number;
+    unique_users: number;
+  }>;
+  apiUsage: Array<{
+    provider: string;
+    model: string;
+    request_count: number;
+    total_tokens: number;
+    total_cost: number;
+  }>;
 }
 
 interface User {
@@ -99,8 +118,8 @@ interface User {
   name: string;
   email: string;
   avatar?: string;
-  role: string;
-  status: 'active' | 'suspended' | 'pending';
+  role: 'admin' | 'member';
+  status: 'active' | 'inactive' | 'new';
   lastActive: string;
   promptCount: number;
 }
@@ -225,9 +244,41 @@ export default function AdminDashboard() {
   const filteredUsers = users.filter(user => {
     const matchesSearch = user.name.toLowerCase().includes(userSearch.toLowerCase()) ||
                          user.email.toLowerCase().includes(userSearch.toLowerCase());
-    const matchesFilter = userFilter === 'all' || user.status === userFilter;
+    const matchesFilter = userFilter === 'all' || user.role === userFilter;
     return matchesSearch && matchesFilter;
   });
+
+  // Handle user role change
+  const handleRoleChange = async (userId: string, newRole: string) => {
+    try {
+      const response = await fetch(`/api/admin/users/${userId}`, {
+        method: 'PATCH',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({ action: 'change_role', role: newRole }),
+      })
+
+      if (response.ok) {
+        // Update local state
+        setUsers(users.map(user => 
+          user.id === userId ? { ...user, role: newRole as 'admin' | 'member' } : user
+        ))
+        toast({
+          title: "Role Updated",
+          description: `User role changed to ${newRole}`,
+        })
+      } else {
+        throw new Error('Failed to update role')
+      }
+    } catch (error) {
+      toast({
+        title: "Error",
+        description: "Failed to update user role",
+        variant: "destructive",
+      })
+    }
+  }
 
   if (loading) {
     return (
@@ -430,7 +481,7 @@ export default function AdminDashboard() {
                 <div className="relative">
                   <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 w-4 h-4 text-muted-foreground" />
                   <Input
-                    placeholder="Search users..."
+                    placeholder="Search users by name or email..."
                     value={userSearch}
                     onChange={(e) => setUserSearch(e.target.value)}
                     className="pl-10"
@@ -439,13 +490,12 @@ export default function AdminDashboard() {
               </div>
               <Select value={userFilter} onValueChange={setUserFilter}>
                 <SelectTrigger className="w-[180px]">
-                  <SelectValue placeholder="Filter by status" />
+                  <SelectValue placeholder="All Roles" />
                 </SelectTrigger>
                 <SelectContent>
-                  <SelectItem value="all">All Users</SelectItem>
-                  <SelectItem value="active">Active</SelectItem>
-                  <SelectItem value="suspended">Suspended</SelectItem>
-                  <SelectItem value="pending">Pending</SelectItem>
+                  <SelectItem value="all">All Roles</SelectItem>
+                  <SelectItem value="admin">Admin</SelectItem>
+                  <SelectItem value="member">Member</SelectItem>
                 </SelectContent>
               </Select>
             </div>
@@ -454,64 +504,74 @@ export default function AdminDashboard() {
               <CardHeader>
                 <CardTitle>User Management</CardTitle>
                 <CardDescription>
-                  Manage user accounts and permissions
+                  Manage user accounts, roles, and permissions
                 </CardDescription>
               </CardHeader>
               <CardContent>
-                <div className="space-y-4">
-                  {filteredUsers.map((user) => (
-                    <div key={user.id} className="flex items-center justify-between p-4 border rounded-lg">
-                      <div className="flex items-center gap-3">
-                        <div className="w-10 h-10 rounded-full bg-primary/10 flex items-center justify-center">
-                          {user.avatar ? (
-                            <img src={user.avatar} alt={user.name} className="w-10 h-10 rounded-full" />
-                          ) : (
-                            <Users className="w-5 h-5 text-primary" />
-                          )}
-                        </div>
-                        <div>
-                          <p className="font-medium">{user.name}</p>
-                          <p className="text-sm text-muted-foreground">{user.email}</p>
-                          <div className="flex items-center gap-2 mt-1">
-                            <Badge variant={user.status === 'active' ? 'default' : 'secondary'}>
-                              {user.status}
-                            </Badge>
-                            <span className="text-xs text-muted-foreground">
-                              {user.promptCount} prompts
-                            </span>
-                          </div>
-                        </div>
-                      </div>
-                      <div className="flex items-center gap-2">
-                        {user.status === 'active' ? (
-                          <Button
-                            variant="outline"
-                            size="sm"
-                            onClick={() => handleUserAction(user.id, 'suspend')}
-                          >
-                            <Ban className="w-4 h-4 mr-2" />
-                            Suspend
-                          </Button>
-                        ) : (
-                          <Button
-                            variant="outline"
-                            size="sm"
-                            onClick={() => handleUserAction(user.id, 'activate')}
-                          >
-                            <UserCheck className="w-4 h-4 mr-2" />
-                            Activate
-                          </Button>
-                        )}
-                        <Button
-                          variant="outline"
-                          size="sm"
-                          onClick={() => handleUserAction(user.id, 'delete')}
-                        >
-                          <Trash2 className="w-4 h-4" />
-                        </Button>
-                      </div>
-                    </div>
-                  ))}
+                <div className="overflow-x-auto">
+                  <table className="w-full">
+                    <thead>
+                      <tr className="border-b">
+                        <th className="text-left py-3 px-4 font-medium text-muted-foreground">User</th>
+                        <th className="text-left py-3 px-4 font-medium text-muted-foreground">Status</th>
+                        <th className="text-left py-3 px-4 font-medium text-muted-foreground">Prompts Created</th>
+                        <th className="text-left py-3 px-4 font-medium text-muted-foreground">Last Active</th>
+                        <th className="text-left py-3 px-4 font-medium text-muted-foreground">Role</th>
+                      </tr>
+                    </thead>
+                    <tbody>
+                      {filteredUsers.map((user) => {
+                        return (
+                          <tr key={user.id} className="border-b hover:bg-muted/50">
+                            <td className="py-4 px-4">
+                              <div className="flex items-center gap-3">
+                                <div className="w-10 h-10 rounded-full bg-primary/10 flex items-center justify-center">
+                                  {user.avatar ? (
+                                    <img src={user.avatar} alt={user.name} className="w-10 h-10 rounded-full" />
+                                  ) : (
+                                    <span className="text-sm font-medium">
+                                      {user.name.charAt(0).toUpperCase()}
+                                    </span>
+                                  )}
+                                </div>
+                                <div>
+                                  <p className="font-medium">{user.name}</p>
+                                  <p className="text-sm text-muted-foreground">{user.email}</p>
+                                </div>
+                              </div>
+                            </td>
+                            <td className="py-4 px-4">
+                              <Badge variant={user.status === 'active' ? 'default' : user.status === 'inactive' ? 'secondary' : 'outline'}>
+                                {user.status === 'active' ? 'Active' : user.status === 'inactive' ? 'Inactive' : 'New'}
+                              </Badge>
+                            </td>
+                            <td className="py-4 px-4">
+                              <span className="text-sm font-medium">{user.promptCount}</span>
+                            </td>
+                            <td className="py-4 px-4">
+                              <span className="text-sm text-muted-foreground">
+                                {user.lastActive ? new Date(user.lastActive).toLocaleDateString() : 'Never'}
+                              </span>
+                            </td>
+                            <td className="py-4 px-4">
+                              <Select 
+                                value={user.role} 
+                                onValueChange={(value) => handleRoleChange(user.id, value)}
+                              >
+                                <SelectTrigger className="w-[120px]">
+                                  <SelectValue />
+                                </SelectTrigger>
+                                <SelectContent>
+                                  <SelectItem value="admin">Admin</SelectItem>
+                                  <SelectItem value="member">Member</SelectItem>
+                                </SelectContent>
+                              </Select>
+                            </td>
+                          </tr>
+                        );
+                      })}
+                    </tbody>
+                  </table>
                 </div>
               </CardContent>
             </Card>
@@ -519,29 +579,7 @@ export default function AdminDashboard() {
 
           {/* Content Tab */}
           <TabsContent value="content" className="space-y-6">
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-              <Card>
-                <CardHeader>
-                  <CardTitle className="flex items-center gap-2">
-                    <Flag className="w-5 h-5" />
-                    Content Moderation
-                  </CardTitle>
-                </CardHeader>
-                <CardContent>
-                  <div className="space-y-4">
-                    <div className="flex justify-between items-center">
-                      <span>Flagged Content</span>
-                      <Badge variant="destructive">{stats?.contentStats?.flaggedContent || 0}</Badge>
-                    </div>
-                    <div className="flex justify-between items-center">
-                      <span>Pending Reviews</span>
-                      <Badge variant="secondary">{stats?.contentStats?.pendingReviews || 0}</Badge>
-                    </div>
-                    <Button className="w-full">Review Content</Button>
-                  </div>
-                </CardContent>
-              </Card>
-
+            <div className="grid grid-cols-1 gap-6">
               <Card>
                 <CardHeader>
                   <CardTitle className="flex items-center gap-2">
@@ -624,24 +662,25 @@ export default function AdminDashboard() {
               <Card>
                 <CardHeader>
                   <CardTitle className="flex items-center gap-2">
-                    <BarChart3 className="w-5 h-5" />
-                    Usage Statistics
+                    <Activity className="w-5 h-5" />
+                    User Activity
                   </CardTitle>
                 </CardHeader>
                 <CardContent>
                   <div className="space-y-4">
-                    <div className="flex justify-between items-center">
-                      <span>Active Users</span>
-                      <span className="font-medium">{stats?.userStats?.activeUsers || 0}</span>
-                    </div>
-                    <div className="flex justify-between items-center">
-                      <span>Prompts Created Today</span>
-                      <span className="font-medium">{stats?.contentStats?.promptsToday || 0}</span>
-                    </div>
-                    <div className="flex justify-between items-center">
-                      <span>New Users Today</span>
-                      <span className="font-medium">{stats?.userStats?.newUsersToday || 0}</span>
-                    </div>
+                    {stats?.analyticsData?.topEvents?.map((event, index) => (
+                      <div key={event.event_type} className="flex items-center justify-between">
+                        <div className="flex items-center gap-2">
+                          <div className="w-2 h-2 rounded-full bg-primary"></div>
+                          <span className="capitalize">{event.event_type.replace('_', ' ')}</span>
+                        </div>
+                        <Badge variant="outline">{event.count}</Badge>
+                      </div>
+                    )) || (
+                      <p className="text-muted-foreground text-center py-4">
+                        No activity data available
+                      </p>
+                    )}
                   </div>
                 </CardContent>
               </Card>
@@ -649,32 +688,70 @@ export default function AdminDashboard() {
               <Card>
                 <CardHeader>
                   <CardTitle className="flex items-center gap-2">
-                    <Users className="w-5 h-5" />
-                    Top Contributors
+                    <TrendingUp className="w-5 h-5" />
+                    Daily Metrics
                   </CardTitle>
                 </CardHeader>
                 <CardContent>
-                  <div className="space-y-3">
-                    {stats?.userStats?.topContributors?.map((contributor, index) => (
-                      <div key={index} className="flex items-center justify-between">
-                        <div className="flex items-center gap-3">
-                          <div className="w-8 h-8 rounded-full bg-primary/10 flex items-center justify-center">
-                            {contributor.avatar ? (
-                              <img src={contributor.avatar} alt={contributor.name} className="w-8 h-8 rounded-full" />
-                            ) : (
-                              <Users className="w-4 h-4 text-primary" />
-                            )}
-                          </div>
-                          <span className="text-sm">{contributor.name}</span>
+                  <div className="space-y-4">
+                    {stats?.analyticsData?.dailyMetrics?.slice(-7).map((day, index) => (
+                      <div key={day.date} className="flex items-center justify-between">
+                        <span className="text-sm">{new Date(day.date).toLocaleDateString()}</span>
+                        <div className="flex items-center gap-4 text-sm">
+                          <span>{day.interactions} interactions</span>
+                          <span>{day.unique_users} users</span>
                         </div>
-                        <Badge variant="outline">{contributor.promptCount} prompts</Badge>
                       </div>
                     )) || (
                       <p className="text-muted-foreground text-center py-4">
-                        No contributor data available
+                        No daily metrics available
                       </p>
                     )}
                   </div>
+                </CardContent>
+              </Card>
+
+              <Card className="md:col-span-2">
+                <CardHeader>
+                  <CardTitle className="flex items-center gap-2">
+                    <DollarSign className="w-5 h-5" />
+                    API Usage & Costs
+                  </CardTitle>
+                  <CardDescription>
+                    Track API usage and costs across different providers and models
+                  </CardDescription>
+                </CardHeader>
+                <CardContent>
+                                     {stats?.analyticsData?.apiUsage && stats.analyticsData.apiUsage.length > 0 ? (
+                     <div className="space-y-4">
+                       {stats.analyticsData.apiUsage.map((usage, index) => (
+                        <div key={index} className="flex items-center justify-between p-4 border rounded-lg">
+                          <div>
+                            <p className="font-medium">{usage.provider} - {usage.model}</p>
+                            <p className="text-sm text-muted-foreground">
+                              {usage.request_count} requests • {usage.total_tokens} tokens
+                            </p>
+                          </div>
+                          <div className="text-right">
+                            <p className="font-medium">${usage.total_cost.toFixed(4)}</p>
+                            <p className="text-sm text-muted-foreground">
+                              ${(usage.total_cost / usage.request_count).toFixed(6)}/req
+                            </p>
+                          </div>
+                        </div>
+                      ))}
+                    </div>
+                  ) : (
+                    <div className="text-center py-8">
+                      <DollarSign className="w-12 h-12 text-muted-foreground mx-auto mb-4" />
+                      <p className="text-muted-foreground">
+                        No API usage data available yet
+                      </p>
+                      <p className="text-sm text-muted-foreground mt-2">
+                        API usage tracking will be available after the analytics migration is applied
+                      </p>
+                    </div>
+                  )}
                 </CardContent>
               </Card>
             </div>
