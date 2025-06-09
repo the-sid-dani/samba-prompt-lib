@@ -751,10 +751,10 @@ function PlaygroundContent() {
           <div className="w-full lg:w-2/5 bg-muted/30 border-b lg:border-b-0 lg:border-l border-border order-1 lg:order-2">
             <TooltipProvider>
               <ScrollArea className="h-full max-h-[50vh] lg:max-h-none">
-                <div className="p-3 sm:p-6 space-y-4 sm:space-y-6">
-                  <Accordion type="multiple" defaultValue={["system-prompt", "model-settings"]} className="w-full space-y-4 sm:space-y-6">
+                <div className="p-3 sm:p-6 space-y-3 sm:space-y-4">
+                  <Accordion type="multiple" defaultValue={["system-prompt", "model-settings"]} className="w-full space-y-3 sm:space-y-4">
                     <AccordionItem value="system-prompt" className="border border-border rounded-lg bg-card shadow-sm">
-                      <AccordionTrigger className="px-3 sm:px-5 py-3 sm:py-4 hover:no-underline hover:bg-muted/50 rounded-t-lg">
+                      <AccordionTrigger className="px-3 sm:px-4 py-2.5 sm:py-3 hover:no-underline hover:bg-muted/50 rounded-t-lg">
                         <div className="flex items-center justify-between w-full">
                           <div className="flex items-center gap-2">
                             <Bot className="h-4 w-4 sm:h-5 sm:w-5 text-red-600" />
@@ -770,7 +770,7 @@ function PlaygroundContent() {
                           </Tooltip>
                         </div>
                       </AccordionTrigger>
-                      <AccordionContent className="px-3 sm:px-5 pt-3 sm:pt-4 pb-4 sm:pb-5">
+                      <AccordionContent className="px-3 sm:px-4 pt-2 sm:pt-3 pb-3 sm:pb-4">
                         <div className="space-y-3">
                           <Textarea
                             value={systemPrompt} // Use clean text directly
@@ -796,13 +796,13 @@ function PlaygroundContent() {
                     </AccordionItem>
 
                     <AccordionItem value="model-settings" className="border border-border rounded-lg bg-card shadow-sm">
-                      <AccordionTrigger className="px-3 sm:px-5 py-3 sm:py-4 hover:no-underline hover:bg-muted/50 rounded-t-lg">
+                      <AccordionTrigger className="px-3 sm:px-4 py-2.5 sm:py-3 hover:no-underline hover:bg-muted/50 rounded-t-lg">
                         <div className="flex items-center gap-2">
                           <Cpu className="h-4 w-4 sm:h-5 sm:w-5 text-red-600" />
                           <span className="font-semibold text-sm sm:text-base">Model Settings</span>
                         </div>
                       </AccordionTrigger>
-                      <AccordionContent className="px-3 sm:px-5 pb-4 sm:pb-5 space-y-4 sm:space-y-5">
+                      <AccordionContent className="px-3 sm:px-4 pb-3 sm:pb-4 space-y-3 sm:space-y-4">
                         <div>
                           <div className="flex items-center justify-between mb-2">
                             <Label htmlFor="ai-model" className="text-xs sm:text-sm font-medium text-muted-foreground">
@@ -849,133 +849,135 @@ function PlaygroundContent() {
                     </AccordionItem>
 
                     <AccordionItem value="generation-settings" className="border border-border rounded-lg bg-card shadow-sm">
-                      <AccordionTrigger className="px-3 sm:px-5 py-3 sm:py-4 hover:no-underline hover:bg-muted/50 rounded-t-lg">
+                      <AccordionTrigger className="px-3 sm:px-4 py-2.5 sm:py-3 hover:no-underline hover:bg-muted/50 rounded-t-lg">
                         <div className="flex items-center gap-2">
                           <SlidersHorizontal className="h-4 w-4 sm:h-5 sm:w-5 text-red-600" />
                           <span className="font-semibold text-sm sm:text-base">Generation Settings</span>
                         </div>
                       </AccordionTrigger>
-                      <AccordionContent className="px-3 sm:px-5 pb-4 sm:pb-5 space-y-4 sm:space-y-6">
-                        {/* Temperature - First */}
-                        <div className="space-y-2">
-                          <div className="flex justify-between items-center">
-                            <Label htmlFor="temperature" className="text-xs sm:text-sm font-medium text-muted-foreground">
-                              Temperature
-                            </Label>
-                            <Tooltip>
-                              <TooltipTrigger asChild>
-                                <Info className="h-3 w-3 text-muted-foreground cursor-help" />
-                              </TooltipTrigger>
-                              <TooltipContent>
-                                <p>Controls randomness in responses</p>
-                              </TooltipContent>
-                            </Tooltip>
-                          </div>
-                          <div className="flex items-center space-x-2 sm:space-x-3">
-                            <Slider
-                              id="temperature"
-                              min={0}
-                              max={2}
-                              step={0.01}
-                              value={[temperature]}
-                              onValueChange={([value]) => setTemperature(value)}
-                              className="flex-1"
-                            />
-                            <span className="text-xs sm:text-sm text-foreground w-10 sm:w-12 text-center border border-border rounded-md py-1 bg-muted">
-                              {temperature.toFixed(2)}
-                            </span>
-                          </div>
-                        </div>
-                        
-                        {/* Max Tokens - Second */}
-                        <div className="space-y-2">
-                          <div className="flex justify-between items-center">
-                            <Label htmlFor="maxTokens" className="text-xs sm:text-sm font-medium text-muted-foreground">
-                              Max Tokens
-                            </Label>
-                            <Tooltip>
-                              <TooltipTrigger asChild>
-                                <Info className="h-3 w-3 text-muted-foreground cursor-help" />
-                              </TooltipTrigger>
-                              <TooltipContent>
-                                <p>Maximum response length</p>
-                              </TooltipContent>
-                            </Tooltip>
-                          </div>
-                          <Input
-                            id="maxTokens"
-                            type="number"
-                            value={maxTokens}
-                            onChange={(e) => setMaxTokens(parseInt(e.target.value) || 0)}
-                            min={1}
-                            max={4000}
-                            className="w-full border-border bg-background text-foreground text-xs sm:text-sm"
-                          />
-                        </div>
-
-                        {/* Other parameters as sliders */}
-                        {[
-                          {
-                            id: "topP",
-                            label: "Top P",
-                            value: topP,
-                            setValue: setTopP,
-                            min: 0,
-                            max: 1,
-                            step: 0.01,
-                            desc: "Nucleus sampling threshold"
-                          },
-                          {
-                            id: "frequencyPenalty",
-                            label: "Frequency Penalty",
-                            value: frequencyPenalty,
-                            setValue: setFrequencyPenalty,
-                            min: 0,
-                            max: 2,
-                            step: 0.01,
-                            desc: "Reduces word repetition"
-                          },
-                          {
-                            id: "presencePenalty",
-                            label: "Presence Penalty",
-                            value: presencePenalty,
-                            setValue: setPresencePenalty,
-                            min: 0,
-                            max: 2,
-                            step: 0.01,
-                            desc: "Reduces topic repetition"
-                          }
-                        ].map((param) => (
-                          <div key={param.id} className="space-y-2">
+                      <AccordionContent className="px-3 sm:px-5 pb-3 sm:pb-4">
+                        <div className="space-y-3">
+                          {/* Temperature - First */}
+                          <div className="space-y-1.5">
                             <div className="flex justify-between items-center">
-                              <Label htmlFor={param.id} className="text-xs sm:text-sm font-medium text-muted-foreground">
-                                {param.label}
+                              <Label htmlFor="temperature" className="text-xs font-medium text-muted-foreground">
+                                Temperature
                               </Label>
                               <Tooltip>
                                 <TooltipTrigger asChild>
                                   <Info className="h-3 w-3 text-muted-foreground cursor-help" />
                                 </TooltipTrigger>
                                 <TooltipContent>
-                                  <p>{param.desc}</p>
+                                  <p>Controls randomness in responses</p>
                                 </TooltipContent>
                               </Tooltip>
                             </div>
-                            <div className="flex items-center space-x-2 sm:space-x-3">
+                            <div className="flex items-center space-x-2">
                               <Slider
-                                id={param.id}
-                                min={param.min}
-                                max={param.max}
-                                step={param.step}
-                                value={[param.value]}
-                                onValueChange={([value]) => param.setValue(value)}
+                                id="temperature"
+                                min={0}
+                                max={2}
+                                step={0.01}
+                                value={[temperature]}
+                                onValueChange={([value]) => setTemperature(value)}
                                 className="flex-1"
                               />
-                              <span className="text-xs sm:text-sm text-foreground w-10 sm:w-12 text-center border border-border rounded-md py-1 bg-muted">
-                                {param.value.toFixed(param.step < 1 ? 2 : 0)}
+                              <span className="text-xs text-foreground w-10 text-center border border-border rounded-md py-0.5 bg-muted">
+                                {temperature.toFixed(2)}
                               </span>
                             </div>
                           </div>
-                        ))}
+                          
+                          {/* Max Tokens - Second */}
+                          <div className="space-y-1.5">
+                            <div className="flex justify-between items-center">
+                              <Label htmlFor="maxTokens" className="text-xs font-medium text-muted-foreground">
+                                Max Tokens
+                              </Label>
+                              <Tooltip>
+                                <TooltipTrigger asChild>
+                                  <Info className="h-3 w-3 text-muted-foreground cursor-help" />
+                                </TooltipTrigger>
+                                <TooltipContent>
+                                  <p>Maximum response length</p>
+                                </TooltipContent>
+                              </Tooltip>
+                            </div>
+                            <Input
+                              id="maxTokens"
+                              type="number"
+                              value={maxTokens}
+                              onChange={(e) => setMaxTokens(parseInt(e.target.value) || 0)}
+                              min={1}
+                              max={4000}
+                              className="w-full h-8 border-border bg-background text-foreground text-xs"
+                            />
+                          </div>
+
+                          {/* Other parameters as sliders */}
+                          {[
+                            {
+                              id: "topP",
+                              label: "Top P",
+                              value: topP,
+                              setValue: setTopP,
+                              min: 0,
+                              max: 1,
+                              step: 0.01,
+                              desc: "Nucleus sampling threshold"
+                            },
+                            {
+                              id: "frequencyPenalty",
+                              label: "Frequency Penalty",
+                              value: frequencyPenalty,
+                              setValue: setFrequencyPenalty,
+                              min: 0,
+                              max: 2,
+                              step: 0.01,
+                              desc: "Reduces word repetition"
+                            },
+                            {
+                              id: "presencePenalty",
+                              label: "Presence Penalty",
+                              value: presencePenalty,
+                              setValue: setPresencePenalty,
+                              min: 0,
+                              max: 2,
+                              step: 0.01,
+                              desc: "Reduces topic repetition"
+                            }
+                          ].map((param) => (
+                            <div key={param.id} className="space-y-1.5">
+                              <div className="flex justify-between items-center">
+                                <Label htmlFor={param.id} className="text-xs font-medium text-muted-foreground">
+                                  {param.label}
+                                </Label>
+                                <Tooltip>
+                                  <TooltipTrigger asChild>
+                                    <Info className="h-3 w-3 text-muted-foreground cursor-help" />
+                                  </TooltipTrigger>
+                                  <TooltipContent>
+                                    <p>{param.desc}</p>
+                                  </TooltipContent>
+                                </Tooltip>
+                              </div>
+                              <div className="flex items-center space-x-2">
+                                <Slider
+                                  id={param.id}
+                                  min={param.min}
+                                  max={param.max}
+                                  step={param.step}
+                                  value={[param.value]}
+                                  onValueChange={([value]) => param.setValue(value)}
+                                  className="flex-1"
+                                />
+                                <span className="text-xs text-foreground w-10 text-center border border-border rounded-md py-0.5 bg-muted">
+                                  {param.value.toFixed(param.step < 1 ? 2 : 0)}
+                                </span>
+                              </div>
+                            </div>
+                          ))}
+                        </div>
                       </AccordionContent>
                     </AccordionItem>
                   </Accordion>
