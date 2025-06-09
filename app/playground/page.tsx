@@ -863,14 +863,14 @@ function PlaygroundContent() {
                               <Label htmlFor="temperature" className="text-xs font-medium text-muted-foreground">
                                 Temperature
                               </Label>
-                              <Tooltip>
-                                <TooltipTrigger asChild>
-                                  <Info className="h-3 w-3 text-muted-foreground cursor-help" />
-                                </TooltipTrigger>
-                                <TooltipContent>
-                                  <p>Controls randomness in responses</p>
-                                </TooltipContent>
-                              </Tooltip>
+                                                          <Tooltip>
+                              <TooltipTrigger asChild>
+                                <Info className="h-3 w-3 text-muted-foreground cursor-help" />
+                              </TooltipTrigger>
+                              <TooltipContent>
+                                <p>Temperature (0-2): Controls randomness - lower = more focused, higher = more creative</p>
+                              </TooltipContent>
+                            </Tooltip>
                             </div>
                             <div className="flex items-center space-x-2">
                               <Slider
@@ -899,7 +899,7 @@ function PlaygroundContent() {
                                   <Info className="h-3 w-3 text-muted-foreground cursor-help" />
                                 </TooltipTrigger>
                                 <TooltipContent>
-                                  <p>Maximum response length</p>
+                                  <p>Max Tokens: Limits response length</p>
                                 </TooltipContent>
                               </Tooltip>
                             </div>
@@ -924,7 +924,7 @@ function PlaygroundContent() {
                               min: 0,
                               max: 1,
                               step: 0.01,
-                              desc: "Nucleus sampling threshold"
+                              desc: "Top P (0-1): Controls diversity - lower = more focused vocabulary"
                             },
                             {
                               id: "frequencyPenalty",
@@ -934,7 +934,7 @@ function PlaygroundContent() {
                               min: 0,
                               max: 2,
                               step: 0.01,
-                              desc: "Reduces word repetition"
+                              desc: "Frequency Penalty: Reduces repetition of tokens based on frequency"
                             },
                             {
                               id: "presencePenalty",
@@ -944,7 +944,7 @@ function PlaygroundContent() {
                               min: 0,
                               max: 2,
                               step: 0.01,
-                              desc: "Reduces topic repetition"
+                              desc: "Presence Penalty: Reduces repetition of topics/concepts"
                             }
                           ].map((param) => (
                             <div key={param.id} className="space-y-1.5">
