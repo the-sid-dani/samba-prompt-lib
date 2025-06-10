@@ -1,5 +1,7 @@
-import { Metadata } from 'next'
-import { Suspense } from 'react'
+'use client'
+
+import { useEffect, useState, Suspense } from 'react'
+import { useRouter } from 'next/navigation'
 import Navigation from '@/components/navigation/Navigation'
 import TagCloud from '@/components/tag-cloud'
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card'
@@ -8,20 +10,54 @@ import { getTags } from '@/app/actions/tags'
 import Link from 'next/link'
 import { Badge } from '@/components/ui/badge'
 
-export const metadata: Metadata = {
-  title: 'Browse Tags - SambaTV Prompt Library',
-  description: 'Explore prompts by tags. Find AI prompts organized by popular topics and keywords.',
+interface Tag {
+  id: number
+  name: string
+  usage_count: number
 }
 
-async function TagsGrid() {
-  const tags = await getTags()
-  
-  // Filter out tags with zero usage and sort by usage count
-  const activeTags = tags
-    .filter(tag => tag.usage_count > 0)
-    .sort((a, b) => b.usage_count - a.usage_count)
+function TagsGrid() {
+  const [tags, setTags] = useState<Tag[]>([])
+  const [isLoading, setIsLoading] = useState(true)
+  const router = useRouter()
 
-  if (activeTags.length === 0) {
+  useEffect(() => {
+    const loadTags = async () => {
+      try {
+        const tagsData = await getTags()
+        
+        // Filter out tags with zero usage and sort by usage count
+        const activeTags = tagsData
+          .filter((tag: Tag) => tag.usage_count > 0)
+          .sort((a: Tag, b: Tag) => b.usage_count - a.usage_count)
+
+        setTags(activeTags)
+      } catch (error) {
+        console.error('Error loading tags:', error)
+      } finally {
+        setIsLoading(false)
+      }
+    }
+
+    loadTags()
+  }, [])
+
+  const handleTagClick = (tag: string) => {
+    router.push(`/tags/${encodeURIComponent(tag)}`)
+  }
+
+  if (isLoading) {
+    return (
+      <div className="flex items-center justify-center py-12">
+        <div className="text-center">
+          <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary mx-auto mb-4"></div>
+          <p className="text-muted-foreground">Loading tags...</p>
+        </div>
+      </div>
+    )
+  }
+
+  if (tags.length === 0) {
     return (
       <Card>
         <CardContent className="flex flex-col items-center justify-center py-12">
@@ -39,7 +75,7 @@ async function TagsGrid() {
     <div className="space-y-8">
       {/* Tag Cloud Section */}
       <TagCloud 
-        onTagClick={(tag) => window.location.href = `/tags/${encodeURIComponent(tag)}`}
+        onTagClick={handleTagClick}
         maxTags={100}
         title="Tag Cloud"
         description="Popular tags sized by usage frequency"
@@ -53,14 +89,14 @@ async function TagsGrid() {
             All Tags
           </CardTitle>
           <CardDescription>
-            Browse all {activeTags.length} active tags alphabetically
+            Browse all {tags.length} active tags alphabetically
           </CardDescription>
         </CardHeader>
         <CardContent>
           <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-3">
-            {activeTags
-              .sort((a, b) => a.name.localeCompare(b.name))
-              .map((tag) => (
+            {tags
+              .sort((a: Tag, b: Tag) => a.name.localeCompare(b.name))
+              .map((tag: Tag) => (
                 <Link
                   key={tag.id}
                   href={`/tags/${encodeURIComponent(tag.name)}`}
