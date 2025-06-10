@@ -79,6 +79,12 @@ export function CostDisplay({ costBreakdown, isLoading, className }: CostDisplay
   const efficiency = getCostEfficiencyBadge()
   const EfficiencyIcon = efficiency.icon
 
+  const getCostColor = (amount: number): string => {
+    if (amount < 0.01) return 'text-green-600'
+    if (amount < 0.1) return 'text-yellow-600'
+    return 'text-red-600'
+  }
+
   return (
     <TooltipProvider>
       <Card className={className}>
@@ -142,7 +148,7 @@ export function CostDisplay({ costBreakdown, isLoading, className }: CostDisplay
                   </TooltipContent>
                 </Tooltip>
               </div>
-              <span className="font-medium">{formatCost(inputCost)}</span>
+              <span className={getCostColor(inputCost)}>{formatCost(inputCost)}</span>
             </div>
             <div className="flex items-center justify-between text-sm">
               <div className="flex items-center gap-1">
@@ -156,11 +162,11 @@ export function CostDisplay({ costBreakdown, isLoading, className }: CostDisplay
                   </TooltipContent>
                 </Tooltip>
               </div>
-              <span className="font-medium">{formatCost(outputCost)}</span>
+              <span className={getCostColor(outputCost)}>{formatCost(outputCost)}</span>
             </div>
             <div className="flex items-center justify-between text-sm font-medium border-t pt-2">
               <span>Total Cost:</span>
-              <span className="text-lg">{formatCost(totalCost)}</span>
+              <span className={getCostColor(totalCost)}>{formatCost(totalCost)}</span>
             </div>
           </div>
 
@@ -170,11 +176,11 @@ export function CostDisplay({ costBreakdown, isLoading, className }: CostDisplay
           <div className="space-y-2">
             <div className="flex items-center justify-between text-sm">
               <span className="text-muted-foreground">Cost per Token:</span>
-              <span className="font-medium">{formatCost(costPerToken)}</span>
+              <span className={getCostColor(costPerToken)}>{formatCost(costPerToken)}</span>
             </div>
             <div className="flex items-center justify-between text-sm">
               <span className="text-muted-foreground">Cost per 1K Tokens:</span>
-              <span className="font-medium">{formatCost(costPerToken * 1000)}</span>
+              <span className={getCostColor(costPerToken * 1000)}>{formatCost(costPerToken * 1000)}</span>
             </div>
           </div>
 

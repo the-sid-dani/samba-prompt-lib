@@ -1,9 +1,10 @@
 'use client'
 
+import { useState } from 'react'
 import { useRouter } from 'next/navigation'
 import { Button } from '@/components/ui/button'
 import { GitFork, Loader2 } from 'lucide-react'
-import { createPrompt } from '@/app/actions/prompts'
+import { useToast } from '@/hooks/use-toast'
 import { useAsyncOperation } from '@/hooks/use-api-error'
 import { cn } from '@/lib/utils'
 
@@ -33,33 +34,58 @@ export function ForkButton({
   showLabel = true,
 }: ForkButtonProps) {
   const router = useRouter()
+  const { toast } = useToast()
   const { execute, isLoading } = useAsyncOperation()
-  
+
   const handleFork = async () => {
     const forkData = {
       title: promptTitle,
       description: promptDescription,
       content: promptContent,
       category_id: categoryId,
-      tags: tags || [],
+      tags: tags,
       forked_from: promptId,
     }
-    
-    const result = await execute(createPrompt, forkData)
-    
-    if (result) {
-      // Redirect directly to edit page of the forked prompt
-      router.push(`/prompt/${result.id}/edit`)
+
+    try {
+      const response = await fetch('/api/prompts', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify(forkData),
+      })
+
+      if (!response.ok) {
+        throw new Error('Failed to fork prompt')
+      }
+
+      const result = await response.json()
+
+      toast({
+        title: 'Prompt forked successfully!',
+        description: 'Your forked version has been created.',
+      })
+
+      router.push(`/prompt/${result.id}`)
+    } catch (error) {
+      console.error('Fork error:', error)
+      toast({
+        title: 'Error',
+        description: 'Failed to fork prompt. Please try again.',
+        variant: 'destructive',
+      })
     }
   }
-  
+
   return (
     <Button
       variant={variant}
       size={size}
       className={cn(
-        "font-medium shadow-sm",
-        variant === 'default' && "bg-destructive hover:bg-destructive/90 text-destructive-foreground",
+        'font-medium shadow-sm',
+        variant === 'default' &&
+          'bg-destructive hover:bg-destructive/90 text-destructive-foreground',
         className
       )}
       onClick={handleFork}

@@ -43,6 +43,12 @@ import { useModelPreferences } from '@/hooks/useModelPreferences';
 import { ModelInfo } from '@/lib/ai/generated-models';
 import { ModelPreferences } from '@/components/playground/ModelPreferences';
 import { estimateTokensFallback } from '@/lib/tokenization';
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from "@/components/ui/form";
+import { useForm } from "react-hook-form";
+import { zodResolver } from "@hookform/resolvers/zod";
+import * as z from "zod";
+import { Wand2, History } from "lucide-react";
 
 interface Message {
   id: string;
@@ -50,6 +56,19 @@ interface Message {
   content: string;
   timestamp: Date;
 }
+
+// Update the form schema
+const playgroundSchema = z.object({
+  model: z.string().min(1, "Model is required"),
+  prompt: z.string().min(1, "Prompt is required"),
+  temperature: z.number().min(0).max(2),
+  maxTokens: z.number().min(1).max(4000),
+  topP: z.number().min(0).max(1),
+  frequencyPenalty: z.number().min(-2).max(2),
+  presencePenalty: z.number().min(-2).max(2),
+});
+
+type PlaygroundFormData = z.infer<typeof playgroundSchema>;
 
 function PlaygroundContent() {
   console.log('[Playground] Rendering playground page');
@@ -582,6 +601,19 @@ function PlaygroundContent() {
   const inputVars = extractTemplateVariables(inputText);
   const systemVars = extractTemplateVariables(systemPrompt); // Use clean text directly
   const templateVars = [...new Set([...inputVars, ...systemVars])];
+
+  const form = useForm<PlaygroundFormData>({
+    resolver: zodResolver(playgroundSchema),
+    defaultValues: {
+      model: "gpt-3.5-turbo",
+      prompt: "",
+      temperature: 0.7,
+      maxTokens: 1000,
+      topP: 1,
+      frequencyPenalty: 0,
+      presencePenalty: 0,
+    },
+  });
 
   return (
     <div className="min-h-screen bg-background transition-[background-color] duration-300">

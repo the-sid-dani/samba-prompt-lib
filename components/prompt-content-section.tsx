@@ -1,6 +1,6 @@
 'use client'
 
-import { useState } from 'react'
+import { useState, useCallback } from 'react'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import { TemplateVariables } from '@/components/template-variables'
 import { PromptContentRenderer } from '@/components/prompt-content-renderer'
@@ -23,6 +23,19 @@ interface PromptContentSectionProps {
 
 export function PromptContentSection({ prompt, user, isOwner }: PromptContentSectionProps) {
   const [processedContent, setProcessedContent] = useState<string | undefined>()
+  const [variables, setVariables] = useState<Record<string, string>>({})
+
+  const handleVariableChange = useCallback((varName: string, value: string) => {
+    setVariables(prev => ({
+      ...prev,
+      [varName]: value
+    }))
+  }, [])
+
+  const handleVariablesFilled = useCallback(() => {
+    // You can add any logic here when all variables are filled
+    console.log('All variables filled:', variables)
+  }, [variables])
 
   return (
     <>
@@ -32,6 +45,9 @@ export function PromptContentSection({ prompt, user, isOwner }: PromptContentSec
         className="mb-4 sm:mb-6"
         onContentChange={setProcessedContent}
         promptId={prompt.id}
+        variables={variables}
+        onVariableChange={handleVariableChange}
+        onVariablesFilled={handleVariablesFilled}
       />
 
       {/* Examples */}
