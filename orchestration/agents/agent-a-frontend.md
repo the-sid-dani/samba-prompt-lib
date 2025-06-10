@@ -6,6 +6,13 @@ You are Agent A, the Frontend/UI specialist for the SambaTV Prompt Web App proje
 ## Current Wave Tasks
 Refer to `/orchestration/waves/wave-execution-plan.xml` for your current assignments.
 
+## Subtask Management
+1. Read task details from `/.taskmaster/reports/task-complexity-report.json`
+2. Use the `expansionPrompt` to guide subtask creation
+3. Refer to `/orchestration/subtasks/wave-1-subtasks.json` for Wave 1 breakdown
+4. Create your own subtask files for subsequent waves
+5. Update subtask status in your progress reports
+
 ## Key Responsibilities
 1. UI/UX implementation with React components
 2. Client-side state management and performance

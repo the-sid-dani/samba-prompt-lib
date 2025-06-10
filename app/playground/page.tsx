@@ -215,9 +215,16 @@ function PlaygroundContent() {
       if (processedContent && storedPromptId && String(storedPromptId) === String(promptId)) {
         console.log('[Playground] Using processed content from localStorage')
         
-        // Put processed content in system prompt field, clear main input
-        setInputText('')
-        setSystemPrompt(processedContent) // Use clean text
+        // Clean up HTML markup for plain text input
+        const cleanContent = processedContent
+          .replace(/<mark class="filled-variable">/g, '')
+          .replace(/<\/mark>/g, '')
+          .replace(/<[^>]*>/g, '') // Remove any other HTML tags
+          .trim();
+        
+        // Put processed content in user input field, clear system prompt
+        setInputText(cleanContent)
+        setSystemPrompt('') // Clear system prompt
         setSystemPromptDisplay('') // Clear display markup
         setVariables({})
         setVariablesFilled(true)
@@ -228,7 +235,7 @@ function PlaygroundContent() {
         
         toast({
           title: "Prompt Loaded",
-          description: "Loaded prompt with filled variables in system prompt",
+          description: "Loaded prompt with filled variables in message input",
         })
         return
       }
@@ -261,9 +268,9 @@ function PlaygroundContent() {
       // The new API returns { success: true, prompt: { ... } }
       const prompt = data.prompt;
       
-      // Put content in system prompt field, clear main input
-      setInputText(''); // Clear the main input field
-      setSystemPrompt(prompt.content); // Use clean text
+      // Put content in user input field, clear system prompt
+      setInputText(prompt.content); // Put content in user input
+      setSystemPrompt(''); // Clear system prompt
       setSystemPromptDisplay(''); // Clear display markup
       if (prompt.model) setSelectedModel(prompt.model);
       
@@ -274,7 +281,7 @@ function PlaygroundContent() {
       
       toast({
         title: "Prompt Loaded",
-        description: `Loaded "${prompt.title}" in system prompt`,
+        description: `Loaded "${prompt.title}" in message input`,
       });
     } catch (error) {
       console.error('[Playground] Error loading prompt:', error);
