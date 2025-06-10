@@ -48,7 +48,6 @@ export function createTrace(name: string, session?: Session | null, metadata?: R
   return langfuse.trace({
     name,
     userId: session?.user?.id,
-    sessionId: session?.sessionId,
     metadata: {
       userEmail: session?.user?.email,
       ...metadata
@@ -109,11 +108,11 @@ export async function trackPlaygroundExecution({
     input: promptContent,
     output: response,
     usage: tokenUsage,
-    totalCost: cost,
     completionStartTime: new Date(Date.now() - (latencyMs || 0)),
     metadata: {
       error: error || undefined,
-      latencyMs
+      latencyMs,
+      cost
     }
   });
 
@@ -141,7 +140,7 @@ export async function trackPlaygroundExecution({
 export async function trackPromptView(promptId: string | number, userId?: string) {
   const langfuse = getLangfuse();
   
-  langfuse.event({
+  const trace = langfuse.trace({
     name: 'prompt-viewed',
     userId,
     metadata: {
@@ -158,7 +157,7 @@ export async function trackPromptView(promptId: string | number, userId?: string
 export async function trackPromptCopy(promptId: string | number, userId?: string) {
   const langfuse = getLangfuse();
   
-  langfuse.event({
+  const trace = langfuse.trace({
     name: 'prompt-copied',
     userId,
     metadata: {
