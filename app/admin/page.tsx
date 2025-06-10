@@ -170,21 +170,36 @@ export default function AdminDashboard() {
       return;
     }
 
-    // For now, we'll check if the user's email ends with @samba.tv
-    // In a real implementation, you'd check a role field in the database
-    const isAdmin = session.user?.email?.endsWith('@samba.tv');
-    if (!isAdmin) {
+    // Check user role from database
+    checkAdminAccess();
+  }, [session, status, router]);
+
+  const checkAdminAccess = async () => {
+    try {
+      const response = await fetch('/api/auth/check-admin');
+      const data = await response.json();
+      
+      if (!data.isAdmin) {
+        toast({
+          title: "Access Denied",
+          description: "You don't have permission to access the admin dashboard.",
+          variant: "destructive",
+        });
+        router.push('/');
+        return;
+      }
+
+      loadDashboardData();
+    } catch (error) {
+      console.error('Error checking admin access:', error);
       toast({
-        title: "Access Denied",
-        description: "You don't have permission to access the admin dashboard.",
+        title: "Access Error",
+        description: "Unable to verify admin access.",
         variant: "destructive",
       });
       router.push('/');
-      return;
     }
-
-    loadDashboardData();
-  }, [session, status, router]);
+  };
 
   const loadDashboardData = async () => {
     setLoading(true);

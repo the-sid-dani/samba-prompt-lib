@@ -6,10 +6,11 @@ ALTER TABLE public.profiles
 ADD COLUMN role text NOT NULL DEFAULT 'member' 
 CHECK (role IN ('admin', 'member'));
 
--- Update existing users to have admin role if they have @samba.tv email
+-- Update specific users to have admin role (only the project creator for now)
+-- Replace 'sid.dani@samba.tv' with the actual admin email
 UPDATE public.profiles 
 SET role = 'admin' 
-WHERE email LIKE '%@samba.tv';
+WHERE email = 'sid.dani@samba.tv';
 
 -- Create index for role column for better query performance
 CREATE INDEX idx_profiles_role ON public.profiles(role);

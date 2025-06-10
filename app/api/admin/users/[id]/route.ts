@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server'
-import { auth } from '@/lib/auth'
 import { createSupabaseAdminClient } from '@/utils/supabase/server'
+import { requireAdmin } from '@/lib/auth-utils'
 
 export async function PATCH(
   request: NextRequest,
@@ -8,10 +8,12 @@ export async function PATCH(
 ) {
   try {
     // Check authentication and admin status
-    const session = await auth()
-    if (!session?.user?.email?.endsWith('@samba.tv')) {
-      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
-    }
+    await requireAdmin()
+  } catch (error) {
+    return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
+  }
+
+  try {
 
     const requestBody = await request.json()
     const { action, role } = requestBody
@@ -50,9 +52,22 @@ export async function PATCH(
           return NextResponse.json({ error: 'Invalid role' }, { status: 400 })
         }
 
-        // TODO: Update the user's role in the profiles table after migration
-        // For now, just return success since role column doesn't exist yet
-        return NextResponse.json({ success: true, message: `Role changed to ${role} (simulated)` })
+        // Update the user's role in the profiles table
+        const { error: roleError } = await supabase
+          .from('profiles')
+          .update({ role })
+          .eq('id', userId)
+
+        if (roleError) {
+          console.error('Error updating user role:', roleError)
+          return NextResponse.json({ error: 'Failed to update role' }, { status: 500 })
+        }
+
+        return NextResponse.json({ 
+          success: true, 
+          message: `Role changed to ${role}`,
+          role 
+        })
       
       default:
         return NextResponse.json({ error: 'Invalid action' }, { status: 400 })

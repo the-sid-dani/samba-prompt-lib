@@ -1,15 +1,17 @@
 import { NextRequest, NextResponse } from 'next/server'
-import { auth } from '@/lib/auth'
 import { createSupabaseAdminClient } from '@/utils/supabase/server'
 import { getHumanReadableModelName, getProviderDisplayName } from '@/lib/model-utils'
+import { requireAdmin } from '@/lib/auth-utils'
 
 export async function GET(request: NextRequest) {
   try {
     // Check authentication and admin status
-    const session = await auth()
-    if (!session?.user?.email?.endsWith('@samba.tv')) {
-      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
-    }
+    await requireAdmin()
+  } catch (error) {
+    return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
+  }
+
+  try {
 
     const supabase = await createSupabaseAdminClient()
 
@@ -21,6 +23,7 @@ export async function GET(request: NextRequest) {
         name,
         email,
         avatar_url,
+        role,
         created_at,
         updated_at
       `)
@@ -119,8 +122,8 @@ export async function GET(request: NextRequest) {
         status = 'new'
       }
 
-      // Use stored role from database (fallback to email-based calculation if role column doesn't exist yet)
-      const role = (profile as any).role || (profile.email?.endsWith('@samba.tv') ? 'admin' : 'member')
+      // Use stored role from database (default to member if not set)
+      const role = (profile as any).role || 'member'
 
       // Format model usage for this user
       const modelUsage = userModelUsage?.[profile.id] 
