@@ -1,0 +1,107 @@
+# SambaTV AI Platform - Langfuse Integration PRD
+
+## Project Overview
+Fork and deploy Langfuse as a white-labeled "SambaTV AI Platform" to provide comprehensive LLM observability, evaluation, and experimentation capabilities. This approach delivers a production-ready platform in 1-2 days instead of weeks of custom development.
+
+## Current State
+The SambaTV Prompt Library is already functional with:
+- Complete prompt management system (CRUD, voting, favorites, sharing)
+- Google OAuth authentication restricted to @samba.tv domain
+- Admin dashboard with analytics
+- Basic playground with AI model integration (Anthropic, Google, OpenRouter)
+- Analytics tracking (events and API usage)
+- Cost calculation and tracking system
+- Categories and tags for organization
+
+## Strategic Goals
+1. Get ALL Langfuse features immediately (not cherry-picked integrations)
+2. Maintain existing prompt library functionality unchanged
+3. Deploy in 1-2 days instead of weeks
+4. Create seamless integration between systems
+5. Enable advanced LLM evaluation and experimentation
+
+## Features We Get from Langfuse
+- Advanced Playground: Structured outputs, function calling, streaming, multi-turn conversations
+- Full Tracing: Request/response visibility, latency breakdown, session grouping
+- Evaluations: 20+ pre-built evaluators, human annotation queues, custom scoring
+- Datasets: Test case management with import/export capabilities
+- Experiments: A/B testing with statistical significance
+- Advanced Analytics: Real-time dashboards, cost analysis by model/user/prompt
+- Prompt Management: Enhanced versioning and comparison tools
+
+## Technical Requirements
+
+### 1. Fork and Setup
+- Fork Langfuse repository from GitHub
+- Create sambatv-customizations branch
+- Set up development environment
+- Configure upstream for future updates
+
+### 2. White-Label Customization
+- Replace Langfuse branding with SambaTV logo and colors
+- Update app name to "SambaTV AI Platform"
+- Configure primary color to SambaTV red (#E50914)
+- Update all UI text references from Langfuse to SambaTV AI Platform
+
+### 3. Authentication Integration
+- Configure Google OAuth to use existing credentials
+- Share authentication session with main prompt library
+- Restrict access to @samba.tv domain
+- Ensure single sign-on between both systems
+
+### 4. Model Configuration
+- Add API keys for Anthropic, Google, OpenRouter
+- Configure model pricing to match our existing setup
+- Ensure all models from main app are available
+- Set up proper routing through existing APIs
+
+### 5. Database Strategy
+- Deploy Langfuse with its own PostgreSQL database
+- Create linking table in Supabase for cross-references
+- Maintain clean separation of concerns
+- Enable data portability between systems
+
+### 6. Integration Points
+- Add "Test in AI Platform" button to prompt cards
+- Pre-load prompts in Langfuse playground
+- Display evaluation scores in main app
+- Share cost and usage data between systems
+
+### 7. Deployment Configuration
+- Set up subdomain: ai.sambatv.com
+- Configure Docker/Vercel deployment
+- Set up SSL certificates
+- Configure environment variables
+- Set up monitoring and alerts
+
+### 8. Post-Deployment
+- Team training on new features
+- Documentation updates
+- Performance monitoring
+- Feedback collection and iteration
+
+## Success Criteria
+- Platform deployed and accessible within 2 days
+- All Langfuse features working out of the box
+- Seamless authentication between systems
+- No disruption to existing prompt library
+- Team successfully using advanced features
+
+## Future Enhancements (Phase 2)
+- Custom evaluation templates for SambaTV use cases
+- Integration with production trace data
+- Real-time monitoring alerts
+- Automated prompt deployment pipeline
+- Custom dashboards for executives
+
+## Risk Mitigation
+- Test thoroughly in staging before production
+- Maintain ability to revert if issues arise
+- Keep systems separate to avoid dependencies
+- Document all customizations for maintenance
+
+## Resources Needed
+- Developer time: 1-2 days with AI assistance
+- Infrastructure: PostgreSQL database, SSL certificate
+- DevOps support for deployment configuration
+- Team availability for training session 

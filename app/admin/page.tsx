@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useEffect } from 'react';
+import React, { useState, useEffect } from 'react';
 import { useSession } from 'next-auth/react';
 import { useRouter } from 'next/navigation';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
@@ -589,8 +589,8 @@ export default function AdminDashboard() {
                       {filteredUsers.map((user) => {
                         const isExpanded = expandedUserId === user.id;
                         return (
-                          <>
-                            <tr key={user.id} className="border-b hover:bg-muted/50">
+                          <React.Fragment key={user.id}>
+                            <tr className="border-b hover:bg-muted/50">
                               <td className="py-4 px-4">
                                 <div className="flex items-center gap-3">
                                   <div className="w-10 h-10 rounded-full bg-primary/10 flex items-center justify-center">
@@ -689,7 +689,7 @@ export default function AdminDashboard() {
                                 </td>
                               </tr>
                             )}
-                          </>
+                          </React.Fragment>
                         );
                       })}
                     </tbody>

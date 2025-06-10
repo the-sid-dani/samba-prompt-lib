@@ -169,7 +169,7 @@ export default async function PromptDetailPage({ params }: { params: Promise<{ i
                   promptId={promptId}
                   text={prompt.content}
                   label="Copy"
-                  className="bg-primary hover:bg-primary/90 w-full sm:w-auto"
+                  className="bg-coral-600 hover:bg-coral-700 w-full sm:w-auto"
                 />
                 {user && (
                   <ForkButton
