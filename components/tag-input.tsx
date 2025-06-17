@@ -176,10 +176,10 @@ export default function TagInput({
       )}
       
       {/* Tag input with suggestions */}
-      <div className="relative" ref={containerRef}>
+      <div className="relative overflow-visible" ref={containerRef}>
         <Command 
           className={cn(
-            "border rounded-md bg-background",
+            "border rounded-md bg-background overflow-hidden",
             showDropdown && "rounded-b-none"
           )}
           shouldFilter={false} // Disable built-in filtering since we handle it ourselves
@@ -192,7 +192,11 @@ export default function TagInput({
             onFocus={handleFocus}
             placeholder={canAddMoreTags ? placeholder : `Maximum ${maxTags} tags reached`}
             disabled={disabled || !canAddMoreTags}
-            className="h-11 px-4 text-sm border-0 focus:ring-0"
+            className="h-11 px-4 text-sm border-0 focus:ring-0 focus:outline-none"
+            autoComplete="off"
+            autoCorrect="off"
+            autoCapitalize="off"
+            spellCheck="false"
           />
         </Command>
         
