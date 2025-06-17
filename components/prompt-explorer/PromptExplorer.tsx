@@ -80,10 +80,13 @@ export default function PromptExplorer({
   
   // State for data and UI
   const [prompts, setPrompts] = useState(propsPrompts || []);
-  const [availableTags, setAvailableTags] = useState<string[]>([]);
-  const [availableAuthors, setAvailableAuthors] = useState<string[]>([]);
-  const [isFiltersOpen, setIsFiltersOpen] = useState(false);
   const [loading, setLoading] = useState(false);
+  const [availableTags, setAvailableTags] = useState<string[]>([]);
+  const [isFiltersOpen, setIsFiltersOpen] = useState(false);
+  const [availableAuthors, setAvailableAuthors] = useState<string[]>([]);
+
+  // Add flag to prevent multiple simultaneous fetches
+  const [isFetching, setIsFetching] = useState(false);
   
   const displayCategories = propsCategories ? 
     [{ id: "all", name: "All" }, ...propsCategories.map(cat => ({ id: cat.id.toString(), name: cat.name }))] 
@@ -104,24 +107,35 @@ export default function PromptExplorer({
     router.replace(newURL, { scroll: false });
   }, [router]);
 
-  // Fetch prompts with current filters
+  // Function to fetch prompts with current filters
   const fetchFilteredPrompts = useCallback(async (currentFilters: FilterState) => {
-    setLoading(true);
+    // Prevent multiple simultaneous fetches
+    if (isFetching) {
+      console.log('Fetch already in progress, skipping...');
+      return;
+    }
+
     try {
+      setIsFetching(true);
+      setLoading(true);
+      
+      console.log('Fetching prompts with filters:', currentFilters);
+
       const searchParams: any = {
         page: 1,
         limit: 50,
-        user_id: user?.id,
       };
 
+      // Search filtering
       if (currentFilters.search) {
         searchParams.search = currentFilters.search;
       }
-      
-      if (currentFilters.selectedCategory !== 'all') {
-        searchParams.category_id = parseInt(currentFilters.selectedCategory);
+
+      // Category filtering
+      if (currentFilters.selectedCategory && currentFilters.selectedCategory !== 'all') {
+        searchParams.category = currentFilters.selectedCategory;
       }
-      
+
       // Multi-tag filtering
       if (currentFilters.selectedTags.length > 0) {
         searchParams.tags = currentFilters.selectedTags;
@@ -170,12 +184,17 @@ export default function PromptExplorer({
 
       const { prompts: newPrompts } = await fetchPrompts(searchParams);
       setPrompts(newPrompts);
+      
+      console.log('Successfully fetched', newPrompts.length, 'prompts');
     } catch (error) {
       console.error('Error fetching filtered prompts:', error);
+      // Ensure loading is always turned off even on error
     } finally {
+      // Always turn off loading and fetching flags, even if there was an error
       setLoading(false);
+      setIsFetching(false);
     }
-  }, [user?.id]);
+  }, [isFetching]);
 
   // Load available tags and authors
   useEffect(() => {
@@ -201,27 +220,74 @@ export default function PromptExplorer({
     loadFilterOptions();
   }, [prompts]);
 
-  // Handle filter changes
-  const handleFilterChange = useCallback((newFilters: Partial<FilterState>) => {
-    const updatedFilters = { ...filters, ...newFilters };
-    setFilters(updatedFilters);
-    updateURL(updatedFilters);
-    
-    startTransition(() => {
-      fetchFilteredPrompts(updatedFilters);
-    });
-  }, [filters, updateURL, fetchFilteredPrompts]);
-
   // Handle search with debouncing
   useEffect(() => {
-    // Only trigger search when debounced value is different from what we last searched
-    const updatedFilters = { ...filters, search: debouncedSearchQuery };
-    updateURL(updatedFilters);
+    if (!isFetching) {
+      // Only trigger search when debounced value is different and not already fetching
+      const updatedFilters = { ...filters, search: debouncedSearchQuery };
+      updateURL(updatedFilters);
+      
+      startTransition(() => {
+        fetchFilteredPrompts(updatedFilters);
+      });
+    }
+  }, [debouncedSearchQuery, isFetching, filters, updateURL, fetchFilteredPrompts]);
+
+  // Only refresh data when user returns after being away for a significant time
+  useEffect(() => {
+    let lastVisibilityChange = Date.now();
     
-    startTransition(() => {
-      fetchFilteredPrompts(updatedFilters);
+    const handleVisibilityChange = () => {
+      if (!document.hidden && !isFetching) {
+        const now = Date.now();
+        // Only refresh if user was away for more than 30 seconds
+        if (now - lastVisibilityChange > 30000) {
+          console.log('User returned after extended absence, refreshing data');
+          startTransition(() => {
+            fetchFilteredPrompts(filters);
+          });
+        }
+        lastVisibilityChange = now;
+      }
+    };
+
+    document.addEventListener('visibilitychange', handleVisibilityChange);
+
+    return () => {
+      document.removeEventListener('visibilitychange', handleVisibilityChange);
+    };
+  }, [isFetching, filters, fetchFilteredPrompts])
+
+  // Initial data load - only fetch if we truly don't have data
+  useEffect(() => {
+    // Only fetch if we have no prompts at all and no props were provided
+    if (!propsPrompts && prompts.length === 0 && !loading && !isFetching) {
+      console.log('No initial data available, fetching prompts');
+      startTransition(() => {
+        fetchFilteredPrompts(filters);
+      });
+    } else if (propsPrompts && propsPrompts.length > 0) {
+      console.log('Using provided prompts data:', propsPrompts.length, 'prompts');
+      setPrompts(propsPrompts);
+      // Ensure loading is off when using provided data
+      setLoading(false);
+      setIsFetching(false);
+    }
+  }, []); // Only run on mount
+
+  // Handle filter changes
+  const handleFilterChange = useCallback((newFilters: Partial<FilterState>) => {
+    setFilters(prevFilters => {
+      const updatedFilters = { ...prevFilters, ...newFilters };
+      updateURL(updatedFilters);
+      
+      startTransition(() => {
+        fetchFilteredPrompts(updatedFilters);
+      });
+      
+      return updatedFilters;
     });
-  }, [debouncedSearchQuery]);
+  }, [updateURL, fetchFilteredPrompts]);
 
   // Handle direct search input changes
   const handleSearchChange = (value: string) => {
