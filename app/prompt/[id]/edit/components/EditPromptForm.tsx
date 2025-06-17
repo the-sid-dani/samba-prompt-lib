@@ -26,7 +26,7 @@ import { Alert, AlertDescription } from '@/components/ui/alert'
 import { AlertCircle } from 'lucide-react'
 
 import { useAsyncOperation } from '@/hooks/use-api-error'
-import { updatePrompt, getCategories } from '@/app/actions/prompts'
+import { updatePrompt, getCategories, fetchTags } from '@/app/actions/prompts'
 import { useToast } from '@/hooks/use-toast'
 import TagInput from '@/components/tag-input'
 import Link from 'next/link'
@@ -72,7 +72,6 @@ export default function EditPromptForm({ prompt }: EditPromptFormProps) {
   const { execute } = useAsyncOperation()
   
   const [categories, setCategories] = useState<any[]>([])
-  const [availableTags, setAvailableTags] = useState<string[]>([])
   const [isSubmitting, setIsSubmitting] = useState(false)
   const [selectedCategoryId, setSelectedCategoryId] = useState<string>(prompt.category_id?.toString() || '')
 
@@ -105,6 +104,17 @@ export default function EditPromptForm({ prompt }: EditPromptFormProps) {
 
     loadCategories()
   }, [toast])
+
+  // Fetch tag suggestions
+  const handleFetchTagSuggestions = async (query: string): Promise<string[]> => {
+    try {
+      const tags = await fetchTags(query)
+      return tags
+    } catch (error) {
+      console.error('Error fetching tag suggestions:', error)
+      return []
+    }
+  }
 
   const handleCategorySelect = (categoryId: string) => {
     setSelectedCategoryId(categoryId)
@@ -286,12 +296,13 @@ export default function EditPromptForm({ prompt }: EditPromptFormProps) {
                             value={field.value}
                             onChange={field.onChange}
                             placeholder="Add tags to help others find your prompt (e.g., writing, code, analysis)"
-                            suggestions={availableTags}
                             maxTags={5}
+                            onFetchSuggestions={handleFetchTagSuggestions}
+                            disabled={isSubmitting}
                           />
                         </FormControl>
                         <FormDescription className="text-muted-foreground">
-                          Add 1-5 relevant tags to help users discover your prompt
+                          Add 1-5 tags to help others find your prompt. Start typing to see suggestions.
                         </FormDescription>
                         <FormMessage />
                       </FormItem>

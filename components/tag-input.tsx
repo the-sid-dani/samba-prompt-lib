@@ -29,39 +29,67 @@ export default function TagInput({
   const [suggestions, setSuggestions] = useState<string[]>(initialSuggestions)
   const [showSuggestions, setShowSuggestions] = useState(false)
   const [isLoading, setIsLoading] = useState(false)
+  const [allTags, setAllTags] = useState<string[]>([]) // Store all available tags
   const inputRef = useRef<HTMLInputElement>(null)
   const containerRef = useRef<HTMLDivElement>(null)
   
-  // Memoize the current value to prevent unnecessary re-renders
-  const currentValue = useMemo(() => value, [value.join(',')])
-  
-  // Memoize initial suggestions to prevent unnecessary re-renders
-  const memoizedInitialSuggestions = useMemo(() => initialSuggestions, [initialSuggestions.join(',')])
-  
-  // Debounced fetch suggestions
+  // Fetch all available tags when component mounts (for showing when user clicks)
   useEffect(() => {
-    if (!onFetchSuggestions || inputValue.length < 2) {
-      setSuggestions(memoizedInitialSuggestions.filter(tag => !currentValue.includes(tag)))
-      setIsLoading(false)
+    if (onFetchSuggestions) {
+      const fetchAllTags = async () => {
+        try {
+          setIsLoading(true)
+          const results = await onFetchSuggestions('')
+          setAllTags(results)
+          setSuggestions(results.filter(tag => !value.includes(tag)))
+        } catch (error) {
+          console.error('Error fetching all tags:', error)
+          setAllTags([])
+        } finally {
+          setIsLoading(false)
+        }
+      }
+      
+      fetchAllTags()
+    } else {
+      setAllTags(initialSuggestions)
+      setSuggestions(initialSuggestions.filter(tag => !value.includes(tag)))
+    }
+  }, [onFetchSuggestions]) // Only depend on onFetchSuggestions, not value
+  
+  // Filter suggestions based on input and selected tags
+  useEffect(() => {
+    if (!inputValue) {
+      // Show all available tags when no input (filtered to exclude selected ones)
+      setSuggestions(allTags.filter(tag => !value.includes(tag)))
       return
     }
     
-    setIsLoading(true)
-    const debounceTimer = setTimeout(async () => {
-      try {
-        const results = await onFetchSuggestions(inputValue)
-        // Filter out already selected tags
-        setSuggestions(results.filter(tag => !currentValue.includes(tag)))
-      } catch (error) {
-        console.error('Error fetching tag suggestions:', error)
-        setSuggestions([])
-      } finally {
-        setIsLoading(false)
-      }
-    }, 300)
-    
-    return () => clearTimeout(debounceTimer)
-  }, [inputValue, onFetchSuggestions, currentValue, memoizedInitialSuggestions])
+    // If we have onFetchSuggestions and input is long enough, fetch filtered results
+    if (onFetchSuggestions && inputValue.length >= 2) {
+      setIsLoading(true)
+      const debounceTimer = setTimeout(async () => {
+        try {
+          const results = await onFetchSuggestions(inputValue)
+          setSuggestions(results.filter(tag => !value.includes(tag)))
+        } catch (error) {
+          console.error('Error fetching tag suggestions:', error)
+          setSuggestions([])
+        } finally {
+          setIsLoading(false)
+        }
+      }, 300)
+      
+      return () => clearTimeout(debounceTimer)
+    } else {
+      // Filter from all available tags locally
+      const filtered = allTags.filter(tag => 
+        tag.toLowerCase().includes(inputValue.toLowerCase()) && !value.includes(tag)
+      )
+      setSuggestions(filtered)
+      setIsLoading(false)
+    }
+  }, [inputValue, onFetchSuggestions, allTags, value])
   
   // Handle tag addition
   const addTag = useCallback((tag: string) => {
@@ -69,7 +97,6 @@ export default function TagInput({
     if (trimmedTag && !value.includes(trimmedTag) && value.length < maxTags) {
       onChange([...value, trimmedTag])
       setInputValue('')
-      setShowSuggestions(false)
       // Refocus input after adding tag
       setTimeout(() => inputRef.current?.focus(), 0)
     }
@@ -83,7 +110,7 @@ export default function TagInput({
   // Handle input changes
   const handleInputChange = (newValue: string) => {
     setInputValue(newValue)
-    setShowSuggestions(newValue.length > 0)
+    setShowSuggestions(true) // Always show suggestions when typing
   }
   
   // Handle keyboard events
@@ -102,11 +129,9 @@ export default function TagInput({
     }
   }
   
-  // Handle focus
+  // Handle focus - show all available tags
   const handleFocus = () => {
-    if (inputValue.length > 0) {
-      setShowSuggestions(true)
-    }
+    setShowSuggestions(true)
   }
   
   // Handle click outside to close suggestions
@@ -121,14 +146,8 @@ export default function TagInput({
     return () => document.removeEventListener('mousedown', handleClickOutside)
   }, [])
   
-  // Filter suggestions based on input (no double filtering)
-  const filteredSuggestions = suggestions.filter(tag => 
-    tag.toLowerCase().includes(inputValue.toLowerCase()) && !value.includes(tag)
-  )
-  
   const canAddMoreTags = value.length < maxTags
-  const hasInput = inputValue.trim().length > 0
-  const showDropdown = showSuggestions && hasInput && !disabled
+  const showDropdown = showSuggestions && !disabled && (suggestions.length > 0 || isLoading || inputValue.trim().length > 0)
   
   return (
     <div className="space-y-2">
@@ -187,8 +206,8 @@ export default function TagInput({
                     <Loader2 className="h-4 w-4 animate-spin" />
                     Loading suggestions...
                   </div>
-                ) : filteredSuggestions.length > 0 ? (
-                  filteredSuggestions.slice(0, 10).map((suggestion) => (
+                ) : suggestions.length > 0 ? (
+                  suggestions.slice(0, 15).map((suggestion) => (
                     <CommandItem
                       key={suggestion}
                       value={suggestion}
@@ -198,11 +217,15 @@ export default function TagInput({
                       {suggestion}
                     </CommandItem>
                   ))
-                ) : hasInput ? (
+                ) : inputValue.trim().length > 0 ? (
                   <CommandEmpty className="px-3 py-2 text-sm text-muted-foreground">
                     Press Enter to add "{inputValue}"
                   </CommandEmpty>
-                ) : null}
+                ) : (
+                  <CommandEmpty className="px-3 py-2 text-sm text-muted-foreground">
+                    No tags available. Start typing to create new tags.
+                  </CommandEmpty>
+                )}
               </CommandGroup>
             </Command>
           </div>
@@ -211,7 +234,7 @@ export default function TagInput({
       
       {/* Helper text */}
       <p className="text-xs text-muted-foreground">
-        {value.length}/{maxTags} tags. {canAddMoreTags && 'Type and press Enter to add tags.'}
+        {value.length}/{maxTags} tags. {canAddMoreTags && 'Click the input to see available tags or type to search.'}
       </p>
     </div>
   )
