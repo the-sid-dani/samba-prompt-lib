@@ -3,6 +3,14 @@ const config = {
 		title: "SambaTV Prompt Library",
 		description: "Internal AI Prompt Library for SambaTV Employees",
 		keywords: ["SambaTV", "AI", "Prompts", "Internal Tool", "Prompt Library"],
+		icons: {
+			icon: [
+				{ url: '/favicon.png', sizes: '32x32', type: 'image/png' },
+				{ url: '/favicon.ico', sizes: 'any' }
+			],
+			apple: { url: '/favicon.png', sizes: '180x180', type: 'image/png' },
+			shortcut: '/favicon.ico'
+		}
 	},
 	theme: {
 		colors: {
