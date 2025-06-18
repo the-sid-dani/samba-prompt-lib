@@ -73,7 +73,7 @@ export function ImprovementsList({
     }
     
     loadImprovements()
-  }, [promptId, refreshTrigger, toast])
+  }, [promptId, refreshTrigger]) // Removed toast from dependencies
   
   const handleReview = async () => {
     if (!reviewDialog.improvement || !reviewDialog.action) return

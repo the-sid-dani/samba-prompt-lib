@@ -21,8 +21,8 @@ importers:
         specifier: ^0.24.1
         version: 0.24.1
       '@hookform/resolvers':
-        specifier: ^5.0.1
-        version: 5.1.0(react-hook-form@7.57.0(react@19.1.0))
+        specifier: ^5.1.1
+        version: 5.1.1(react-hook-form@7.57.0(react@19.1.0))
       '@next/third-parties':
         specifier: ^15.1.7
         version: 15.3.3(next@15.3.3(@babel/core@7.27.4)(react-dom@19.1.0(react@19.1.0))(react@19.1.0))(react@19.1.0)
@@ -166,7 +166,7 @@ importers:
         version: 6.10.1
       openai:
         specifier: ^5.1.1
-        version: 5.1.1(ws@8.18.2)(zod@3.25.56)
+        version: 5.1.1(ws@8.18.2)(zod@3.25.64)
       puppeteer:
         specifier: ^24.9.0
         version: 24.10.0(typescript@5.8.3)
@@ -183,7 +183,7 @@ importers:
         specifier: ^4.0.16
         version: 4.0.16(@babel/core@7.27.4)(react-dom@19.1.0(react@19.1.0))(react@19.1.0)
       react-hook-form:
-        specifier: ^7.56.4
+        specifier: ^7.57.0
         version: 7.57.0(react@19.1.0)
       react-hot-toast:
         specifier: ^2.5.2
@@ -219,8 +219,8 @@ importers:
         specifier: ^5.0.2
         version: 5.0.2
       zod:
-        specifier: ^3.25.32
-        version: 3.25.56
+        specifier: ^3.25.57
+        version: 3.25.64
     devDependencies:
       '@eslint/eslintrc':
         specifier: ^3
@@ -695,8 +695,8 @@ packages:
       react: ^18 || ^19 || ^19.0.0-rc
       react-dom: ^18 || ^19 || ^19.0.0-rc
 
-  '@hookform/resolvers@5.1.0':
-    resolution: {integrity: sha512-A5tY8gxqvvR0lFfropqpy/gUDOxjwT7LZCxJ8lNA9puK7nFNRl/O0egGKxzdF4JSz/pnnT1O8g76P/YMyTBEFw==}
+  '@hookform/resolvers@5.1.1':
+    resolution: {integrity: sha512-J/NVING3LMAEvexJkyTLjruSm7aOFx7QX21pzkiJfMoNG0wl5aFEjLTl7ay7IQb9EWY6AkrBy7tHL2Alijpdcg==}
     peerDependencies:
       react-hook-form: ^7.55.0
 
@@ -5400,8 +5400,8 @@ packages:
     resolution: {integrity: sha512-GQHQqAopRhwU8Kt1DDM8NjibDXHC8eoh1erhGAJPEyveY9qqVeXvVikNKrDz69sHowPMorbPUrH/mx8c50eiBQ==}
     engines: {node: '>=18'}
 
-  zod@3.25.56:
-    resolution: {integrity: sha512-rd6eEF3BTNvQnR2e2wwolfTmUTnp70aUTqr0oaGbHifzC3BKJsoV+Gat8vxUMR1hwOKBs6El+qWehrHbCpW6SQ==}
+  zod@3.25.64:
+    resolution: {integrity: sha512-hbP9FpSZf7pkS7hRVUrOjhwKJNyampPgtXKc3AN6DsWtoHsg2Sb4SQaS4Tcay380zSwd2VPo9G9180emBACp5g==}
 
   zustand@5.0.5:
     resolution: {integrity: sha512-mILtRfKW9xM47hqxGIxCv12gXusoY/xTSHBYApXozR0HmQv299whhBeeAcRy+KrPPybzosvJBCOmVjq6x12fCg==}
@@ -5789,7 +5789,7 @@ snapshots:
       react-dom: 19.1.0(react@19.1.0)
       use-sync-external-store: 1.5.0(react@19.1.0)
 
-  '@hookform/resolvers@5.1.0(react-hook-form@7.57.0(react@19.1.0))':
+  '@hookform/resolvers@5.1.1(react-hook-form@7.57.0(react@19.1.0))':
     dependencies:
       '@standard-schema/utils': 0.3.0
       react-hook-form: 7.57.0(react@19.1.0)
@@ -6886,7 +6886,7 @@ snapshots:
       tsup: 8.5.0(jiti@1.21.7)(postcss@8.5.4)(tsx@4.19.4)(typescript@5.8.3)(yaml@2.8.0)
       ua-parser-js: 2.0.3
       vite-plugin-css-injected-by-js: 3.5.2(vite@6.3.5(@types/node@20.19.0)(jiti@1.21.7)(tsx@4.19.4)(yaml@2.8.0))
-      zod: 3.25.56
+      zod: 3.25.64
       zustand: 5.0.5(@types/react@19.1.6)(react@19.1.0)(use-sync-external-store@1.5.0(react@19.1.0))
     transitivePeerDependencies:
       - '@microsoft/api-extractor'
@@ -7698,7 +7698,7 @@ snapshots:
     dependencies:
       devtools-protocol: 0.0.1452169
       mitt: 3.0.1
-      zod: 3.25.56
+      zod: 3.25.64
 
   class-variance-authority@0.7.1:
     dependencies:
@@ -9745,10 +9745,10 @@ snapshots:
     dependencies:
       mimic-function: 5.0.1
 
-  openai@5.1.1(ws@8.18.2)(zod@3.25.56):
+  openai@5.1.1(ws@8.18.2)(zod@3.25.64):
     optionalDependencies:
       ws: 8.18.2
-      zod: 3.25.56
+      zod: 3.25.64
 
   optionator@0.9.4:
     dependencies:
@@ -11331,7 +11331,7 @@ snapshots:
 
   yoctocolors@2.1.1: {}
 
-  zod@3.25.56: {}
+  zod@3.25.64: {}
 
   zustand@5.0.5(@types/react@19.1.6)(react@19.1.0)(use-sync-external-store@1.5.0(react@19.1.0)):
     optionalDependencies:

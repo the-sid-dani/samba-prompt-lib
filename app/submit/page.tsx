@@ -274,7 +274,7 @@ export default function SubmitPromptPage() {
       })
       
       setTimeout(() => {
-        router.push(`/prompt/${result.id}`)
+        router.push('/')
       }, 500)
     }
   }

@@ -34,8 +34,8 @@ export function PromptContentSection({ prompt, user, isOwner }: PromptContentSec
 
   const handleVariablesFilled = useCallback(() => {
     // You can add any logic here when all variables are filled
-    console.log('All variables filled:', variables)
-  }, [variables])
+    console.log('All variables filled')
+  }, [])
 
   return (
     <>

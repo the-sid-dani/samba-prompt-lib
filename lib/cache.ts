@@ -80,6 +80,20 @@ export function revalidateAfterPromptCreate(userId: string, categoryId?: number,
   if (tags && tags.length > 0) {
     tags.forEach(tag => revalidateTag(CACHE_TAGS.tagPrompts(tag)))
   }
+  
+  // Revalidate key pages to ensure new prompts show up immediately
+  revalidatePath('/')
+  revalidatePath('/showcase')
+  
+  // Revalidate category pages if applicable
+  if (categoryId) {
+    revalidatePath(`/categories/${categoryId}`)
+  }
+  
+  // Revalidate tag pages if applicable
+  if (tags && tags.length > 0) {
+    tags.forEach(tag => revalidatePath(`/tags/${tag}`))
+  }
 }
 
 /**
@@ -113,6 +127,21 @@ export function revalidateAfterPromptUpdate(
   // Handle tag changes
   const allTags = new Set([...(oldTags || []), ...(newTags || [])])
   allTags.forEach(tag => revalidateTag(CACHE_TAGS.tagPrompts(tag)))
+  
+  // Revalidate key pages to reflect prompt updates
+  revalidatePath('/')
+  revalidatePath('/showcase')
+  
+  // Revalidate category pages if applicable
+  if (oldCategoryId) {
+    revalidatePath(`/categories/${oldCategoryId}`)
+  }
+  if (newCategoryId && newCategoryId !== oldCategoryId) {
+    revalidatePath(`/categories/${newCategoryId}`)
+  }
+  
+  // Revalidate tag pages if applicable
+  allTags.forEach(tag => revalidatePath(`/tags/${tag}`))
 }
 
 /**
@@ -143,6 +172,20 @@ export function revalidateAfterPromptDelete(
   // Revalidate tag caches
   if (tags && tags.length > 0) {
     tags.forEach(tag => revalidateTag(CACHE_TAGS.tagPrompts(tag)))
+  }
+  
+  // Revalidate key pages to reflect prompt deletion
+  revalidatePath('/')
+  revalidatePath('/showcase')
+  
+  // Revalidate category pages if applicable
+  if (categoryId) {
+    revalidatePath(`/categories/${categoryId}`)
+  }
+  
+  // Revalidate tag pages if applicable
+  if (tags && tags.length > 0) {
+    tags.forEach(tag => revalidatePath(`/tags/${tag}`))
   }
 }
 
