@@ -26,9 +26,9 @@ export default function RootLayout({
         <meta name="msapplication-TileColor" content="#E60000" />
         <meta name="msapplication-config" content="/browserconfig.xml" />
         {/* Force favicon refresh across all domains */}
-        <link rel="icon" href="/favicon.ico" sizes="any" />
-        <link rel="icon" href="/favicon.png" type="image/png" />
-        <link rel="apple-touch-icon" href="/apple-touch-icon.png" />
+        <link rel="icon" href="/favicon.ico?v=2025061801" sizes="any" />
+        <link rel="icon" href="/favicon.png?v=2025061801" type="image/png" />
+        <link rel="apple-touch-icon" href="/apple-touch-icon.png?v=2025061801" />
         <link rel="manifest" href="/site.webmanifest" />
         {/* Prevent favicon caching issues */}
         <meta httpEquiv="Cache-Control" content="no-cache, no-store, must-revalidate" />
