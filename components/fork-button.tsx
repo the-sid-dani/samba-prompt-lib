@@ -64,10 +64,10 @@ export function ForkButton({
 
       toast({
         title: 'Prompt forked successfully!',
-        description: 'Your forked version has been created.',
+        description: 'You can now edit your forked version.',
       })
 
-      router.push(`/prompt/${result.id}`)
+      router.push(`/prompt/${result.id}/edit`)
     } catch (error) {
       console.error('Fork error:', error)
       toast({

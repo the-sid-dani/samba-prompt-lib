@@ -111,11 +111,11 @@ export function ForkModal({ open, onOpenChange, originalPrompt }: ForkModalProps
     if (result) {
       toast({
         title: 'Prompt forked successfully!',
-        description: 'Your forked version has been created.',
+        description: 'You can now edit your forked version.',
       })
       
       onOpenChange(false)
-      router.push(`/prompt/${result.id}`)
+      router.push(`/prompt/${result.id}/edit`)
     }
   }
   
