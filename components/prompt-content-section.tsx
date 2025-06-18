@@ -82,11 +82,6 @@ export function PromptContentSection({ prompt, user, isOwner }: PromptContentSec
             {user && (
               <ForkButton
                 promptId={prompt.id}
-                promptTitle={prompt.title}
-                promptDescription={prompt.description}
-                promptContent={prompt.content}
-                categoryId={prompt.category_id || 1}
-                tags={prompt.tags || []}
                 className="bg-primary text-white hover:bg-primary/90 w-full sm:w-auto shrink-0"
               />
             )}

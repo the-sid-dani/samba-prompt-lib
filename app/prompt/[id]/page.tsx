@@ -174,11 +174,6 @@ export default async function PromptDetailPage({ params }: { params: Promise<{ i
                 {user && (
                   <ForkButton
                     promptId={promptId}
-                    promptTitle={prompt.title}
-                    promptDescription={prompt.description}
-                    promptContent={prompt.content}
-                    categoryId={prompt.category_id || 1}
-                    tags={prompt.tags || []}
                     className="w-full sm:w-auto"
                   />
                 )}
