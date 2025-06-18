@@ -1028,10 +1028,20 @@ export async function updatePrompt(id: number, input: z.infer<typeof updatePromp
 // Delete a prompt
 export async function deletePrompt(id: number) {
   try {
+    console.log(`🗑️ [Delete] Starting deletion of prompt ${id}`)
+    
+    // Check environment variables first
+    if (!process.env.NEXT_PUBLIC_SUPABASE_URL || !process.env.SUPABASE_SERVICE_ROLE_KEY) {
+      console.error('❌ [Delete] Missing Supabase environment variables')
+      throw new Error('Supabase configuration is missing. Admin operations cannot be performed.')
+    }
+    
     const session = await auth()
     if (!session?.user?.id) {
       throw new Error('Unauthorized: Must be logged in to delete prompts')
     }
+    
+    console.log(`👤 [Delete] User ${session.user.id} attempting to delete prompt ${id}`)
     
     const supabase = await getSupabaseClient()
     
@@ -1042,7 +1052,12 @@ export async function deletePrompt(id: number) {
       .eq('id', id)
       .single()
     
-    if (fetchError || !existingPrompt) {
+    if (fetchError) {
+      console.error('Error fetching prompt for deletion:', fetchError)
+      throw new Error(`Prompt not found: ${fetchError.message}`)
+    }
+    
+    if (!existingPrompt) {
       throw new Error('Prompt not found')
     }
     
@@ -1052,6 +1067,25 @@ export async function deletePrompt(id: number) {
     
     // Use admin client for deleting related records to bypass RLS
     const adminSupabase = createSupabaseAdminClient()
+    
+    // Test admin client connectivity first
+    console.log(`Testing admin client for prompt ${id} deletion...`)
+    try {
+      const { data: testData, error: testError } = await adminSupabase
+        .from('prompt')
+        .select('id')
+        .eq('id', id)
+        .single()
+      
+      if (testError) {
+        console.error('Admin client test failed:', testError)
+        throw new Error(`Admin client not working: ${testError.message}`)
+      }
+      console.log(`Admin client test successful for prompt ${id}`)
+    } catch (testError) {
+      console.error('Admin client connectivity test failed:', testError)
+      throw new Error(`Cannot connect with admin client: ${testError}`)
+    }
     
     console.log(`Starting deletion of prompt ${id} and related records...`)
     
@@ -1068,6 +1102,7 @@ export async function deletePrompt(id: number) {
     
     if (forkDeleteError1) {
       console.error('Error deleting prompt forks (as original):', forkDeleteError1)
+      // Continue - this is not critical for deletion
     } else {
       console.log(`Deleted fork relationships where prompt ${id} is original`)
     }
@@ -1080,11 +1115,12 @@ export async function deletePrompt(id: number) {
     
     if (forkDeleteError2) {
       console.error('Error deleting prompt forks (as fork):', forkDeleteError2)
+      // Continue - this is not critical for deletion
     } else {
       console.log(`Deleted fork relationships where prompt ${id} is forked`)
     }
     
-    // 2. Delete user favorites
+    // 2. Delete user favorites (critical for referential integrity)
     console.log(`Deleting favorites for prompt ${id}...`)
     const { error: favoritesDeleteError } = await adminSupabase
       .from('user_favorites')
@@ -1093,24 +1129,11 @@ export async function deletePrompt(id: number) {
     
     if (favoritesDeleteError) {
       console.error('Error deleting prompt favorites:', favoritesDeleteError)
-    } else {
-      console.log(`Deleted favorites for prompt ${id}`)
+      throw new Error(`Failed to delete prompt favorites: ${favoritesDeleteError.message}`)
     }
+    console.log(`Deleted favorites for prompt ${id}`)
     
-    // 3. Delete prompt votes
-    console.log(`Deleting votes for prompt ${id}...`)
-    const { error: votesDeleteError } = await adminSupabase
-      .from('prompt_votes')
-      .delete()
-      .eq('prompt_id', id)
-    
-    if (votesDeleteError) {
-      console.error('Error deleting prompt votes:', votesDeleteError)
-    } else {
-      console.log(`Deleted votes for prompt ${id}`)
-    }
-    
-    // 4. Delete user interactions
+    // 3. Delete user interactions (important for analytics)
     console.log(`Deleting interactions for prompt ${id}...`)
     const { error: interactionsDeleteError } = await adminSupabase
       .from('user_interactions')
@@ -1119,49 +1142,52 @@ export async function deletePrompt(id: number) {
     
     if (interactionsDeleteError) {
       console.error('Error deleting user interactions:', interactionsDeleteError)
+      // Continue - this is not critical for deletion
     } else {
       console.log(`Deleted interactions for prompt ${id}`)
     }
     
-    // 5. Delete prompt versions (if this table exists)
-    console.log(`Deleting versions for prompt ${id}...`)
-    const { error: versionsDeleteError } = await adminSupabase
-      .from('prompt_versions')
-      .delete()
-      .eq('prompt_id', id)
+    // 4. Delete optional related records (non-critical, may not exist)
+    const optionalTables = [
+      { table: 'prompt_votes', name: 'votes' },
+      { table: 'prompt_versions', name: 'versions' },
+      { table: 'prompt_improvements', name: 'improvements' }
+    ]
     
-    if (versionsDeleteError) {
-      console.error('Error deleting prompt versions:', versionsDeleteError)
-    } else {
-      console.log(`Deleted versions for prompt ${id}`)
+    for (const { table, name } of optionalTables) {
+      try {
+        console.log(`Deleting ${name} for prompt ${id}...`)
+        const { error } = await adminSupabase
+          .from(table)
+          .delete()
+          .eq('prompt_id', id)
+        
+        if (error) {
+          console.log(`Table ${table} may not exist or error occurred:`, error.message)
+        } else {
+          console.log(`Deleted ${name} for prompt ${id}`)
+        }
+      } catch (error) {
+        console.log(`Skipping ${table} (table may not exist):`, error)
+      }
     }
     
-    // 6. Delete improvement suggestions (if this table exists)
-    console.log(`Deleting improvements for prompt ${id}...`)
-    const { error: improvementsDeleteError } = await adminSupabase
-      .from('prompt_improvements')
-      .delete()
-      .eq('prompt_id', id)
-    
-    if (improvementsDeleteError) {
-      console.error('Error deleting prompt improvements:', improvementsDeleteError)
-    } else {
-      console.log(`Deleted improvements for prompt ${id}`)
-    }
-    
-    // 7. Finally, delete the prompt itself using admin client to ensure it works
+    // 5. Finally, delete the prompt itself using admin client to ensure it works
     console.log(`Deleting main prompt ${id}...`)
-    const { error: deleteError } = await adminSupabase
+    const { error: deleteError, count } = await adminSupabase
       .from('prompt')
       .delete()
       .eq('id', id)
+      .eq('user_id', session.user.id) // Double-check ownership for safety
     
     if (deleteError) {
       console.error('Error deleting main prompt:', deleteError)
       throw new Error(`Failed to delete prompt: ${deleteError.message}`)
     }
     
-    console.log(`Successfully deleted prompt ${id} and all related records`)
+    console.log(`Successfully deleted prompt ${id}, deleted ${count} record(s)`)
+    
+    console.log(`✅ [Delete] Successfully deleted prompt ${id} and all related records`)
     
     // Revalidate caches
     revalidateAfterPromptDelete(
@@ -1173,8 +1199,40 @@ export async function deletePrompt(id: number) {
     
     return { success: true, message: 'Prompt deleted successfully' }
   } catch (error) {
-    console.error('Error in deletePrompt:', error)
-    throw error
+    console.error('❌ [Delete] Error in deletePrompt:', error)
+    
+    // Fallback: Try simple deletion if complex deletion fails
+    try {
+      console.log(`🔄 [Delete] Attempting fallback deletion for prompt ${id}`)
+      const session = await auth()
+      if (!session?.user?.id) {
+        throw error // Re-throw original error if no session
+      }
+      
+      const adminSupabase = createSupabaseAdminClient()
+      
+      // Just try to delete the main prompt directly and let database handle cascading deletes
+      const { error: fallbackError } = await adminSupabase
+        .from('prompt')
+        .delete()
+        .eq('id', id)
+        .eq('user_id', session.user.id)
+      
+      if (fallbackError) {
+        console.error('❌ [Delete] Fallback deletion also failed:', fallbackError)
+        throw error // Re-throw original error
+      }
+      
+      console.log(`✅ [Delete] Fallback deletion successful for prompt ${id}`)
+      
+      // Still revalidate caches on success
+      revalidateAfterPromptDelete(id, session.user.id)
+      
+      return { success: true, message: 'Prompt deleted successfully (via fallback)' }
+    } catch (fallbackError) {
+      console.error('❌ [Delete] Both primary and fallback deletion failed:', fallbackError)
+      throw error // Re-throw original error
+    }
   }
 }
 
