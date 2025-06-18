@@ -87,11 +87,11 @@ VS Code + Tailwind CSS IntelliSense extension
 ```
 
 ### **1. Clone & Install**
-```bash
+   ```bash
 git clone https://github.com/the-sid-dani/samba-prompt-lib.git
 cd samba-prompt-lib
 pnpm install  # or npm install
-```
+   ```
 
 ### **2. Environment Setup**
 ```bash
@@ -99,12 +99,12 @@ pnpm install  # or npm install
 cp .env.example .env.local
 
 # Fill in the following required variables:
-```
+   ```
 
 #### **Essential Environment Variables**
 ```bash
 # === NextAuth Configuration ===
-NEXTAUTH_URL=http://localhost:3000
+   NEXTAUTH_URL=http://localhost:3000
 NEXTAUTH_SECRET=your-randomly-generated-secret-here
 
 # === Google OAuth (Contact IT for Samba credentials) ===
@@ -114,7 +114,7 @@ GOOGLE_CLIENT_SECRET=your-samba-google-oauth-client-secret
 # === Supabase Database ===
 NEXT_PUBLIC_SUPABASE_URL=https://your-project.supabase.co
 NEXT_PUBLIC_SUPABASE_ANON_KEY=your-anon-key
-SUPABASE_SERVICE_ROLE_KEY=your-service-role-key
+   SUPABASE_SERVICE_ROLE_KEY=your-service-role-key
 
 # === AI Provider API Keys (Optional for development) ===
 GOOGLE_GEMINI_API_KEY=your-gemini-api-key
@@ -359,7 +359,7 @@ echo $NEXT_PUBLIC_SUPABASE_ANON_KEY
 ```
 
 #### **"Build Fails on Vercel"**
-```bash
+   ```bash
 # Common cause: Missing environment variables
 # Solution: Add all required env vars in Vercel dashboard
 ```

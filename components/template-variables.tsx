@@ -45,15 +45,15 @@ function extractVariables(content: string): TemplateVariable[] {
     const parts = cleanMatch.split('|')
     const variableName = parts[0].trim()
     const defaultValue = parts.length > 1 ? parts[1].trim() : ''
-    
+        
     if (!uniqueVariables.has(variableName)) {
       uniqueVariables.add(variableName)
       variables.push({
         name: variableName,
         value: defaultValue,
         defaultValue: defaultValue
-      })
-    }
+          })
+        }
   })
   
   return variables
@@ -101,9 +101,9 @@ export function TemplateVariables({
     try {
       await navigator.clipboard.writeText(processedContent)
       toast({
-        title: "Copied!",
-        description: "Customized prompt copied to clipboard",
-      })
+            title: "Copied!",
+            description: "Customized prompt copied to clipboard",
+          })
     } catch (err) {
       toast({
         title: "Failed to copy",
@@ -119,7 +119,7 @@ export function TemplateVariables({
     })
     router.push(`/playground?${params.toString()}`)
   }, [processedContent, router])
-
+    
   // Don't render if no variables found
   if (extractedVariables.length === 0) {
     return null
@@ -153,14 +153,14 @@ export function TemplateVariables({
               Copy
             </Button>
             
-            <Button
+              <Button
               onClick={testInPlayground}
-              size="sm"
+                size="sm"
               className="flex items-center gap-2"
-            >
+              >
               <Beaker className="h-4 w-4" />
               Test in Playground
-            </Button>
+              </Button>
           </div>
         </div>
       </CardHeader>

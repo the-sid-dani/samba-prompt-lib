@@ -67,20 +67,20 @@ export default function TagInput({
     
     // If we have onFetchSuggestions and input is long enough, fetch filtered results
     if (onFetchSuggestions && inputValue.length >= 2) {
-      setIsLoading(true)
-      const debounceTimer = setTimeout(async () => {
-        try {
-          const results = await onFetchSuggestions(inputValue)
+    setIsLoading(true)
+    const debounceTimer = setTimeout(async () => {
+      try {
+        const results = await onFetchSuggestions(inputValue)
           setSuggestions(results.filter(tag => !value.includes(tag)))
-        } catch (error) {
-          console.error('Error fetching tag suggestions:', error)
-          setSuggestions([])
-        } finally {
-          setIsLoading(false)
-        }
-      }, 300)
-      
-      return () => clearTimeout(debounceTimer)
+      } catch (error) {
+        console.error('Error fetching tag suggestions:', error)
+        setSuggestions([])
+      } finally {
+        setIsLoading(false)
+      }
+    }, 300)
+    
+    return () => clearTimeout(debounceTimer)
     } else {
       // Filter from all available tags locally
       const filtered = allTags.filter(tag => 
@@ -131,7 +131,7 @@ export default function TagInput({
   
   // Handle focus - show all available tags
   const handleFocus = () => {
-    setShowSuggestions(true)
+      setShowSuggestions(true)
   }
   
   // Handle click outside to close suggestions

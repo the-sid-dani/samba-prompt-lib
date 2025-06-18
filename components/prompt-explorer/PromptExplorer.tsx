@@ -130,12 +130,12 @@ export default function PromptExplorer({
       if (currentFilters.search) {
         searchParams.search = currentFilters.search;
       }
-
+      
       // Category filtering
       if (currentFilters.selectedCategory && currentFilters.selectedCategory !== 'all') {
         searchParams.category = currentFilters.selectedCategory;
       }
-
+      
       // Multi-tag filtering
       if (currentFilters.selectedTags.length > 0) {
         searchParams.tags = currentFilters.selectedTags;
@@ -225,11 +225,11 @@ export default function PromptExplorer({
     if (!isFetching) {
       // Only trigger search when debounced value is different and not already fetching
       const updatedFilters = { ...filters, search: debouncedSearchQuery };
-      updateURL(updatedFilters);
-      
-      startTransition(() => {
-        fetchFilteredPrompts(updatedFilters);
-      });
+    updateURL(updatedFilters);
+    
+    startTransition(() => {
+      fetchFilteredPrompts(updatedFilters);
+    });
     }
   }, [debouncedSearchQuery, isFetching, filters, updateURL, fetchFilteredPrompts]);
 
@@ -279,11 +279,11 @@ export default function PromptExplorer({
   const handleFilterChange = useCallback((newFilters: Partial<FilterState>) => {
     setFilters(prevFilters => {
       const updatedFilters = { ...prevFilters, ...newFilters };
-      updateURL(updatedFilters);
-      
-      startTransition(() => {
-        fetchFilteredPrompts(updatedFilters);
-      });
+    updateURL(updatedFilters);
+    
+    startTransition(() => {
+      fetchFilteredPrompts(updatedFilters);
+    });
       
       return updatedFilters;
     });
