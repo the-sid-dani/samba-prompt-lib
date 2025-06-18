@@ -4,13 +4,29 @@ const config = {
 		description: "Internal AI Prompt Library for SambaTV Employees",
 		keywords: ["SambaTV", "AI", "Prompts", "Internal Tool", "Prompt Library"],
 		icons: {
+			// Standard favicon formats - works across all domains
 			icon: [
+				{ url: '/favicon.ico', sizes: 'any' },
 				{ url: '/favicon.png', sizes: '32x32', type: 'image/png' },
-				{ url: '/favicon.ico', sizes: 'any' }
+				{ url: '/icon-192.png', sizes: '192x192', type: 'image/png' },
+				{ url: '/icon-512.png', sizes: '512x512', type: 'image/png' }
 			],
-			apple: { url: '/favicon.png', sizes: '180x180', type: 'image/png' },
-			shortcut: '/favicon.ico'
-		}
+			// Apple devices
+			apple: [
+				{ url: '/apple-touch-icon.png', sizes: '180x180', type: 'image/png' },
+				{ url: '/favicon.png', sizes: '152x152', type: 'image/png' },
+				{ url: '/favicon.png', sizes: '120x120', type: 'image/png' }
+			],
+			// Shortcut icon (fallback)
+			shortcut: '/favicon.ico',
+			// Other platforms
+			other: [
+				{ rel: 'mask-icon', url: '/favicon.png', color: '#E60000' }
+			]
+		},
+		// Additional metadata for better cross-domain support
+		manifest: '/site.webmanifest',
+		themeColor: '#E60000'
 	},
 	theme: {
 		colors: {

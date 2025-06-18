@@ -22,7 +22,18 @@ export default function RootLayout({
   return (
     <html lang="en" suppressHydrationWarning>
       <head>
-        <meta name="theme-color" content="#FFFFFF" />
+        <meta name="theme-color" content="#E60000" />
+        <meta name="msapplication-TileColor" content="#E60000" />
+        <meta name="msapplication-config" content="/browserconfig.xml" />
+        {/* Force favicon refresh across all domains */}
+        <link rel="icon" href="/favicon.ico" sizes="any" />
+        <link rel="icon" href="/favicon.png" type="image/png" />
+        <link rel="apple-touch-icon" href="/apple-touch-icon.png" />
+        <link rel="manifest" href="/site.webmanifest" />
+        {/* Prevent favicon caching issues */}
+        <meta httpEquiv="Cache-Control" content="no-cache, no-store, must-revalidate" />
+        <meta httpEquiv="Pragma" content="no-cache" />
+        <meta httpEquiv="Expires" content="0" />
       </head>
       <SessionProvider refetchInterval={0} refetchOnWindowFocus={false}>
         <body

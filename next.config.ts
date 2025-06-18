@@ -42,6 +42,46 @@ const nextConfig: NextConfig = {
   // Headers for better caching
   async headers() {
     return [
+      // Favicon files - ensure they work across all domains
+      {
+        source: '/favicon.ico',
+        headers: [
+          {
+            key: 'Cache-Control',
+            value: 'public, max-age=86400, must-revalidate',
+          },
+          {
+            key: 'Content-Type',
+            value: 'image/x-icon',
+          },
+        ],
+      },
+      {
+        source: '/:all*(favicon|apple-touch-icon|icon-192|icon-512).png',
+        headers: [
+          {
+            key: 'Cache-Control',
+            value: 'public, max-age=86400, must-revalidate',
+          },
+          {
+            key: 'Content-Type',
+            value: 'image/png',
+          },
+        ],
+      },
+      {
+        source: '/site.webmanifest',
+        headers: [
+          {
+            key: 'Cache-Control',
+            value: 'public, max-age=86400, must-revalidate',
+          },
+          {
+            key: 'Content-Type',
+            value: 'application/manifest+json',
+          },
+        ],
+      },
       {
         source: '/:all*(svg|jpg|jpeg|png|gif|ico|webp|avif)',
         headers: [
