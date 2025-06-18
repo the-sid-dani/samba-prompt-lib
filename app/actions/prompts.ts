@@ -405,8 +405,13 @@ export async function fetchPrompts(input?: Partial<z.infer<typeof fetchPromptsSc
           query = query.lte('uses', params.popularity_max)
         }
         
-        // Apply sorting
-        query = query.order(params.sort_by, { ascending: params.sort_order === 'asc' })
+        // Apply sorting - special handling for trending
+        if (params.sort_by === 'votes') {
+          // For trending, we'll fetch all and sort by recent activity later
+          query = query.order('created_at', { ascending: false })
+        } else {
+          query = query.order(params.sort_by, { ascending: params.sort_order === 'asc' })
+        }
         
         // Apply pagination
         const from = (params.page - 1) * params.limit
@@ -469,10 +474,56 @@ export async function fetchPrompts(input?: Partial<z.infer<typeof fetchPromptsSc
             }
           })
           
-          // Apply author filtering after enrichment
-          let filteredPrompts = enrichedPrompts;
+          // Calculate trending scores if needed
+          let finalPrompts = enrichedPrompts;
+          if (params.sort_by === 'votes') {
+            // For trending, calculate recent activity from last 24 hours
+            const twentyFourHoursAgo = new Date();
+            twentyFourHoursAgo.setHours(twentyFourHoursAgo.getHours() - 24);
+            
+            // Fetch recent interactions for trending calculation
+            const { data: recentInteractions } = await supabase
+              .from('user_interactions')
+              .select('prompt_id, interaction_type, created_at')
+              .gte('created_at', twentyFourHoursAgo.toISOString())
+              .in('prompt_id', promptIds);
+            
+            // Count recent interactions per prompt
+            const trendingScores = new Map<number, number>();
+            if (recentInteractions) {
+              recentInteractions.forEach(interaction => {
+                const currentScore = trendingScores.get(interaction.prompt_id) || 0;
+                // Weight different interactions (copy = 3, favorite = 2, fork = 4, view = 1)
+                let weight = 1;
+                switch (interaction.interaction_type) {
+                  case 'copy': weight = 3; break;
+                  case 'favorite': weight = 2; break;
+                  case 'fork': weight = 4; break;
+                  case 'view': weight = 1; break;
+                  default: weight = 1;
+                }
+                trendingScores.set(interaction.prompt_id, currentScore + weight);
+              });
+            }
+            
+            // Sort by trending score (recent activity), with fallback to regular uses for ties
+            finalPrompts = enrichedPrompts.sort((a, b) => {
+              const scoreA = trendingScores.get(a.id) || 0;
+              const scoreB = trendingScores.get(b.id) || 0;
+              
+              if (scoreA !== scoreB) {
+                return scoreB - scoreA; // Higher trending score first
+              }
+              
+              // Fallback to uses count for ties
+              return (b.uses || 0) - (a.uses || 0);
+            });
+          }
+
+          // Apply author filtering after enrichment and sorting
+          let filteredPrompts = finalPrompts;
           if (params.author) {
-            filteredPrompts = enrichedPrompts.filter(prompt => {
+            filteredPrompts = finalPrompts.filter(prompt => {
               const profile = prompt.profiles;
               if (!profile) return false;
               

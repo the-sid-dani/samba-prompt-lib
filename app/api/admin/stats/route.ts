@@ -98,16 +98,16 @@ export async function GET(request: NextRequest) {
     const featuredPrompts = promptsData?.filter(p => p.featured).length || 0
     const totalUsers = usersData?.length || 0
 
-    // Calculate new prompts and users in the last 30 days
-    const thirtyDaysAgo = new Date()
-    thirtyDaysAgo.setDate(thirtyDaysAgo.getDate() - 30)
+    // Calculate new prompts and users today
+    const todayStart = new Date()
+    todayStart.setHours(0, 0, 0, 0)
 
-    const newPrompts = promptsData?.filter(p => 
-      p.created_at && new Date(p.created_at) > thirtyDaysAgo
+    const promptsToday = promptsData?.filter(p => 
+      p.created_at && new Date(p.created_at) >= todayStart
     ).length || 0
 
-    const newUsers = usersData?.filter(u => 
-      u.created_at && new Date(u.created_at) > thirtyDaysAgo
+    const usersToday = usersData?.filter(u => 
+      u.created_at && new Date(u.created_at) >= todayStart
     ).length || 0
 
     // Get popular prompts based on interactions
@@ -178,9 +178,9 @@ export async function GET(request: NextRequest) {
       totalTags: tagsData?.length || 0,
       overview: {
         totalUsers,
-        newUsers,
+        newUsers: usersToday,
         totalPrompts,
-        newPrompts,
+        newPrompts: promptsToday,
         featuredPrompts,
         totalInteractions: analyticsData.topEvents.reduce((sum, event) => sum + event.count, 0),
         totalApiCalls: costAnalysis.totalCalls,
@@ -192,9 +192,9 @@ export async function GET(request: NextRequest) {
         dailyMetrics: analyticsData.dailyMetrics.map(day => ({
           ...day,
           total_users: totalUsers,
-          new_users: newUsers,
+          new_users: usersToday,
           total_prompts: totalPrompts,
-          new_prompts: newPrompts,
+          new_prompts: promptsToday,
           total_api_calls: costAnalysis.totalCalls,
           total_tokens_used: costAnalysis.totalTokens,
           total_api_cost_usd: costAnalysis.totalCost
@@ -222,12 +222,12 @@ export async function GET(request: NextRequest) {
         errorRate: '0.1%'
       },
       userStats: {
-        newUsersToday: newUsers,
+        newUsersToday: usersToday,
         activeUsers: analyticsData.dailyMetrics.reduce((sum, day) => sum + day.active_users, 0),
         totalSessions: 0 // TODO: Add sessions count
       },
       contentStats: {
-        promptsToday: newPrompts,
+        promptsToday: promptsToday,
         totalViews: analyticsData.topEvents.find(e => e.event_type === 'view')?.count || 0,
         totalShares: analyticsData.topEvents.find(e => e.event_type === 'share')?.count || 0,
         popularPrompts: popularPrompts

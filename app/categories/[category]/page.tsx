@@ -222,7 +222,7 @@ async function CategoryPageContent({ categoryId }: { categoryId: string }) {
                 key={cat.id}
                 href={`/categories/${cat.id}`}
               >
-                <button className="px-3 sm:px-4 py-1.5 sm:py-2 rounded-full text-xs sm:text-sm font-medium whitespace-nowrap transition-colors bg-gray-100 text-gray-700 hover:bg-gray-200">
+                <button className="px-3 sm:px-4 py-1.5 sm:py-2 rounded-full text-xs sm:text-sm font-medium whitespace-nowrap transition-colors bg-muted text-muted-foreground hover:bg-muted/80">
                   {cat.name}
                 </button>
               </Link>

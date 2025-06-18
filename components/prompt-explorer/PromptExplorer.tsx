@@ -225,11 +225,10 @@ export default function PromptExplorer({
     if (!isFetching) {
       // Only trigger search when debounced value is different and not already fetching
       const updatedFilters = { ...filters, search: debouncedSearchQuery };
-    updateURL(updatedFilters);
-    
-    startTransition(() => {
-      fetchFilteredPrompts(updatedFilters);
-    });
+      updateURL(updatedFilters);
+      startTransition(() => {
+        fetchFilteredPrompts(updatedFilters);
+      });
     }
   }, [debouncedSearchQuery, isFetching, filters, updateURL, fetchFilteredPrompts]);
 
@@ -279,15 +278,16 @@ export default function PromptExplorer({
   const handleFilterChange = useCallback((newFilters: Partial<FilterState>) => {
     setFilters(prevFilters => {
       const updatedFilters = { ...prevFilters, ...newFilters };
-    updateURL(updatedFilters);
+      return updatedFilters;
+    });
     
+    // Update URL and fetch data after state update
+    const updatedFilters = { ...filters, ...newFilters };
+    updateURL(updatedFilters);
     startTransition(() => {
       fetchFilteredPrompts(updatedFilters);
     });
-      
-      return updatedFilters;
-    });
-  }, [updateURL, fetchFilteredPrompts]);
+  }, [filters, updateURL, fetchFilteredPrompts]);
 
   // Handle direct search input changes
   const handleSearchChange = (value: string) => {
