@@ -67,7 +67,7 @@ export function ForkButton({
         description: 'You can now edit your forked version.',
       })
 
-      router.push(`/prompt/${result.id}/edit`)
+      router.push(`/prompt/${result.prompt.id}/edit`)
     } catch (error) {
       console.error('Fork error:', error)
       toast({
