@@ -29,7 +29,11 @@ const formSchema = z.object({
   content: z.string().min(1, 'Prompt content is required').min(10, 'Prompt content must be at least 10 characters'),
   category_id: z.number().min(1, 'Please select a category'),
   tags: z.array(z.string()).min(1, 'Please add at least one tag').max(5, 'Maximum 5 tags allowed'),
-  examples: z.array(z.string()).optional(),
+  examples: z.array(z.object({
+    input: z.string(),
+    output: z.string(),
+    description: z.string().optional()
+  })).optional(),
 })
 
 type FormData = z.infer<typeof formSchema>
@@ -42,7 +46,7 @@ interface ForkPromptFormProps {
     content: string
     category_id: number
     tags: string[]
-    examples?: string[]
+    examples?: any[]
   }
 }
 
@@ -52,6 +56,18 @@ export function ForkPromptForm({ originalPrompt }: ForkPromptFormProps) {
   const { execute, isLoading } = useAsyncOperation()
   const [categories, setCategories] = useState<Array<{ id: number; name: string }>>([])
   
+  // Convert original examples to the expected format
+  const convertedExamples = (originalPrompt.examples || []).map((example: any) => {
+    if (typeof example === 'string') {
+      return { input: example, output: '', description: '' }
+    }
+    return {
+      input: example.input || '',
+      output: example.output || '',
+      description: example.description || ''
+    }
+  })
+  
   const form = useForm<FormData>({
     resolver: zodResolver(formSchema),
     defaultValues: {
@@ -60,7 +76,7 @@ export function ForkPromptForm({ originalPrompt }: ForkPromptFormProps) {
       content: originalPrompt.content,
       category_id: originalPrompt.category_id,
       tags: originalPrompt.tags || [],
-      examples: originalPrompt.examples || [],
+      examples: convertedExamples,
     },
   })
   
@@ -84,12 +100,18 @@ export function ForkPromptForm({ originalPrompt }: ForkPromptFormProps) {
   }, [toast])
   
   const onSubmit = async (data: FormData) => {
+    console.log('Form data being submitted:', data)
+    
     const promptData = {
       ...data,
       forked_from: originalPrompt.id,
     }
     
+    console.log('Processed prompt data:', promptData)
+    
     const result = await execute(createPrompt, promptData)
+    
+    console.log('Create prompt result:', result)
     
     if (result) {
       toast({
@@ -97,6 +119,8 @@ export function ForkPromptForm({ originalPrompt }: ForkPromptFormProps) {
         description: 'Your forked prompt has been saved.',
       })
       
+      // Force refresh the pages to ensure they show updated data
+      router.refresh()
       router.push(`/prompt/${result.id}`)
     }
   }
@@ -236,31 +260,66 @@ export function ForkPromptForm({ originalPrompt }: ForkPromptFormProps) {
               <FormItem>
                 <FormLabel>Examples (Optional)</FormLabel>
                 <FormControl>
-                  <div className="space-y-2">
+                  <div className="space-y-4">
                     {(field.value || []).map((example, index) => (
-                      <div key={index} className="flex gap-2">
-                        <Textarea
-                          value={example}
-                          onChange={(e) => {
-                            const newExamples = [...(field.value || [])]
-                            newExamples[index] = e.target.value
-                            field.onChange(newExamples)
-                          }}
-                          placeholder={`Example ${index + 1}...`}
-                          className="flex-1 min-h-[60px]"
-                          rows={2}
-                        />
-                        <Button
-                          type="button"
-                          variant="outline"
-                          size="sm"
-                          onClick={() => {
-                            const newExamples = (field.value || []).filter((_, i) => i !== index)
-                            field.onChange(newExamples)
-                          }}
-                        >
-                          Remove
-                        </Button>
+                      <div key={index} className="border rounded-lg p-4 space-y-3">
+                        <div className="flex justify-between items-center">
+                          <h4 className="font-medium">Example {index + 1}</h4>
+                          <Button
+                            type="button"
+                            variant="outline"
+                            size="sm"
+                            onClick={() => {
+                              const newExamples = (field.value || []).filter((_, i) => i !== index)
+                              field.onChange(newExamples)
+                            }}
+                          >
+                            Remove
+                          </Button>
+                        </div>
+                        <div className="space-y-2">
+                          <div>
+                            <label className="text-sm font-medium">Input</label>
+                            <Textarea
+                              value={example.input}
+                              onChange={(e) => {
+                                const newExamples = [...(field.value || [])]
+                                newExamples[index] = { ...newExamples[index], input: e.target.value }
+                                field.onChange(newExamples)
+                              }}
+                              placeholder="Example input..."
+                              className="mt-1"
+                              rows={2}
+                            />
+                          </div>
+                          <div>
+                            <label className="text-sm font-medium">Output</label>
+                            <Textarea
+                              value={example.output}
+                              onChange={(e) => {
+                                const newExamples = [...(field.value || [])]
+                                newExamples[index] = { ...newExamples[index], output: e.target.value }
+                                field.onChange(newExamples)
+                              }}
+                              placeholder="Expected output..."
+                              className="mt-1"
+                              rows={2}
+                            />
+                          </div>
+                          <div>
+                            <label className="text-sm font-medium">Description (Optional)</label>
+                            <Input
+                              value={example.description || ''}
+                              onChange={(e) => {
+                                const newExamples = [...(field.value || [])]
+                                newExamples[index] = { ...newExamples[index], description: e.target.value }
+                                field.onChange(newExamples)
+                              }}
+                              placeholder="Brief description..."
+                              className="mt-1"
+                            />
+                          </div>
+                        </div>
                       </div>
                     ))}
                     <Button
@@ -268,7 +327,7 @@ export function ForkPromptForm({ originalPrompt }: ForkPromptFormProps) {
                       variant="outline"
                       size="sm"
                       onClick={() => {
-                        field.onChange([...(field.value || []), ''])
+                        field.onChange([...(field.value || []), { input: '', output: '', description: '' }])
                       }}
                       disabled={(field.value || []).length >= 5}
                     >

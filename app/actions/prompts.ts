@@ -6,7 +6,7 @@ import { Database } from '@/types/database.types'
 import { z } from 'zod'
 import { cache } from 'react'
 import { unstable_cache } from 'next/cache'
-import { revalidateTag } from 'next/cache'
+import { revalidateTag, revalidatePath } from 'next/cache'
 import { 
   CACHE_TAGS, 
   CACHE_TIMES,
@@ -951,12 +951,27 @@ export async function createPrompt(input: z.infer<typeof createPromptSchema>) {
       revalidateTag(CACHE_TAGS.prompt(forked_from))
     }
     
-    // Revalidate caches
+    // Revalidate caches - add more extensive revalidation
     revalidateAfterPromptCreate(
       session.user.id,
       validatedData.category_id || undefined,
       validatedData.tags
     )
+    
+    // Additional cache revalidation for better explore page updates
+    revalidatePath('/')
+    revalidatePath('/prompt')
+    revalidatePath('/categories')
+    if (validatedData.category_id) {
+      revalidatePath(`/categories/${validatedData.category_id}`)
+    }
+    
+    // Revalidate tags pages
+    if (validatedData.tags && validatedData.tags.length > 0) {
+      validatedData.tags.forEach(tag => {
+        revalidatePath(`/tags/${encodeURIComponent(tag)}`)
+      })
+    }
     
     return prompt as PromptWithCategory
   } catch (error) {
@@ -1008,7 +1023,7 @@ export async function updatePrompt(id: number, input: z.infer<typeof updatePromp
       throw new Error(`Failed to update prompt: ${updateError.message}`)
     }
     
-    // Revalidate caches
+    // Revalidate caches - add more extensive revalidation
     revalidateAfterPromptUpdate(
       id,
       session.user.id,
@@ -1017,6 +1032,31 @@ export async function updatePrompt(id: number, input: z.infer<typeof updatePromp
       existingPrompt.tags || undefined,
       validatedData.tags || existingPrompt.tags || undefined
     )
+    
+    // Additional cache revalidation for better explore page updates
+    revalidatePath('/')
+    revalidatePath('/prompt')
+    revalidatePath('/categories')
+    revalidatePath(`/prompt/${id}`)
+    if (validatedData.category_id) {
+      revalidatePath(`/categories/${validatedData.category_id}`)
+    }
+    if (existingPrompt.category_id && existingPrompt.category_id !== validatedData.category_id) {
+      revalidatePath(`/categories/${existingPrompt.category_id}`)
+    }
+    
+    // Revalidate tags pages
+    const finalTags = validatedData.tags || existingPrompt.tags || []
+    if (finalTags.length > 0) {
+      finalTags.forEach(tag => {
+        revalidatePath(`/tags/${encodeURIComponent(tag)}`)
+      })
+    }
+    if (existingPrompt.tags && existingPrompt.tags.length > 0) {
+      existingPrompt.tags.forEach(tag => {
+        revalidatePath(`/tags/${encodeURIComponent(tag)}`)
+      })
+    }
     
     return prompt as PromptWithCategory
   } catch (error) {

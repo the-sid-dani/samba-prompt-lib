@@ -139,6 +139,9 @@ export default function EditPromptForm({ prompt }: EditPromptFormProps) {
         description: 'Your prompt has been updated successfully.',
       })
       
+      // Force refresh the pages to ensure they show updated data
+      router.refresh()
+      
       // Redirect to the updated prompt page
       router.push(`/prompt/${prompt.id}`)
     } catch (error) {
