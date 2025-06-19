@@ -119,9 +119,10 @@ export function ForkPromptForm({ originalPrompt }: ForkPromptFormProps) {
         description: 'Your forked prompt has been saved.',
       })
       
-      // Force refresh the pages to ensure they show updated data
-      router.refresh()
-      router.push(`/prompt/${result.id}`)
+      // Add a small delay to ensure database transaction is complete
+      setTimeout(() => {
+        router.push(`/prompt/${result.id}`)
+      }, 500)
     }
   }
   

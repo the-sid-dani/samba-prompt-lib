@@ -958,10 +958,12 @@ export async function createPrompt(input: z.infer<typeof createPromptSchema>) {
       validatedData.tags
     )
     
-    // Additional cache revalidation for better explore page updates
+    // Aggressive cache revalidation for immediate updates
+    revalidatePath('/', 'layout')
     revalidatePath('/')
     revalidatePath('/prompt')
     revalidatePath('/categories')
+    revalidatePath('/showcase')
     if (validatedData.category_id) {
       revalidatePath(`/categories/${validatedData.category_id}`)
     }
@@ -972,6 +974,9 @@ export async function createPrompt(input: z.infer<typeof createPromptSchema>) {
         revalidatePath(`/tags/${encodeURIComponent(tag)}`)
       })
     }
+    
+    // Force revalidate all prompt-related cache tags
+    revalidateAllPromptCaches()
     
     return prompt as PromptWithCategory
   } catch (error) {
@@ -1033,10 +1038,12 @@ export async function updatePrompt(id: number, input: z.infer<typeof updatePromp
       validatedData.tags || existingPrompt.tags || undefined
     )
     
-    // Additional cache revalidation for better explore page updates
+    // Aggressive cache revalidation for immediate updates
+    revalidatePath('/', 'layout')
     revalidatePath('/')
     revalidatePath('/prompt')
     revalidatePath('/categories')
+    revalidatePath('/showcase')
     revalidatePath(`/prompt/${id}`)
     if (validatedData.category_id) {
       revalidatePath(`/categories/${validatedData.category_id}`)
@@ -1057,6 +1064,9 @@ export async function updatePrompt(id: number, input: z.infer<typeof updatePromp
         revalidatePath(`/tags/${encodeURIComponent(tag)}`)
       })
     }
+    
+    // Force revalidate all prompt-related cache tags
+    revalidateAllPromptCaches()
     
     return prompt as PromptWithCategory
   } catch (error) {

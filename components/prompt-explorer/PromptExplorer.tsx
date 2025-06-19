@@ -87,6 +87,7 @@ export default function PromptExplorer({
 
   // Add flag to prevent multiple simultaneous fetches
   const [isFetching, setIsFetching] = useState(false);
+  const [lastFetchTime, setLastFetchTime] = useState<number>(0);
   
   const displayCategories = propsCategories ? 
     [{ id: "all", name: "All" }, ...propsCategories.map(cat => ({ id: cat.id.toString(), name: cat.name }))] 
@@ -108,16 +109,25 @@ export default function PromptExplorer({
   }, [router]);
 
   // Function to fetch prompts with current filters
-  const fetchFilteredPrompts = useCallback(async (currentFilters: FilterState) => {
+  const fetchFilteredPrompts = useCallback(async (currentFilters: FilterState, forceRefresh = false) => {
+    const now = Date.now();
+    
     // Prevent multiple simultaneous fetches
     if (isFetching) {
       console.log('Fetch already in progress, skipping...');
       return;
     }
 
+    // Prevent excessive API calls (minimum 2 seconds between calls unless forced)
+    if (!forceRefresh && now - lastFetchTime < 2000) {
+      console.log('Rate limiting: too soon since last fetch, skipping...');
+      return;
+    }
+
     try {
       setIsFetching(true);
       setLoading(true);
+      setLastFetchTime(now);
       
       console.log('Fetching prompts with filters:', currentFilters);
 
@@ -194,7 +204,7 @@ export default function PromptExplorer({
       setLoading(false);
       setIsFetching(false);
     }
-  }, [isFetching]);
+  }, [isFetching, lastFetchTime]);
 
   // Load available tags and authors
   useEffect(() => {
@@ -225,23 +235,23 @@ export default function PromptExplorer({
     if (!isFetching) {
       // Only trigger search when debounced value is different and not already fetching
       const updatedFilters = { ...filters, search: debouncedSearchQuery };
-      updateURL(updatedFilters);
-      startTransition(() => {
-        fetchFilteredPrompts(updatedFilters);
-      });
+    updateURL(updatedFilters);
+    startTransition(() => {
+      fetchFilteredPrompts(updatedFilters);
+    });
     }
   }, [debouncedSearchQuery, isFetching, filters, updateURL, fetchFilteredPrompts]);
 
-  // Only refresh data when user returns after being away for a significant time
+  // Refresh data when user returns to the page (especially after creating/editing prompts)
   useEffect(() => {
     let lastVisibilityChange = Date.now();
     
     const handleVisibilityChange = () => {
       if (!document.hidden && !isFetching) {
         const now = Date.now();
-        // Only refresh if user was away for more than 30 seconds
-        if (now - lastVisibilityChange > 30000) {
-          console.log('User returned after extended absence, refreshing data');
+        // Refresh if user was away for more than 5 seconds (reduced from 30 seconds)
+        if (now - lastVisibilityChange > 5000) {
+          console.log('User returned, refreshing data for latest changes');
           startTransition(() => {
             fetchFilteredPrompts(filters);
           });
@@ -250,27 +260,36 @@ export default function PromptExplorer({
       }
     };
 
+    const handleFocus = () => {
+      if (!isFetching) {
+        console.log('Window focused, refreshing data for latest changes');
+        startTransition(() => {
+          fetchFilteredPrompts(filters, true); // Force refresh on focus
+        });
+      }
+    };
+
     document.addEventListener('visibilitychange', handleVisibilityChange);
+    window.addEventListener('focus', handleFocus);
 
     return () => {
       document.removeEventListener('visibilitychange', handleVisibilityChange);
+      window.removeEventListener('focus', handleFocus);
     };
   }, [isFetching, filters, fetchFilteredPrompts])
 
-  // Initial data load - only fetch if we truly don't have data
+  // Initial data load - always fetch fresh data on mount
   useEffect(() => {
-    // Only fetch if we have no prompts at all and no props were provided
-    if (!propsPrompts && prompts.length === 0 && !loading && !isFetching) {
-      console.log('No initial data available, fetching prompts');
+    if (propsPrompts && propsPrompts.length > 0) {
+      console.log('Using provided prompts data:', propsPrompts.length, 'prompts');
+      setPrompts(propsPrompts);
+      setLoading(false);
+      setIsFetching(false);
+    } else {
+      console.log('No initial data provided, fetching fresh prompts');
       startTransition(() => {
         fetchFilteredPrompts(filters);
       });
-    } else if (propsPrompts && propsPrompts.length > 0) {
-      console.log('Using provided prompts data:', propsPrompts.length, 'prompts');
-      setPrompts(propsPrompts);
-      // Ensure loading is off when using provided data
-      setLoading(false);
-      setIsFetching(false);
     }
   }, []); // Only run on mount
 

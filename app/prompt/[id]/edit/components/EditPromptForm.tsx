@@ -139,11 +139,10 @@ export default function EditPromptForm({ prompt }: EditPromptFormProps) {
         description: 'Your prompt has been updated successfully.',
       })
       
-      // Force refresh the pages to ensure they show updated data
-      router.refresh()
-      
-      // Redirect to the updated prompt page
-      router.push(`/prompt/${prompt.id}`)
+      // Add a small delay to ensure database transaction is complete
+      setTimeout(() => {
+        router.push(`/prompt/${prompt.id}`)
+      }, 500)
     } catch (error) {
       console.error('Error updating prompt:', error)
       toast({
