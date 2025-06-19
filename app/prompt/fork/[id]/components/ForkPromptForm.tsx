@@ -1,6 +1,7 @@
 'use client'
 
 import { useState, useEffect } from 'react'
+import { Json } from '@/types/database.types'
 import { useRouter } from 'next/navigation'
 import { useForm } from 'react-hook-form'
 import { zodResolver } from '@hookform/resolvers/zod'
@@ -44,9 +45,9 @@ interface ForkPromptFormProps {
     title: string
     description: string
     content: string
-    category_id: number
-    tags: string[]
-    examples?: any[]
+    category_id: number | null
+    tags: string[] | null
+    examples?: Json
   }
 }
 
@@ -57,16 +58,22 @@ export function ForkPromptForm({ originalPrompt }: ForkPromptFormProps) {
   const [categories, setCategories] = useState<Array<{ id: number; name: string }>>([])
   
   // Convert original examples to the expected format
-  const convertedExamples = (originalPrompt.examples || []).map((example: any) => {
-    if (typeof example === 'string') {
-      return { input: example, output: '', description: '' }
+  const convertedExamples = (() => {
+    if (!originalPrompt.examples) return []
+    if (Array.isArray(originalPrompt.examples)) {
+      return originalPrompt.examples.map((example: any) => {
+        if (typeof example === 'string') {
+          return { input: example, output: '', description: '' }
+        }
+        return {
+          input: example.input || '',
+          output: example.output || '',
+          description: example.description || ''
+        }
+      })
     }
-    return {
-      input: example.input || '',
-      output: example.output || '',
-      description: example.description || ''
-    }
-  })
+    return []
+  })()
   
   const form = useForm<FormData>({
     resolver: zodResolver(formSchema),
@@ -74,7 +81,7 @@ export function ForkPromptForm({ originalPrompt }: ForkPromptFormProps) {
       title: originalPrompt.title,
       description: originalPrompt.description,
       content: originalPrompt.content,
-      category_id: originalPrompt.category_id,
+      category_id: originalPrompt.category_id || 1, // Default to first category if null
       tags: originalPrompt.tags || [],
       examples: convertedExamples,
     },
@@ -120,8 +127,10 @@ export function ForkPromptForm({ originalPrompt }: ForkPromptFormProps) {
       })
       
       // Add a small delay to ensure database transaction is complete
+      // Also refresh the router to clear any cached data
       setTimeout(() => {
-        router.push(`/prompt/${result.id}`)
+        // Force a hard navigation to ensure fresh data
+        window.location.href = `/prompt/${result.id}`;
       }, 500)
     }
   }

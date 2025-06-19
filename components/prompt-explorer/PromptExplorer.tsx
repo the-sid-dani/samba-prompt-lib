@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect, useTransition, useCallback } from "react";
+import { useState, useEffect, useTransition, useCallback, useRef } from "react";
 import { Search, Plus, TrendingUp, Star, Heart, Eye, Copy, Sparkles, GitFork, Tag, Filter, CalendarDays, Users, X, ChevronDown } from "lucide-react";
 import Link from "next/link";
 import Image from "next/image";
@@ -16,7 +16,6 @@ import { Slider } from "@/components/ui/slider";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
 import { Command, CommandEmpty, CommandGroup, CommandInput, CommandItem } from "@/components/ui/command";
 import Navigation from '@/components/navigation/Navigation';
-import config from "@/config";
 import { PromptCopyButton } from "@/components/prompt-copy-button";
 import { FavoriteButton } from "@/components/favorite-button";
 import SignIn from "@/components/sign-in";
@@ -30,6 +29,7 @@ interface PromptExplorerProps {
   user: any;
   prompts?: any[];
   categories?: any[];
+  initiallyLoaded?: boolean;
   initialFilters?: {
     search?: string;
     category?: string;
@@ -55,39 +55,52 @@ export default function PromptExplorer({
   user, 
   prompts: propsPrompts, 
   categories: propsCategories,
+  initiallyLoaded = false,
   initialFilters = {}
 }: PromptExplorerProps) {
   const router = useRouter();
   const searchParams = useSearchParams();
   const [isPending, startTransition] = useTransition();
-  
-  // Initialize filters from URL parameters or props
-  const [filters, setFilters] = useState<FilterState>(() => {
-    const initialSearch = searchParams.get('search') || initialFilters.search || "";
-    return {
-      search: initialSearch,
-      selectedCategory: searchParams.get('category') || initialFilters.category || "all",
-      selectedTags: searchParams.getAll('tag') || initialFilters.tags || [],
-      dateRange: initialFilters.dateRange,
-      popularityRange: [0, 1000], // Default range
-      selectedAuthor: searchParams.get('author') || initialFilters.author || "",
-      sortBy: searchParams.get('sort') || initialFilters.sort || "popular"
-    };
-  });
 
-  // Debounce search for better performance
-  const debouncedSearchQuery = useDebounce(filters.search, 300);
-  
-  // State for data and UI
+  // State for data and UI - ALL HOOKS MUST BE AT THE TOP
   const [prompts, setPrompts] = useState(propsPrompts || []);
   const [loading, setLoading] = useState(false);
   const [availableTags, setAvailableTags] = useState<string[]>([]);
   const [isFiltersOpen, setIsFiltersOpen] = useState(false);
   const [availableAuthors, setAvailableAuthors] = useState<string[]>([]);
+  const [isHydrated, setIsHydrated] = useState(false);
+  const mountedRef = useRef(true);
+  
+  // Initialize filters from URL parameters or props
+  const [filters, setFilters] = useState<FilterState>(() => {
+    if (typeof window === 'undefined') {
+      // Server-side: use initialFilters
+      return {
+        search: initialFilters.search || "",
+        selectedCategory: initialFilters.category || "all",
+        selectedTags: initialFilters.tags || [],
+        dateRange: initialFilters.dateRange,
+        popularityRange: [0, 1000],
+        selectedAuthor: initialFilters.author || "",
+        sortBy: initialFilters.sort || "popular"
+      };
+    } else {
+      // Client-side: use URL params
+      const initialSearch = searchParams.get('search') || initialFilters.search || "";
+      return {
+        search: initialSearch,
+        selectedCategory: searchParams.get('category') || initialFilters.category || "all",
+        selectedTags: searchParams.get('tags')?.split(',') || initialFilters.tags || [],
+        dateRange: initialFilters.dateRange,
+        popularityRange: [0, 1000],
+        selectedAuthor: searchParams.get('author') || initialFilters.author || "",
+        sortBy: searchParams.get('sort') || initialFilters.sort || "popular"
+      };
+    }
+  });
 
-  // Add flag to prevent multiple simultaneous fetches
-  const [isFetching, setIsFetching] = useState(false);
-  const [lastFetchTime, setLastFetchTime] = useState<number>(0);
+  // Debounce search for better performance
+  const debouncedSearchQuery = useDebounce(filters.search, 300);
   
   const displayCategories = propsCategories ? 
     [{ id: "all", name: "All" }, ...propsCategories.map(cat => ({ id: cat.id.toString(), name: cat.name }))] 
@@ -95,41 +108,49 @@ export default function PromptExplorer({
 
   // Update URL when filters change
   const updateURL = useCallback((newFilters: FilterState) => {
+    if (typeof window === 'undefined') return; // Skip on server
+    
     const params = new URLSearchParams();
     
     if (newFilters.search) params.set('search', newFilters.search);
-    if (newFilters.selectedCategory !== 'all') params.set('category', newFilters.selectedCategory);
-    newFilters.selectedTags.forEach(tag => params.append('tag', tag));
-    if (newFilters.selectedAuthor) params.set('author', newFilters.selectedAuthor);
-    if (newFilters.sortBy !== 'popular') params.set('sort', newFilters.sortBy);
+    if (newFilters.selectedCategory && newFilters.selectedCategory !== 'all') {
+      params.set('category', newFilters.selectedCategory);
+    }
+    if (newFilters.selectedTags.length > 0) {
+      params.set('tags', newFilters.selectedTags.join(','));
+    }
+    if (newFilters.selectedAuthor) {
+      params.set('author', newFilters.selectedAuthor);
+    }
+    if (newFilters.sortBy) {
+      params.set('sort', newFilters.sortBy);
+    }
     
-    const base = window.location.pathname;
-    const newURL = params.toString() ? `${base}?${params.toString()}` : base;
+    const newURL = params.toString() ? `/?${params.toString()}` : '/';
     router.replace(newURL, { scroll: false });
   }, [router]);
 
-  // Function to fetch prompts with current filters
-  const fetchFilteredPrompts = useCallback(async (currentFilters: FilterState, forceRefresh = false) => {
-    const now = Date.now();
-    
-    // Prevent multiple simultaneous fetches
-    if (isFetching) {
-      console.log('Fetch already in progress, skipping...');
-      return;
-    }
-
-    // Prevent excessive API calls (minimum 2 seconds between calls unless forced)
-    if (!forceRefresh && now - lastFetchTime < 2000) {
-      console.log('Rate limiting: too soon since last fetch, skipping...');
-      return;
-    }
-
+  // Fetch all available tags from database (separate from current page prompts)
+  const fetchAllTags = useCallback(async () => {
     try {
-      setIsFetching(true);
+      console.log('🏷️ [PromptExplorer] Fetching all available tags...');
+      const tags = await fetchTags(); // Fetch all tags without query
+      console.log('🏷️ [PromptExplorer] Fetched', tags.length, 'total tags:', tags.slice(0, 5));
+      setAvailableTags(tags);
+    } catch (error) {
+      console.error('❌ [PromptExplorer] Error fetching tags:', error);
+      setAvailableTags([]); // Fallback to empty array
+    }
+  }, []);
+
+  // Function to fetch prompts with current filters
+  const fetchFilteredPrompts = useCallback(async (currentFilters: FilterState) => {
+    if (!isHydrated) return; // Don't fetch until hydrated
+    
+    try {
       setLoading(true);
-      setLastFetchTime(now);
       
-      console.log('Fetching prompts with filters:', currentFilters);
+      console.log('🔍 [PromptExplorer] Fetching prompts with filters:', currentFilters);
 
       const searchParams: any = {
         page: 1,
@@ -155,174 +176,74 @@ export default function PromptExplorer({
       if (currentFilters.selectedAuthor) {
         searchParams.author = currentFilters.selectedAuthor;
       }
-
+      
       // Date range filtering
       if (currentFilters.dateRange?.from) {
-        searchParams.date_from = currentFilters.dateRange.from.toISOString().split('T')[0];
+        searchParams.created_after = currentFilters.dateRange.from.toISOString();
       }
-      
       if (currentFilters.dateRange?.to) {
-        searchParams.date_to = currentFilters.dateRange.to.toISOString().split('T')[0];
-      }
-
-      // Popularity range filtering  
-      if (currentFilters.popularityRange[0] > 0) {
-        searchParams.popularity_min = currentFilters.popularityRange[0];
+        searchParams.created_before = currentFilters.dateRange.to.toISOString();
       }
       
-      if (currentFilters.popularityRange[1] < 1000) {
-        searchParams.popularity_max = currentFilters.popularityRange[1];
+      // Popularity filtering
+      if (currentFilters.popularityRange) {
+        searchParams.min_popularity = currentFilters.popularityRange[0];
+        searchParams.max_popularity = currentFilters.popularityRange[1];
+      }
+      
+      // Sorting
+      if (currentFilters.sortBy) {
+        searchParams.sort_by = currentFilters.sortBy;
+        searchParams.sort_order = 'desc';
       }
 
-      // Map sort values
-      switch (currentFilters.sortBy) {
-        case 'popular':
-          searchParams.sort_by = 'uses';
-          searchParams.sort_order = 'desc';
-          break;
-        case 'trending':
-          searchParams.sort_by = 'votes';
-          searchParams.sort_order = 'desc';
-          break;
-        case 'newest':
-          searchParams.sort_by = 'created_at';
-          searchParams.sort_order = 'desc';
-          break;
-      }
-
-      console.log('Fetching prompts with sort:', currentFilters.sortBy, 'mapped to:', searchParams.sort_by, searchParams.sort_order);
-
-      const { prompts: newPrompts } = await fetchPrompts(searchParams);
+      const result = await fetchPrompts(searchParams);
+      const newPrompts = result.prompts || [];
+      
+      console.log('✅ [PromptExplorer] Successfully fetched', newPrompts.length, 'prompts');
+      console.log('🔍 [PromptExplorer] First few prompts:', newPrompts.slice(0, 3).map(p => ({ id: p.id, title: p.title })));
+      
+      console.log('📝 [PromptExplorer] Setting prompts state with', newPrompts.length, 'prompts');
       setPrompts(newPrompts);
+      console.log('📝 [PromptExplorer] Prompts state set completed');
       
-      console.log('Successfully fetched', newPrompts.length, 'prompts');
+      // Extract unique authors from the results
+      const authors = [...new Set(newPrompts.map(prompt => prompt.profiles?.name || prompt.profiles?.username).filter(Boolean))] as string[];
+      setAvailableAuthors(authors);
+      
     } catch (error) {
-      console.error('Error fetching filtered prompts:', error);
-      // Ensure loading is always turned off even on error
+      console.error('❌ [PromptExplorer] Error fetching prompts:', error);
     } finally {
-      // Always turn off loading and fetching flags, even if there was an error
       setLoading(false);
-      setIsFetching(false);
     }
-  }, [isFetching, lastFetchTime]);
+  }, [isHydrated]);
 
-  // Load available tags and authors
-  useEffect(() => {
-    const loadFilterOptions = async () => {
-      try {
-        const tags = await fetchTags();
-        setAvailableTags(tags);
-        
-        // Extract unique authors from current prompts
-        const authors = Array.from(
-          new Set(
-            prompts
-              .map(p => p.profiles?.username || p.profiles?.name || p.profiles?.email?.split('@')[0])
-              .filter(Boolean)
-          )
-        ).sort();
-        setAvailableAuthors(authors);
-      } catch (error) {
-        console.error('Error loading filter options:', error);
-      }
-    };
-
-    loadFilterOptions();
-  }, [prompts]);
-
-  // Handle search with debouncing
-  useEffect(() => {
-    if (!isFetching) {
-      // Only trigger search when debounced value is different and not already fetching
-      const updatedFilters = { ...filters, search: debouncedSearchQuery };
-    updateURL(updatedFilters);
-    startTransition(() => {
-      fetchFilteredPrompts(updatedFilters);
-    });
-    }
-  }, [debouncedSearchQuery, isFetching, filters, updateURL, fetchFilteredPrompts]);
-
-  // Refresh data when user returns to the page (especially after creating/editing prompts)
-  useEffect(() => {
-    let lastVisibilityChange = Date.now();
-    
-    const handleVisibilityChange = () => {
-      if (!document.hidden && !isFetching) {
-        const now = Date.now();
-        // Refresh if user was away for more than 5 seconds (reduced from 30 seconds)
-        if (now - lastVisibilityChange > 5000) {
-          console.log('User returned, refreshing data for latest changes');
-          startTransition(() => {
-            fetchFilteredPrompts(filters);
-          });
-        }
-        lastVisibilityChange = now;
-      }
-    };
-
-    const handleFocus = () => {
-      if (!isFetching) {
-        console.log('Window focused, refreshing data for latest changes');
-        startTransition(() => {
-          fetchFilteredPrompts(filters, true); // Force refresh on focus
-        });
-      }
-    };
-
-    document.addEventListener('visibilitychange', handleVisibilityChange);
-    window.addEventListener('focus', handleFocus);
-
-    return () => {
-      document.removeEventListener('visibilitychange', handleVisibilityChange);
-      window.removeEventListener('focus', handleFocus);
-    };
-  }, [isFetching, filters, fetchFilteredPrompts])
-
-  // Initial data load - always fetch fresh data on mount
-  useEffect(() => {
-    if (propsPrompts && propsPrompts.length > 0) {
-      console.log('Using provided prompts data:', propsPrompts.length, 'prompts');
-      setPrompts(propsPrompts);
-      setLoading(false);
-      setIsFetching(false);
-    } else {
-      console.log('No initial data provided, fetching fresh prompts');
-      startTransition(() => {
-        fetchFilteredPrompts(filters);
-      });
-    }
-  }, []); // Only run on mount
-
-  // Handle filter changes
+  // Handle filter changes (except search which has its own effect)
   const handleFilterChange = useCallback((newFilters: Partial<FilterState>) => {
-    setFilters(prevFilters => {
-      const updatedFilters = { ...prevFilters, ...newFilters };
-      return updatedFilters;
-    });
-    
-    // Update URL and fetch data after state update
     const updatedFilters = { ...filters, ...newFilters };
+    setFilters(updatedFilters);
     updateURL(updatedFilters);
     startTransition(() => {
       fetchFilteredPrompts(updatedFilters);
     });
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [filters, updateURL, fetchFilteredPrompts]);
 
   // Handle direct search input changes
-  const handleSearchChange = (value: string) => {
+  const handleSearchChange = useCallback((value: string) => {
     setFilters(prev => ({ ...prev, search: value }));
-  };
+  }, []);
 
   // Toggle tag filter
-  const toggleTag = (tag: string) => {
+  const toggleTag = useCallback((tag: string) => {
     const newTags = filters.selectedTags.includes(tag) 
       ? filters.selectedTags.filter(t => t !== tag)
       : [...filters.selectedTags, tag];
     handleFilterChange({ selectedTags: newTags });
-  };
+  }, [filters.selectedTags, handleFilterChange]);
 
   // Clear all filters
-  const clearAllFilters = () => {
+  const clearAllFilters = useCallback(() => {
     const clearedFilters: FilterState = {
       search: "",
       selectedCategory: "all",
@@ -337,11 +258,110 @@ export default function PromptExplorer({
     startTransition(() => {
       fetchFilteredPrompts(clearedFilters);
     });
-  };
+  }, [updateURL, fetchFilteredPrompts]);
+
+  // Hydration detection - critical for SSR/CSR sync
+  useEffect(() => {
+    console.log('💧 [PromptExplorer] Hydration completed');
+    setIsHydrated(true);
+  }, []);
+
+  // Initial data load - handle server-side vs client-side data properly
+  useEffect(() => {
+    if (!isHydrated) return; // Wait for hydration
+    
+    console.log('🚀 [PromptExplorer] Component mounting after hydration...');
+    console.log('🚀 [PromptExplorer] initiallyLoaded:', initiallyLoaded);
+    console.log('🚀 [PromptExplorer] propsPrompts:', propsPrompts?.length || 0);
+    console.log('🚀 [PromptExplorer] current prompts state:', prompts.length);
+    
+    // Always fetch all tags on initial load (regardless of server-side data)
+    fetchAllTags();
+    
+    if (initiallyLoaded && propsPrompts && propsPrompts.length > 0) {
+      console.log('✅ [PromptExplorer] Using server-side data:', propsPrompts.length, 'prompts');
+      setPrompts(propsPrompts);
+      setLoading(false); // Ensure loading is false since we have data
+    } else if (!initiallyLoaded) {
+      console.log('🔄 [PromptExplorer] No server-side data, fetching client-side...');
+      if (mountedRef.current) {
+        // Add a small delay to ensure all effects are set up
+        setTimeout(() => {
+          if (mountedRef.current) {
+            fetchFilteredPrompts(filters);
+          }
+        }, 100);
+      }
+    } else {
+      console.log('⚠️ [PromptExplorer] Server-side loading indicated but no data provided');
+      if (mountedRef.current) {
+        fetchFilteredPrompts(filters);
+      }
+    }
+    
+    return () => {
+      mountedRef.current = false;
+    };
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [isHydrated]); // Only depend on hydration completion
+
+  // Consolidated effect for handling filter changes including debounced search
+  useEffect(() => {
+    if (!isHydrated || !mountedRef.current) return;
+    
+    console.log('🔄 [PromptExplorer] Filters or search changed, fetching data...');
+    console.log('🔄 [PromptExplorer] Current filters:', filters);
+    console.log('🔄 [PromptExplorer] Debounced search:', debouncedSearchQuery);
+    
+    const updatedFilters = { ...filters, search: debouncedSearchQuery };
+    updateURL(updatedFilters);
+    
+    startTransition(() => {
+      fetchFilteredPrompts(updatedFilters);
+    });
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [debouncedSearchQuery, filters.selectedCategory, filters.selectedTags, filters.sortBy, filters.selectedAuthor, JSON.stringify(filters.dateRange), JSON.stringify(filters.popularityRange), isHydrated]);
+
+  // Refresh data when user returns to the page (especially after creating/editing prompts)
+  useEffect(() => {
+    if (!isHydrated) return;
+    
+    let isSubscribed = true;
+    
+    const handleVisibilityChange = () => {
+      if (!document.hidden && isSubscribed && !loading && mountedRef.current) {
+        console.log('👁️ [PromptExplorer] Page became visible, refreshing data...');
+        startTransition(() => {
+          fetchFilteredPrompts(filters);
+        });
+      }
+    };
+
+    document.addEventListener('visibilitychange', handleVisibilityChange);
+    
+    return () => {
+      isSubscribed = false;
+      document.removeEventListener('visibilitychange', handleVisibilityChange);
+    };
+  }, [filters, loading, fetchFilteredPrompts, isHydrated]);
+
+  // Show loading spinner until hydration is complete (prevents hydration mismatch)
+  if (!isHydrated) {
+    console.log('⏳ [PromptExplorer] Waiting for hydration...');
+    return (
+      <div className="min-h-screen bg-background flex items-center justify-center">
+        <div className="animate-spin rounded-full h-32 w-32 border-b-2 border-primary"></div>
+      </div>
+    );
+  }
 
   // Check if any filters are active (excluding search from badge display)
   const hasActiveFilters = filters.selectedCategory !== 'all' || 
     filters.selectedTags.length > 0;
+
+  console.log('🎨 [PromptExplorer] Rendering with prompts.length:', prompts.length);
+  console.log('🎨 [PromptExplorer] Loading state:', loading);
+  console.log('🎨 [PromptExplorer] Current filters:', filters);
 
   return (
     <div className="min-h-screen bg-background transition-[background-color] duration-300">
@@ -405,22 +425,33 @@ export default function PromptExplorer({
             {/* Tag Filter */}
             {availableTags.length > 0 && (
               <div>
-                <h3 className="text-sm font-medium text-foreground mb-2">Filter by tags</h3>
-                <div className="flex gap-2 overflow-x-auto scrollbar-hide pb-2 md:flex-wrap md:overflow-x-visible md:pb-0">
-                  {availableTags.slice(0, 20).map((tag) => (
-                    <button
-                      key={tag}
-                      onClick={() => toggleTag(tag)}
-                      className={`px-3 py-1.5 rounded-full text-sm font-medium whitespace-nowrap transition-colors flex items-center gap-1 shrink-0 ${
-                        filters.selectedTags.includes(tag)
-                          ? "bg-primary text-primary-foreground"
-                          : "bg-muted text-muted-foreground hover:bg-muted/80"
-                      }`}
-                    >
-                      <Tag className="w-3 h-3" />
-                      {tag}
-                    </button>
-                  ))}
+                <div className="flex items-center justify-between mb-2">
+                  <h3 className="text-sm font-medium text-foreground">Filter by tags</h3>
+                  <span className="text-xs text-muted-foreground">
+                    {availableTags.length} tags available
+                  </span>
+                </div>
+                <div className="relative">
+                  <div className="flex gap-2 overflow-x-auto scrollbar-hide pb-2 scroll-smooth">
+                    {availableTags.map((tag) => (
+                      <button
+                        key={tag}
+                        onClick={() => toggleTag(tag)}
+                        className={`px-3 py-1.5 rounded-full text-sm font-medium whitespace-nowrap transition-colors flex items-center gap-1 shrink-0 ${
+                          filters.selectedTags.includes(tag)
+                            ? "bg-primary text-primary-foreground"
+                            : "bg-muted text-muted-foreground hover:bg-muted/80"
+                        }`}
+                      >
+                        <Tag className="w-3 h-3" />
+                        {tag}
+                      </button>
+                    ))}
+                  </div>
+                  {/* Scroll indicators - always show on all screen sizes */}
+                  <div className="absolute right-0 top-0 bottom-2 w-12 bg-gradient-to-l from-background via-background/80 to-transparent pointer-events-none flex items-center justify-end pr-1">
+                    <div className="text-xs text-muted-foreground animate-pulse">→</div>
+                  </div>
                 </div>
               </div>
             )}

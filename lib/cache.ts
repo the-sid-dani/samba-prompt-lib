@@ -31,13 +31,18 @@ export const CACHE_TAGS = {
  * Cache revalidation times in seconds
  */
 export const CACHE_TIMES = {
-  // Static data (categories, etc.)
-  static: 3600, // 1 hour
+  // Static data that rarely changes
+  static: 60 * 60, // 1 hour
+  categories: 60 * 30, // 30 minutes
   
-  // Dynamic data
-  prompts: 300, // 5 minutes
-  trending: 180, // 3 minutes
-  userSpecific: 60, // 1 minute
+  // Dynamic data that changes frequently
+  prompts: 60 * 2, // 2 minutes (increased from 30 seconds)
+  userSpecific: 60, // 1 minute (increased from 10 seconds)
+  trending: 60 * 5, // 5 minutes (increased from 30 seconds)
+  
+  // Real-time data
+  votes: 30, // 30 seconds
+  favorites: 30, // 30 seconds
   
   // Page-level caching
   homepage: 300, // 5 minutes

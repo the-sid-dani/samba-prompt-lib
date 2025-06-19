@@ -14,7 +14,8 @@ import {
   revalidateAfterPromptUpdate,
   revalidateAfterPromptDelete,
   revalidateAfterVote,
-  revalidateAfterFavorite
+  revalidateAfterFavorite,
+  revalidateAllPromptCaches
 } from '@/lib/cache'
 
 type Prompt = Database['public']['Tables']['prompt']['Row']
@@ -319,19 +320,56 @@ export async function updateCategory(id: number, name: string, description?: str
 
 // Fetch prompts with filtering and pagination
 export async function fetchPrompts(input?: Partial<z.infer<typeof fetchPromptsSchema>>) {
-  const params = fetchPromptsSchema.parse(input || {})
+  // Map frontend sort values to backend column names
+  const sortMapping: Record<string, string> = {
+    'popular': 'uses',      // Popular = most used
+    'trending': 'votes',    // Trending = most voted
+    'newest': 'created_at'  // Newest = most recently created
+  }
+  
+  // Transform the input to map sort_by values
+  const transformedInput = input ? {
+    ...input,
+    sort_by: input.sort_by && sortMapping[input.sort_by] ? sortMapping[input.sort_by] : input.sort_by
+  } : {}
+  
+  const params = fetchPromptsSchema.parse(transformedInput)
+  
+  console.log('📋 [fetchPrompts] Called with params:', params)
   
   // Build cache tags based on parameters
   const cacheTags: string[] = [CACHE_TAGS.prompts]
   if (params.category_id) cacheTags.push(CACHE_TAGS.categoryPrompts(params.category_id))
   if (params.tag) cacheTags.push(CACHE_TAGS.tagPrompts(params.tag))
-  if (params.featured) cacheTags.push(CACHE_TAGS.featuredPrompts)
   if (params.user_id) cacheTags.push(CACHE_TAGS.userPrompts(params.user_id))
   
-  // Create a cached version of the fetch function
-  const getCachedPrompts = unstable_cache(
+  // Create a unique cache key based on all parameters
+  const cacheKey = [
+    'prompts',
+    String(params.page),
+    String(params.limit),
+    params.search || '',
+    String(params.category_id || ''),
+    params.tag || '',
+    params.tags?.join(',') || '',
+    String(params.featured || ''),
+    params.user_id || '',
+    params.author || '',
+    params.date_from || '',
+    params.date_to || '',
+    String(params.popularity_min || ''),
+    String(params.popularity_max || ''),
+    params.sort_by,
+    params.sort_order,
+  ]
+
+  console.log('💾 [fetchPrompts] Cache key:', cacheKey.join('-'))
+
+  const cachedFetch = unstable_cache(
     async () => {
       try {
+        console.log('🔄 [fetchPrompts] Cache miss - fetching fresh data from database');
+        
         // Check if Supabase is configured
         if (!process.env.NEXT_PUBLIC_SUPABASE_URL || !process.env.SUPABASE_SERVICE_ROLE_KEY) {
           console.warn('Supabase not configured, returning empty prompts array')
@@ -348,6 +386,7 @@ export async function fetchPrompts(input?: Partial<z.infer<typeof fetchPromptsSc
         }
 
         const supabase = createSupabaseAdminClient()
+        console.log('✅ [fetchPrompts] Created supabase client');
         
         // Build the query
         let query = supabase
@@ -358,6 +397,8 @@ export async function fetchPrompts(input?: Partial<z.infer<typeof fetchPromptsSc
             user_favorites(user_id),
             prompt_forks!prompt_forks_original_prompt_id_fkey(id)
           `, { count: 'exact' })
+        
+        console.log('🔧 [fetchPrompts] Built base query');
         
         // Apply filters
         if (params.search) {
@@ -395,7 +436,7 @@ export async function fetchPrompts(input?: Partial<z.infer<typeof fetchPromptsSc
         if (params.date_to) {
           query = query.lte('created_at', params.date_to)
         }
-        
+
         // Popularity range filtering
         if (params.popularity_min !== undefined) {
           query = query.gte('uses', params.popularity_min)
@@ -418,143 +459,76 @@ export async function fetchPrompts(input?: Partial<z.infer<typeof fetchPromptsSc
         const to = from + params.limit - 1
         query = query.range(from, to)
         
+        console.log('Executing query...');
         const { data: prompts, error, count } = await query
         
+        console.log('Query result:', {
+          promptsCount: prompts?.length || 0,
+          totalCount: count,
+          error: error?.message
+        });
+        
         if (error) {
+          console.error('Database error:', error);
           throw new Error(`Failed to fetch prompts: ${error.message}`)
         }
         
-        // Fetch profile data for all prompts
-        if (prompts && prompts.length > 0) {
-          const userIds = [...new Set(prompts.map(p => p.user_id))].filter(Boolean)
-          
-          const { data: profiles, error: profileError } = await supabase
-            .from('profiles')
-            .select('id, email, name, username, avatar_url')
-            .in('id', userIds)
-          
-          // Create a map for quick lookup
-          const profileMap = new Map(profiles?.map(p => [p.id, p]) || [])
-          
-          // Fetch fork information
-          const promptIds = prompts.map(p => p.id)
-          const { data: forkRelations } = await supabase
-            .from('prompt_forks')
-            .select(`
-              forked_prompt_id,
-              original_prompt:prompt!prompt_forks_original_prompt_id_fkey(
-                id,
-                title,
-                user_id,
-                profiles(
-                  id,
-                  username,
-                  name,
-                  email,
-                  avatar_url
-                )
-              )
-            `)
-            .in('forked_prompt_id', promptIds)
-          
-          // Create a map for fork lookup
-          const forkMap = new Map(forkRelations?.map(f => [f.forked_prompt_id, f.original_prompt]) || [])
-          
-          // Enrich prompts with profile data and favorite status
-          const enrichedPrompts = prompts.map(prompt => {
-            const userFavorites = (prompt.user_favorites || []) as Array<{ user_id: string }>
-            const isFavorited = params.user_id ? userFavorites.some(fav => fav.user_id === params.user_id) : false
-            
-            return {
-              ...prompt,
-              profiles: profileMap.get(prompt.user_id) || null,
-              isFavorited,
-              favoriteCount: userFavorites.length,
-              forked_from: forkMap.get(prompt.id) || null
-            }
-          })
-          
-          // Calculate trending scores if needed
-          let finalPrompts = enrichedPrompts;
-          if (params.sort_by === 'votes') {
-            // For trending, calculate recent activity from last 24 hours
-            const twentyFourHoursAgo = new Date();
-            twentyFourHoursAgo.setHours(twentyFourHoursAgo.getHours() - 24);
-            
-            // Fetch recent interactions for trending calculation
-            const { data: recentInteractions } = await supabase
-              .from('user_interactions')
-              .select('prompt_id, interaction_type, created_at')
-              .gte('created_at', twentyFourHoursAgo.toISOString())
-              .in('prompt_id', promptIds);
-            
-            // Count recent interactions per prompt
-            const trendingScores = new Map<number, number>();
-            if (recentInteractions) {
-              recentInteractions.forEach(interaction => {
-                const currentScore = trendingScores.get(interaction.prompt_id) || 0;
-                // Weight different interactions (copy = 3, favorite = 2, fork = 4, view = 1)
-                let weight = 1;
-                switch (interaction.interaction_type) {
-                  case 'copy': weight = 3; break;
-                  case 'favorite': weight = 2; break;
-                  case 'fork': weight = 4; break;
-                  case 'view': weight = 1; break;
-                  default: weight = 1;
-                }
-                trendingScores.set(interaction.prompt_id, currentScore + weight);
-              });
-            }
-            
-            // Sort by trending score (recent activity), with fallback to regular uses for ties
-            finalPrompts = enrichedPrompts.sort((a, b) => {
-              const scoreA = trendingScores.get(a.id) || 0;
-              const scoreB = trendingScores.get(b.id) || 0;
-              
-              if (scoreA !== scoreB) {
-                return scoreB - scoreA; // Higher trending score first
-              }
-              
-              // Fallback to uses count for ties
-              return (b.uses || 0) - (a.uses || 0);
-            });
-          }
-
-          // Apply author filtering after enrichment and sorting
-          let filteredPrompts = finalPrompts;
-          if (params.author) {
-            filteredPrompts = finalPrompts.filter(prompt => {
-              const profile = prompt.profiles;
-              if (!profile) return false;
-              
-              const authorName = profile.username || profile.name || profile.email?.split('@')[0] || '';
-              return authorName.toLowerCase().includes(params.author!.toLowerCase());
-            });
-          }
-          
-          // Use original database count for pagination metadata to maintain consistency
-          const totalPages = Math.ceil((count || 0) / params.limit)
-          
+        // If no prompts, return empty result
+        if (!prompts || prompts.length === 0) {
+          console.log('No prompts found, returning empty result');
           return {
-            prompts: filteredPrompts as PromptWithCategory[],
+            prompts: [] as PromptWithCategory[],
             pagination: {
               page: params.page,
               limit: params.limit,
-              total: count || 0, // Use original database count
-              totalPages: totalPages,
-              hasMore: params.page < totalPages,
+              total: count || 0,
+              totalPages: 1,
+              hasMore: false,
             },
           }
         }
         
+        // Fetch profile data for all prompts
+        const userIds = [...new Set(prompts.map(p => p.user_id))].filter(Boolean)
+        
+        const { data: profiles, error: profileError } = await supabase
+          .from('profiles')
+          .select('id, email, name, username, avatar_url')
+          .in('id', userIds)
+        
+        if (profileError) {
+          console.warn('Error fetching profiles:', profileError);
+        }
+        
+        // Create a map for quick lookup
+        const profileMap = new Map(profiles?.map(p => [p.id, p]) || [])
+        
+        // Enrich prompts with profile data
+        const enrichedPrompts = prompts.map(prompt => {
+          const userFavorites = (prompt.user_favorites || []) as Array<{ user_id: string }>
+          const isFavorited = params.user_id ? userFavorites.some(fav => fav.user_id === params.user_id) : false
+          
+          return {
+            ...prompt,
+            profiles: profileMap.get(prompt.user_id) || null,
+            isFavorited,
+            favoriteCount: userFavorites.length,
+            forked_from: null // Simplified for now
+          }
+        })
+        
+        console.log('Successfully processed', enrichedPrompts.length, 'prompts');
+        
+        const totalPages = Math.ceil((count || 0) / params.limit)
+        
         return {
-          prompts: (prompts || []) as PromptWithCategory[],
+          prompts: enrichedPrompts as PromptWithCategory[],
           pagination: {
             page: params.page,
             limit: params.limit,
             total: count || 0,
-            totalPages: 1,
-            hasMore: false,
+            totalPages: totalPages,
+            hasMore: params.page < totalPages,
           },
         }
       } catch (error) {
@@ -562,160 +536,31 @@ export async function fetchPrompts(input?: Partial<z.infer<typeof fetchPromptsSc
         throw error
       }
     },
-    [`prompts-${JSON.stringify(params)}`],
+    cacheKey,
     {
       tags: cacheTags,
-      revalidate: params.user_id ? CACHE_TIMES.userSpecific : CACHE_TIMES.prompts,
+      revalidate: CACHE_TIMES.prompts,
     }
   )
   
-  return getCachedPrompts()
+  const startTime = Date.now()
+  const result = await cachedFetch()
+  const endTime = Date.now()
+  
+  console.log(`⚡ [fetchPrompts] Completed in ${endTime - startTime}ms - returned ${result.prompts.length} prompts`)
+  
+  return result
 }
 
 // Fetch a single prompt by ID with all relations
 export async function fetchPromptById(id: number, userId?: string): Promise<PromptWithRelations | null> {
-  console.log('[fetchPromptById] Starting with id:', id, 'userId:', userId);
+  console.log('🔍 [fetchPromptById] Called with id:', id, 'userId:', userId);
   
-  // TEMPORARY: Bypass cache to test
-  const BYPASS_CACHE = true;
-  
-  if (BYPASS_CACHE) {
-    console.log('[fetchPromptById] BYPASSING CACHE - Direct query');
-    try {
-      const supabase = createSupabaseAdminClient()
-      
-      // First, let's try a simple query to see if the prompt exists
-      const { data: simplePrompt, error: simpleError } = await supabase
-        .from('prompt')
-        .select('id, title')
-        .eq('id', id)
-        .single()
-      
-      console.log('[fetchPromptById] Simple query result:', simplePrompt, 'error:', simpleError);
-      
-      const { data: prompt, error } = await supabase
-        .from('prompt')
-        .select(`
-          *,
-          categories(*),
-          user_favorites(user_id),
-          prompt_votes(vote_type, user_id),
-          prompt_forks!prompt_forks_original_prompt_id_fkey(id),
-          prompt_versions(*)
-        `)
-        .eq('id', id)
-        .single()
-      
-      console.log('[fetchPromptById] Full query result:', prompt ? 'Found prompt' : 'No prompt', 'error:', error);
-      
-      if (error || !prompt) {
-        console.log('[fetchPromptById] Returning null due to error or no prompt');
-        return null
-      }
-      
-      // Fetch profile data
-      let profileData = null
-      if (prompt.user_id) {
-        const { data: profile } = await supabase
-          .from('profiles')
-          .select('id, email, name, username')
-          .eq('id', prompt.user_id)
-          .single()
-        
-        profileData = profile
-      }
-      
-      // Fetch fork origin info if this prompt was forked
-      let forkedFrom = null;
-      const { data: forkRelation } = await supabase
-        .from('prompt_forks')
-        .select(`
-          original_prompt_id,
-          original_prompt:prompt!prompt_forks_original_prompt_id_fkey(
-            id,
-            title,
-            user_id
-          )
-        `)
-        .eq('forked_prompt_id', id)
-        .single();
-      
-      if (forkRelation && forkRelation.original_prompt) {
-        // Fetch the profile data for the original prompt author
-        const { data: originalAuthorProfile } = await supabase
-          .from('profiles')
-          .select('id, username, name, email, avatar_url')
-          .eq('id', forkRelation.original_prompt.user_id)
-          .single();
-        
-        if (originalAuthorProfile) {
-          forkedFrom = {
-            ...forkRelation.original_prompt,
-            profiles: originalAuthorProfile
-          };
-        }
-      }
-      
-      // Cast the prompt to any to handle the complex type
-      const promptData = prompt as any
-      
-      // Calculate metrics
-      const promptVotes = (promptData.prompt_votes || []) as Array<{ vote_type: string; user_id: string }>
-      const userFavorites = (promptData.user_favorites || []) as Array<{ user_id: string }>
-      const promptForks = (promptData.prompt_forks || []) as Array<{ id: number }>
-      
-      const upvotes = promptVotes.filter(vote => vote.vote_type === 'up').length
-      const downvotes = promptVotes.filter(vote => vote.vote_type === 'down').length
-      const forkCount = promptForks.length
-      
-      // Check if current user has favorited or voted
-      const isFavorited = userId ? userFavorites.some(fav => fav.user_id === userId) : false
-      const userVote = userId 
-        ? promptVotes.find(vote => vote.user_id === userId)?.vote_type as 'up' | 'down' | undefined
-        : undefined
-      
-      // Construct the return object
-      const result: PromptWithRelations = {
-        id: promptData.id,
-        title: promptData.title,
-        description: promptData.description,
-        content: promptData.content,
-        category_id: promptData.category_id,
-        tags: promptData.tags,
-        user_id: promptData.user_id,
-        featured: promptData.featured,
-        uses: promptData.uses,
-        votes: promptData.votes,
-        created_at: promptData.created_at,
-        updated_at: promptData.updated_at,
-        examples: promptData.examples,
-        categories: promptData.categories as Database['public']['Tables']['categories']['Row'] | null,
-        user_favorites: userFavorites,
-        prompt_votes: promptVotes,
-        prompt_forks: promptForks,
-        prompt_versions: (promptData.prompt_versions || []) as Array<Database['public']['Tables']['prompt_versions']['Row']>,
-        upvotes,
-        downvotes,
-        forkCount,
-        isFavorited,
-        userVote: userVote || null,
-        profiles: profileData,
-        forked_from: forkedFrom || undefined,
-      }
-      
-      return result
-    } catch (error) {
-      console.error('Error in fetchPromptById (bypass):', error)
-      throw error
-    }
-  }
-  
-  // Original cached version (currently bypassed)
   // Create a cached version for this specific ID
   const getCachedPrompt = unstable_cache(
     async (promptId: number, currentUserId?: string) => {
       try {
-        console.log('[fetchPromptById] Inside cached function with promptId:', promptId);
+        console.log('🔄 [fetchPromptById] Cache miss - fetching fresh data for promptId:', promptId);
         const supabase = createSupabaseAdminClient()
         
         // First, let's try a simple query to see if the prompt exists
@@ -725,7 +570,7 @@ export async function fetchPromptById(id: number, userId?: string): Promise<Prom
           .eq('id', promptId)
           .single()
         
-        console.log('[fetchPromptById] Simple query result:', simplePrompt, 'error:', simpleError);
+        console.log('🔄 [fetchPromptById] Simple query result:', simplePrompt, 'error:', simpleError);
         
         const { data: prompt, error } = await supabase
           .from('prompt')
@@ -740,10 +585,10 @@ export async function fetchPromptById(id: number, userId?: string): Promise<Prom
           .eq('id', promptId)
           .single()
         
-        console.log('[fetchPromptById] Full query result:', prompt ? 'Found prompt' : 'No prompt', 'error:', error);
+        console.log('🔄 [fetchPromptById] Full query result:', prompt ? 'Found prompt' : 'No prompt', 'error:', error);
         
         if (error || !prompt) {
-          console.log('[fetchPromptById] Returning null due to error or no prompt');
+          console.log('🔄 [fetchPromptById] Returning null due to error or no prompt');
           return null
         }
         
@@ -850,9 +695,9 @@ export async function fetchPromptById(id: number, userId?: string): Promise<Prom
     }
   )
   
-  console.log('[fetchPromptById] About to call getCachedPrompt');
+  console.log('🔄 [fetchPromptById] About to call getCachedPrompt');
   const result = await getCachedPrompt(id, userId);
-  console.log('[fetchPromptById] Final result:', result ? 'Found prompt' : 'null');
+  console.log('🔄 [fetchPromptById] Final result:', result ? 'Found prompt' : 'null');
   return result;
 }
 
@@ -865,7 +710,8 @@ export async function createPrompt(input: z.infer<typeof createPromptSchema>) {
     }
     
     const validatedData = createPromptSchema.parse(input)
-    const supabase = await getSupabaseClient()
+    // Use admin client to avoid redirect issues in server actions
+    const supabase = createSupabaseAdminClient()
     
     // Separate forked_from from the main prompt data
     const { forked_from, ...promptDataWithoutFork } = validatedData
@@ -994,7 +840,8 @@ export async function updatePrompt(id: number, input: z.infer<typeof updatePromp
     }
     
     const validatedData = updatePromptSchema.parse(input)
-    const supabase = await getSupabaseClient()
+    // Use admin client to avoid redirect issues in server actions
+    const supabase = createSupabaseAdminClient()
     
     // Check ownership and get current data
     const { data: existingPrompt, error: fetchError } = await supabase
@@ -1093,7 +940,7 @@ export async function deletePrompt(id: number) {
     
     console.log(`👤 [Delete] User ${session.user.id} attempting to delete prompt ${id}`)
     
-    const supabase = await getSupabaseClient()
+    const supabase = createSupabaseAdminClient()
     
     // Check ownership and get current data
     const { data: existingPrompt, error: fetchError } = await supabase
@@ -1197,18 +1044,35 @@ export async function deletePrompt(id: number) {
       console.log(`Deleted interactions for prompt ${id}`)
     }
     
-    // 4. Delete optional related records (non-critical, may not exist)
+    // 4. Delete prompt_tags (important for foreign key constraints)
+    console.log(`Deleting prompt_tags for prompt ${id}...`)
+    const { error: tagsDeleteError } = await adminSupabase
+      .from('prompt_tags')
+      .delete()
+      .eq('prompt_id', id)
+    
+    if (tagsDeleteError) {
+      console.error('Error deleting prompt_tags:', tagsDeleteError)
+      // Continue - this is not always critical for deletion
+    } else {
+      console.log(`Deleted prompt_tags for prompt ${id}`)
+    }
+
+    // 5. Delete optional related records (non-critical, may not exist)
     const optionalTables = [
       { table: 'prompt_votes', name: 'votes' },
       { table: 'prompt_versions', name: 'versions' },
-      { table: 'prompt_improvements', name: 'improvements' }
+      { table: 'prompt_improvements', name: 'improvements' },
+      { table: 'prompt_comments', name: 'comments' },
+      { table: 'api_usage_logs', name: 'api usage logs' },
+      { table: 'playground_sessions', name: 'playground sessions' }
     ]
     
     for (const { table, name } of optionalTables) {
       try {
         console.log(`Deleting ${name} for prompt ${id}...`)
         const { error } = await adminSupabase
-          .from(table)
+          .from(table as any)
           .delete()
           .eq('prompt_id', id)
         
@@ -1222,7 +1086,7 @@ export async function deletePrompt(id: number) {
       }
     }
     
-    // 5. Finally, delete the prompt itself using admin client to ensure it works
+    // 6. Finally, delete the prompt itself using admin client to ensure it works
     console.log(`Deleting main prompt ${id}...`)
     const { error: deleteError, count } = await adminSupabase
       .from('prompt')
@@ -1232,6 +1096,13 @@ export async function deletePrompt(id: number) {
     
     if (deleteError) {
       console.error('Error deleting main prompt:', deleteError)
+      
+      // Check if it's a foreign key constraint error
+      if (deleteError.code === '23503') {
+        console.error('❌ [Delete] Foreign key constraint violation:', deleteError.details)
+        throw new Error(`Cannot delete prompt: It is still referenced by other records. ${deleteError.details}`)
+      }
+      
       throw new Error(`Failed to delete prompt: ${deleteError.message}`)
     }
     
@@ -1615,13 +1486,73 @@ async function updatePromptVoteCount(promptId: number, voteType: 'up' | 'down', 
   }
 }
 
-// Fetch existing tags for autocomplete - optimized version
+// Fetch existing tags for autocomplete - using normalized tags table
 export async function fetchTags(query?: string): Promise<string[]> {
   try {
     const supabase = createSupabaseAdminClient()
     
-    // Use a more efficient approach: get tags directly from a materialized view or aggregated query
-    // For now, we'll optimize by limiting the data we fetch and using better filtering
+    console.log('fetchTags called with query:', query)
+    
+    // Use the normalized tags table with usage count from prompt_tags junction table
+    let dbQuery = supabase
+      .from('tags')
+      .select(`
+        name,
+        prompt_tags(count)
+      `)
+      .order('name', { ascending: true })
+    
+    // Apply query filter if provided
+    if (query && query.length >= 2) {
+      dbQuery = dbQuery.ilike('name', `%${query}%`)
+    }
+    
+    const { data: tagsData, error } = await dbQuery
+    
+    if (error) {
+      console.error('Error fetching tags from tags table:', error)
+      
+      // Fallback to old method if tags table query fails
+      console.log('Falling back to old tags method...')
+      return await fetchTagsFromPrompts(query)
+    }
+    
+    console.log('Tags fetched from normalized table:', tagsData?.length || 0)
+    
+    // Calculate usage count for each tag and sort by popularity
+    const tagsWithUsage = tagsData?.map(tag => ({
+      name: tag.name,
+      usage_count: tag.prompt_tags?.length || 0
+    })) || []
+    
+    // Sort by usage count (descending), then alphabetically
+    const sortedTags = tagsWithUsage
+      .sort((a, b) => {
+        if (b.usage_count !== a.usage_count) {
+          return b.usage_count - a.usage_count
+        }
+        return a.name.localeCompare(b.name)
+      })
+      .map(tag => tag.name)
+    
+    console.log('Returning', sortedTags.length, 'tags (no limit applied)')
+    
+    // Return ALL tags (removed the slice limit)
+    return sortedTags
+  } catch (error) {
+    console.error('Error in fetchTags:', error)
+    
+    // Fallback to old method
+    return await fetchTagsFromPrompts(query)
+  }
+}
+
+// Fallback function using the old prompt.tags array method
+async function fetchTagsFromPrompts(query?: string): Promise<string[]> {
+  try {
+    const supabase = createSupabaseAdminClient()
+    
+    console.log('Using fallback: fetching tags from prompt.tags arrays')
     
     const dbQuery = supabase
       .from('prompt')
@@ -1633,7 +1564,7 @@ export async function fetchTags(query?: string): Promise<string[]> {
     const { data: prompts, error } = await dbQuery
     
     if (error) {
-      console.error('Error fetching tags:', error)
+      console.error('Error fetching tags from prompts:', error)
       throw new Error(`Failed to fetch tags: ${error.message}`)
     }
     
@@ -1672,10 +1603,12 @@ export async function fetchTags(query?: string): Promise<string[]> {
       uniqueTags = uniqueTags.filter(tag => tag.includes(lowerQuery))
     }
     
-    // Return top 15 tags for better UX (not too overwhelming)
-    return uniqueTags.slice(0, 15)
+    console.log('Fallback method returning', uniqueTags.length, 'tags (no limit applied)')
+    
+    // Return ALL tags (removed the slice limit)
+    return uniqueTags
   } catch (error) {
-    console.error('Error in fetchTags:', error)
+    console.error('Error in fetchTagsFromPrompts fallback:', error)
     return []
   }
 }
