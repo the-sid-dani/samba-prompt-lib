@@ -12,15 +12,29 @@ interface ModelInfo {
   description?: string;
 }
 
-const sources = [
+// Helper function to check if API key is valid
+function isValidApiKey(key: string | undefined): boolean {
+  return Boolean(key && key.trim() && key !== '***' && key !== 'undefined');
+}
+
+interface ApiSource {
+  provider: string;
+  apiKey: string | undefined;
+  getUrl: () => string;
+  getHeaders: () => Record<string, string>;
+  map: (m: any) => ModelInfo;
+}
+
+const sources: ApiSource[] = [
   {
     provider: 'anthropic',
-    url: 'https://api.anthropic.com/v1/models',
-    headers: { 
-      'x-api-key': process.env.ANTHROPIC_API_KEY!, 
+    apiKey: process.env.ANTHROPIC_API_KEY,
+    getUrl: () => 'https://api.anthropic.com/v1/models',
+    getHeaders: () => ({
+      'x-api-key': process.env.ANTHROPIC_API_KEY!,
       'anthropic-version': '2023-06-01',
       'Content-Type': 'application/json'
-    },
+    }),
     map: (m: any): ModelInfo => ({
       id: m.id,
       name: m.display_name || m.id,
@@ -34,8 +48,9 @@ const sources = [
   },
   {
     provider: 'google',
-    url: `https://generativelanguage.googleapis.com/v1beta/models?key=${process.env.GEMINI_API_KEY}`,
-    headers: {},
+    apiKey: process.env.GEMINI_API_KEY,
+    getUrl: () => `https://generativelanguage.googleapis.com/v1beta/models?key=${process.env.GEMINI_API_KEY}`,
+    getHeaders: () => ({}),
     map: (m: any): ModelInfo => {
       const id = m.name.replace('models/', '');
       const isExperimental = id.includes('exp') || id.includes('preview') || id.includes('thinking');
@@ -56,11 +71,12 @@ const sources = [
   },
   {
     provider: 'openrouter',
-    url: 'https://openrouter.ai/api/v1/models',
-    headers: { 
-      Authorization: `Bearer ${process.env.OPENROUTER_API_KEY!}`,
+    apiKey: process.env.OPENROUTER_API_KEY,
+    getUrl: () => 'https://openrouter.ai/api/v1/models',
+    getHeaders: () => ({
+      'Authorization': `Bearer ${process.env.OPENROUTER_API_KEY!}`,
       'Content-Type': 'application/json'
-    },
+    }),
     map: (m: any): ModelInfo => {
       const isOpenAI = m.id.includes('gpt') || m.id.includes('o1');
       const isLatest = m.id.includes('o1') || m.id.includes('gpt-4o');
@@ -98,12 +114,33 @@ async function fetchWithRetry(url: string, options: any, retries = 3): Promise<a
 (async () => {
   console.log('🔄 Refreshing AI model list...');
   
+  // Check which API keys are available
+  const availableProviders = sources.filter(source => {
+    const hasKey = isValidApiKey(source.apiKey);
+    if (!hasKey) {
+      console.warn(`⚠️  Skipping ${source.provider} - API key not available or invalid`);
+    }
+    return hasKey;
+  });
+
+  if (availableProviders.length === 0) {
+    console.error('❌ No valid API keys found! Please set environment variables:');
+    console.error('   - ANTHROPIC_API_KEY');
+    console.error('   - GEMINI_API_KEY (or GOOGLE_AI_API_KEY)');
+    console.error('   - OPENROUTER_API_KEY');
+    process.exit(1);
+  }
+
+  console.log(`📡 Found ${availableProviders.length}/${sources.length} valid API keys`);
+  
   const allModels: ModelInfo[] = [];
   
-  for (const source of sources) {
+  for (const source of availableProviders) {
     try {
       console.log(`📡 Fetching ${source.provider} models...`);
-      const response = await fetchWithRetry(source.url, { headers: source.headers });
+      const url = source.getUrl();
+      const headers = source.getHeaders();
+      const response = await fetchWithRetry(url, { headers });
       const data = response.data || response.models || [];
       const models = data.map(source.map);
       
@@ -111,8 +148,14 @@ async function fetchWithRetry(url: string, options: any, retries = 3): Promise<a
       allModels.push(...models);
     } catch (error) {
       console.error(`❌ Failed to fetch ${source.provider} models:`, error);
-      process.exit(1);
+      // Don't exit on individual provider failure - continue with others
+      console.warn(`⚠️  Continuing without ${source.provider} models...`);
     }
+  }
+
+  if (allModels.length === 0) {
+    console.error('❌ No models fetched from any provider!');
+    process.exit(1);
   }
 
   // Sort models by provider, then by category, then by name
@@ -131,7 +174,7 @@ async function fetchWithRetry(url: string, options: any, retries = 3): Promise<a
   const banner = `// ⚠️  AUTO-GENERATED — DO NOT EDIT.
 // Last refresh: ${new Date().toISOString()}
 // Total models: ${allModels.length}
-// Sources: Anthropic API, Google Gemini API, OpenRouter API
+// Sources: ${availableProviders.map(p => p.provider).join(', ')} APIs
 
 export interface ModelInfo {
   id: string;

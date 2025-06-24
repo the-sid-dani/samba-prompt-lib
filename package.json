@@ -17,6 +17,7 @@
     "rollback:emergency": "./scripts/emergency-rollback.sh",
     "rollback:verify": "./scripts/verify-rollback.sh",
     "refresh:models": "tsx scripts/refreshModels.ts",
+    "test:api-keys": "tsx scripts/test-api-keys.ts",
     "update:pricing": "node scripts/update-pricing.js",
     "test:analytics": "node scripts/test-analytics.js"
   },
