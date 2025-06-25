@@ -5,6 +5,9 @@ on:
     - cron: '8 8 * * *'   # daily 08:08 UTC (≈ midnight PT)
   workflow_dispatch:        # allows manual triggering
 
+permissions:
+  contents: write          # Allow workflow to push commits
+
 jobs:
   update:
     runs-on: ubuntu-latest
