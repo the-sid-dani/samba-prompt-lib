@@ -74,7 +74,7 @@ export function PromptContentSection({ prompt, user, isOwner }: PromptContentSec
           <div className="mt-3 sm:mt-4 flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3 sm:gap-4">
             <div className="text-xs text-muted-foreground flex-1">
               {processedContent ? (
-                <span>Variables filled! The prompt above shows your customized version.</span>
+                <span>Variables filled! Your customized values are highlighted in <span className="text-red-600 font-medium">red</span> above.</span>
               ) : (
                 <span>Tip: Variables in <span className="text-red-600 font-medium">{`{{red}}`}</span> can be customized above</span>
               )}

@@ -83,9 +83,12 @@ export function TemplateVariables({
   useEffect(() => {
     let processed = content
     extractedVariables.forEach(variable => {
-      const value = variables[variable.name] || variable.defaultValue || `{{${variable.name}}}`
-      const regex = new RegExp(`\\{\\{\\s*${variable.name}(\\|[^}]*)?\\s*\\}\\}`, 'g')
-      processed = processed.replace(regex, value)
+      const value = variables[variable.name] || variable.defaultValue || ''
+      if (value) {
+        // When a variable has a value, wrap it with highlight markers
+        const regex = new RegExp(`\\{\\{\\s*${variable.name}(\\|[^}]*)?\\s*\\}\\}`, 'g')
+        processed = processed.replace(regex, `|||HIGHLIGHT|||${value}|||HIGHLIGHT|||`)
+      }
     })
     setProcessedContent(processed)
     onContentChange?.(processed)

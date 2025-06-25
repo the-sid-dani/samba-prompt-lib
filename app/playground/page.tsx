@@ -184,7 +184,21 @@ function PlaygroundContent() {
   // Load prompt from URL if prompt ID is provided
   useEffect(() => {
     const promptId = searchParams.get('promptId');
-    if (promptId && promptLoadedRef.current !== promptId) {
+    const directPrompt = searchParams.get('prompt');
+    
+    // Handle direct prompt content (from Test in Playground button)
+    if (directPrompt && !promptLoadedRef.current) {
+      promptLoadedRef.current = 'direct-prompt';
+      // Clean up highlight markers if present
+      const cleanedPrompt = directPrompt
+        .replace(/\|\|\|HIGHLIGHT\|\|\|/g, '')
+        .trim();
+      setInputText(cleanedPrompt);
+      toast({
+        title: "Prompt Loaded",
+        description: "Prompt loaded in message input",
+      });
+    } else if (promptId && promptLoadedRef.current !== promptId) {
       promptLoadedRef.current = promptId;
       loadPrompt(promptId);
     }
