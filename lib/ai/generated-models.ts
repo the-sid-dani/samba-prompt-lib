@@ -1,7 +1,7 @@
 // ⚠️  AUTO-GENERATED — DO NOT EDIT.
-// Last refresh: 2025-01-09T02:45:00.000Z (Updated with latest Claude 4.x and Gemini 2.5 models)
-// Total models: 34
-// Sources: Anthropic API, Google Gemini API, OpenRouter API
+// Last refresh: 2025-06-26T08:54:40.221Z
+// Total models: 61
+// Sources: anthropic, google, openrouter APIs
 
 export interface ModelInfo {
   id: string;
@@ -16,324 +16,666 @@ export interface ModelInfo {
 }
 
 export const SUPPORTED_MODELS: ModelInfo[] = [
-  // Anthropic Claude Models - Latest 4.x Series
   {
-    id: 'claude-opus-4-20250514',
-    name: 'claude-opus-4-20250514',
-    provider: 'anthropic',
-    maxTokens: 200000,
-    supportsStreaming: true,
-    category: 'Latest',
-    isLatest: true,
-    description: 'Claude 4 Opus - Highest reasoning and tool-use power (Flagship)'
+    "id": "claude-3-5-haiku-20241022",
+    "name": "Claude Haiku 3.5",
+    "provider": "anthropic",
+    "maxTokens": 8192,
+    "supportsStreaming": true,
+    "category": "Latest",
+    "isLatest": true,
+    "description": "Claude model - claude-3-5-haiku-20241022"
   },
   {
-    id: 'claude-sonnet-4-20250514',
-    name: 'claude-sonnet-4-20250514',
-    provider: 'anthropic',
-    maxTokens: 200000,
-    supportsStreaming: true,
-    category: 'Latest',
-    isLatest: true,
-    description: 'Claude 4 Sonnet - Nearly Opus-level IQ, lower latency (High-performance)'
+    "id": "claude-3-5-sonnet-20241022",
+    "name": "Claude Sonnet 3.5 (New)",
+    "provider": "anthropic",
+    "maxTokens": 8192,
+    "supportsStreaming": true,
+    "category": "Latest",
+    "isLatest": true,
+    "description": "Claude model - claude-3-5-sonnet-20241022"
   },
   {
-    id: 'claude-3-7-sonnet-20250219',
-    name: 'claude-3-7-sonnet-20250219',
-    provider: 'anthropic',
-    maxTokens: 200000,
-    supportsStreaming: true,
-    category: 'Latest',
-    isLatest: true,
-    description: 'Claude 3.7 Sonnet - Bridge model when migrating to 4.x (Advanced)'
-  },
-
-  // Anthropic Claude Models - 3.5 Series (Production)
-  {
-    id: 'claude-3-5-sonnet-20241022',
-    name: 'claude-3-5-sonnet-20241022',
-    provider: 'anthropic',
-    maxTokens: 200000,
-    supportsStreaming: true,
-    category: 'Production',
-    description: 'Claude 3.5 Sonnet - Best cost-to-quality in 3.x line (Mainstream)'
+    "id": "claude-3-5-sonnet-20240620",
+    "name": "Claude Sonnet 3.5 (Old)",
+    "provider": "anthropic",
+    "maxTokens": 8192,
+    "supportsStreaming": true,
+    "category": "Latest",
+    "isLatest": true,
+    "description": "Claude model - claude-3-5-sonnet-20240620"
   },
   {
-    id: 'claude-3-5-haiku-20241022',
-    name: 'claude-3-5-haiku-20241022',
-    provider: 'anthropic',
-    maxTokens: 200000,
-    supportsStreaming: true,
-    category: 'Production',
-    description: 'Claude 3.5 Haiku - Ultra-low latency workloads (Fastest 3.x)'
-  },
-
-  // Anthropic Claude Models - Legacy 3.x Series
-  {
-    id: 'claude-3-opus-20240229',
-    name: 'claude-3-opus-20240229',
-    provider: 'anthropic',
-    maxTokens: 200000,
-    supportsStreaming: true,
-    category: 'Legacy',
-    description: 'Claude 3 Opus - Still strong on writing tasks (Legacy premium)'
+    "id": "claude-2.0",
+    "name": "Claude 2.0",
+    "provider": "anthropic",
+    "maxTokens": 8192,
+    "supportsStreaming": true,
+    "category": "Legacy",
+    "isLatest": false,
+    "description": "Claude model - claude-2.0"
   },
   {
-    id: 'claude-3-sonnet-20240229',
-    name: 'claude-3-sonnet-20240229',
-    provider: 'anthropic',
-    maxTokens: 200000,
-    supportsStreaming: true,
-    category: 'Legacy',
-    description: 'Claude 3 Sonnet - Good default if 3.5/4 series unavailable (Legacy balanced)'
+    "id": "claude-2.1",
+    "name": "Claude 2.1",
+    "provider": "anthropic",
+    "maxTokens": 8192,
+    "supportsStreaming": true,
+    "category": "Legacy",
+    "isLatest": false,
+    "description": "Claude model - claude-2.1"
   },
   {
-    id: 'claude-3-haiku-20240307',
-    name: 'claude-3-haiku-20240307',
-    provider: 'anthropic',
-    maxTokens: 200000,
-    supportsStreaming: true,
-    category: 'Legacy',
-    description: 'Claude 3 Haiku - Cheapest Claude for lightweight tasks (Legacy speed)'
-  },
-
-  // Google Gemini Models - 2.5 Series (Experimental Preview)
-  {
-    id: 'gemini-2.5-pro-preview-06-05',
-    name: 'gemini-2.5-pro-preview-06-05',
-    provider: 'google',
-    maxTokens: 2097152,
-    supportsStreaming: true,
-    category: 'Experimental',
-    isExperimental: true,
-    isLatest: true,
-    description: 'Gemini 2.5 Pro - Top reasoning, thinking budget control (Flagship preview)'
+    "id": "claude-3-haiku-20240307",
+    "name": "Claude Haiku 3",
+    "provider": "anthropic",
+    "maxTokens": 8192,
+    "supportsStreaming": true,
+    "category": "Legacy",
+    "isLatest": false,
+    "description": "Claude model - claude-3-haiku-20240307"
   },
   {
-    id: 'gemini-2.5-flash-preview-05-20',
-    name: 'gemini-2.5-flash-preview-05-20',
-    provider: 'google',
-    maxTokens: 1048576,
-    supportsStreaming: true,
-    category: 'Experimental',
-    isExperimental: true,
-    isLatest: true,
-    description: 'Gemini 2.5 Flash - Same tokenizer as 2.5 Pro, tuned for speed (Fast preview)'
-  },
-
-  // Google Gemini Models - 2.0 Series (Latest GA)
-  {
-    id: 'gemini-2.0-flash',
-    name: 'gemini-2.0-flash',
-    provider: 'google',
-    maxTokens: 1048576,
-    supportsStreaming: true,
-    category: 'Latest',
-    isLatest: true,
-    description: 'Gemini 2.0 Flash - Real-time streaming, long-context vision (Next-gen balanced)'
+    "id": "claude-3-opus-20240229",
+    "name": "Claude Opus 3",
+    "provider": "anthropic",
+    "maxTokens": 8192,
+    "supportsStreaming": true,
+    "category": "Legacy",
+    "isLatest": false,
+    "description": "Claude model - claude-3-opus-20240229"
   },
   {
-    id: 'gemini-2.0-flash-lite',
-    name: 'gemini-2.0-flash-lite',
-    provider: 'google',
-    maxTokens: 1048576,
-    supportsStreaming: true,
-    category: 'Latest',
-    isLatest: true,
-    description: 'Gemini 2.0 Flash Lite - Sub-second responses, lowest cost (Next-gen ultra-cheap)'
-  },
-
-  // Google Gemini Models - 1.5 Series (Production Stable)
-  {
-    id: 'gemini-1.5-pro-002',
-    name: 'gemini-1.5-pro-002',
-    provider: 'google',
-    maxTokens: 2097152,
-    supportsStreaming: true,
-    category: 'Production',
-    description: 'Gemini 1.5 Pro - 2M token context, full multimodal (Stable flagship)'
+    "id": "claude-opus-4-20250514",
+    "name": "Claude Opus 4",
+    "provider": "anthropic",
+    "maxTokens": 8192,
+    "supportsStreaming": true,
+    "category": "Legacy",
+    "isLatest": false,
+    "description": "Claude model - claude-opus-4-20250514"
   },
   {
-    id: 'gemini-1.5-flash-002',
-    name: 'gemini-1.5-flash-002',
-    provider: 'google',
-    maxTokens: 1048576,
-    supportsStreaming: true,
-    category: 'Production',
-    description: 'Gemini 1.5 Flash - Best price-performance prior to 2.x (Stable fast)'
+    "id": "claude-3-sonnet-20240229",
+    "name": "Claude Sonnet 3",
+    "provider": "anthropic",
+    "maxTokens": 8192,
+    "supportsStreaming": true,
+    "category": "Legacy",
+    "isLatest": false,
+    "description": "Claude model - claude-3-sonnet-20240229"
   },
   {
-    id: 'gemini-1.5-flash-8b-001',
-    name: 'gemini-1.5-flash-8b-001',
-    provider: 'google',
-    maxTokens: 1048576,
-    supportsStreaming: true,
-    category: 'Production',
-    description: 'Gemini 1.5 Flash 8B - 8-billion-param variant for massive scale (Tiny fast)'
-  },
-
-  // Google Gemini Models - Legacy 1.0 Series
-  {
-    id: 'gemini-pro-latest',
-    name: 'gemini-pro-latest',
-    provider: 'google',
-    maxTokens: 30720,
-    supportsStreaming: true,
-    category: 'Legacy',
-    description: 'Gemini Pro - Original 1.0 model, back-compat (Legacy pro)'
-  },
-
-  // OpenAI & OpenRouter Models
-  {
-    id: 'o1-preview',
-    name: 'o1-preview',
-    provider: 'openrouter',
-    maxTokens: 128000,
-    supportsStreaming: true,
-    category: 'Latest',
-    isLatest: true,
-    description: 'OpenAI o1 - Advanced reasoning model'
+    "id": "claude-3-7-sonnet-20250219",
+    "name": "Claude Sonnet 3.7",
+    "provider": "anthropic",
+    "maxTokens": 8192,
+    "supportsStreaming": true,
+    "category": "Legacy",
+    "isLatest": false,
+    "description": "Claude model - claude-3-7-sonnet-20250219"
   },
   {
-    id: 'o1-mini',
-    name: 'o1-mini',
-    provider: 'openrouter',
-    maxTokens: 128000,
-    supportsStreaming: true,
-    category: 'Latest',
-    isLatest: true,
-    description: 'OpenAI o1 mini - Faster reasoning model'
+    "id": "claude-sonnet-4-20250514",
+    "name": "Claude Sonnet 4",
+    "provider": "anthropic",
+    "maxTokens": 8192,
+    "supportsStreaming": true,
+    "category": "Legacy",
+    "isLatest": false,
+    "description": "Claude model - claude-sonnet-4-20250514"
   },
   {
-    id: 'gpt-4o-mini-search-preview',
-    name: 'gpt-4o-mini-search-preview',
-    provider: 'openrouter',
-    maxTokens: 128000,
-    supportsStreaming: true,
-    category: 'Production',
-    description: 'GPT-4o mini with search capabilities'
+    "id": "gemini-2.0-flash",
+    "name": "Gemini 2.0 Flash",
+    "provider": "google",
+    "maxTokens": 8192,
+    "supportsStreaming": true,
+    "category": "Latest",
+    "isLatest": true,
+    "isExperimental": false,
+    "description": "Gemini 2.0 Flash"
   },
   {
-    id: 'gpt-4-turbo',
-    name: 'gpt-4-turbo',
-    provider: 'openrouter',
-    maxTokens: 128000,
-    supportsStreaming: true,
-    category: 'Production',
-    description: 'GPT-4 Turbo - Fast and capable'
-  },
-
-  // DeepSeek Models
-  {
-    id: 'deepseek-v3-base:free',
-    name: 'deepseek-v3-base:free',
-    provider: 'openrouter',
-    maxTokens: 163840,
-    supportsStreaming: true,
-    category: 'Open Source',
-    isLatest: true,
-    description: 'DeepSeek V3 - Free high-performance model'
+    "id": "gemini-2.0-flash-001",
+    "name": "Gemini 2.0 Flash 001",
+    "provider": "google",
+    "maxTokens": 8192,
+    "supportsStreaming": true,
+    "category": "Latest",
+    "isLatest": true,
+    "isExperimental": false,
+    "description": "Stable version of Gemini 2.0 Flash, our fast and versatile multimodal model for scaling across diverse tasks, released in January of 2025."
   },
   {
-    id: 'deepseek-r1-distill-qwen-7b',
-    name: 'deepseek-r1-distill-qwen-7b',
-    provider: 'openrouter',
-    maxTokens: 131072,
-    supportsStreaming: true,
-    category: 'Open Source',
-    description: 'DeepSeek R1 - Reasoning-focused model'
-  },
-
-  // Meta Llama Models
-  {
-    id: 'llama-3.1-405b-instruct',
-    name: 'llama-3.1-405b-instruct',
-    provider: 'openrouter',
-    maxTokens: 32768,
-    supportsStreaming: true,
-    category: 'Open Source',
-    description: 'Meta Llama 3.1 405B - Largest open model'
+    "id": "gemini-2.0-flash-lite",
+    "name": "Gemini 2.0 Flash-Lite",
+    "provider": "google",
+    "maxTokens": 8192,
+    "supportsStreaming": true,
+    "category": "Latest",
+    "isLatest": true,
+    "isExperimental": false,
+    "description": "Gemini 2.0 Flash-Lite"
   },
   {
-    id: 'llama-3.1-70b-instruct',
-    name: 'llama-3.1-70b-instruct',
-    provider: 'openrouter',
-    maxTokens: 131072,
-    supportsStreaming: true,
-    category: 'Open Source',
-    description: 'Meta Llama 3.1 70B - Balanced open model'
-  },
-
-  // Google Open Source Models
-  {
-    id: 'gemma-2-27b-it',
-    name: 'gemma-2-27b-it',
-    provider: 'openrouter',
-    maxTokens: 8192,
-    supportsStreaming: true,
-    category: 'Open Source',
-    description: 'Google Gemma 2 27B - Open instruction-tuned'
+    "id": "gemini-2.0-flash-lite-001",
+    "name": "Gemini 2.0 Flash-Lite 001",
+    "provider": "google",
+    "maxTokens": 8192,
+    "supportsStreaming": true,
+    "category": "Latest",
+    "isLatest": true,
+    "isExperimental": false,
+    "description": "Stable version of Gemini 2.0 Flash-Lite"
   },
   {
-    id: 'gemma-2-9b-it:free',
-    name: 'gemma-2-9b-it:free',
-    provider: 'openrouter',
-    maxTokens: 8192,
-    supportsStreaming: true,
-    category: 'Open Source',
-    description: 'Google Gemma 2 9B - Free lightweight model'
-  },
-
-  // Alibaba Models
-  {
-    id: 'qwen-2.5-72b-instruct:free',
-    name: 'qwen-2.5-72b-instruct:free',
-    provider: 'openrouter',
-    maxTokens: 32768,
-    supportsStreaming: true,
-    category: 'Open Source',
-    description: 'Alibaba Qwen 2.5 72B - Free multilingual model'
+    "id": "gemini-2.5-flash",
+    "name": "Gemini 2.5 Flash",
+    "provider": "google",
+    "maxTokens": 65536,
+    "supportsStreaming": true,
+    "category": "Latest",
+    "isLatest": true,
+    "isExperimental": false,
+    "description": "Stable version of Gemini 2.5 Flash, our mid-size multimodal model that supports up to 1 million tokens, released in June of 2025."
   },
   {
-    id: 'qwq-32b-preview',
-    name: 'qwq-32b-preview',
-    provider: 'openrouter',
-    maxTokens: 32768,
-    supportsStreaming: true,
-    category: 'Open Source',
-    description: 'Alibaba QwQ - Reasoning specialist'
-  },
-
-  // Mistral Models
-  {
-    id: 'mistral-large-2411',
-    name: 'mistral-large-2411',
-    provider: 'openrouter',
-    maxTokens: 131072,
-    supportsStreaming: true,
-    category: 'Production',
-    description: 'Mistral Large - European flagship model'
+    "id": "gemini-2.5-pro",
+    "name": "Gemini 2.5 Pro",
+    "provider": "google",
+    "maxTokens": 65536,
+    "supportsStreaming": true,
+    "category": "Latest",
+    "isLatest": true,
+    "isExperimental": false,
+    "description": "Stable release (June 17th, 2025) of Gemini 2.5 Pro"
   },
   {
-    id: 'mixtral-8x7b-instruct',
-    name: 'mixtral-8x7b-instruct',
-    provider: 'openrouter',
-    maxTokens: 32768,
-    supportsStreaming: true,
-    category: 'Open Source',
-    description: 'Mistral Mixtral 8x7B - Mixture of experts'
+    "id": "gemini-2.0-flash-exp-image-generation",
+    "name": "Gemini 2.0 Flash (Image Generation) Experimental",
+    "provider": "google",
+    "maxTokens": 8192,
+    "supportsStreaming": true,
+    "category": "Experimental",
+    "isLatest": true,
+    "isExperimental": true,
+    "description": "Gemini 2.0 Flash (Image Generation) Experimental"
   },
-
-  // Other Models
   {
-    id: 'hermes-3-llama-3.1-405b',
-    name: 'hermes-3-llama-3.1-405b',
-    provider: 'openrouter',
-    maxTokens: 131072,
-    supportsStreaming: true,
-    category: 'Open Source',
-    description: 'Hermes 3 - Fine-tuned Llama for dialogue'
+    "id": "gemini-2.0-flash-exp",
+    "name": "Gemini 2.0 Flash Experimental",
+    "provider": "google",
+    "maxTokens": 8192,
+    "supportsStreaming": true,
+    "category": "Experimental",
+    "isLatest": true,
+    "isExperimental": true,
+    "description": "Gemini 2.0 Flash Experimental"
+  },
+  {
+    "id": "gemini-2.0-flash-preview-image-generation",
+    "name": "Gemini 2.0 Flash Preview Image Generation",
+    "provider": "google",
+    "maxTokens": 8192,
+    "supportsStreaming": true,
+    "category": "Experimental",
+    "isLatest": true,
+    "isExperimental": true,
+    "description": "Gemini 2.0 Flash Preview Image Generation"
+  },
+  {
+    "id": "gemini-2.0-flash-lite-preview",
+    "name": "Gemini 2.0 Flash-Lite Preview",
+    "provider": "google",
+    "maxTokens": 8192,
+    "supportsStreaming": true,
+    "category": "Experimental",
+    "isLatest": true,
+    "isExperimental": true,
+    "description": "Preview release (February 5th, 2025) of Gemini 2.0 Flash-Lite"
+  },
+  {
+    "id": "gemini-2.0-flash-lite-preview-02-05",
+    "name": "Gemini 2.0 Flash-Lite Preview 02-05",
+    "provider": "google",
+    "maxTokens": 8192,
+    "supportsStreaming": true,
+    "category": "Experimental",
+    "isLatest": true,
+    "isExperimental": true,
+    "description": "Preview release (February 5th, 2025) of Gemini 2.0 Flash-Lite"
+  },
+  {
+    "id": "gemini-2.0-pro-exp",
+    "name": "Gemini 2.0 Pro Experimental",
+    "provider": "google",
+    "maxTokens": 65536,
+    "supportsStreaming": true,
+    "category": "Experimental",
+    "isLatest": true,
+    "isExperimental": true,
+    "description": "Experimental release (March 25th, 2025) of Gemini 2.5 Pro"
+  },
+  {
+    "id": "gemini-2.0-pro-exp-02-05",
+    "name": "Gemini 2.0 Pro Experimental 02-05",
+    "provider": "google",
+    "maxTokens": 65536,
+    "supportsStreaming": true,
+    "category": "Experimental",
+    "isLatest": true,
+    "isExperimental": true,
+    "description": "Experimental release (March 25th, 2025) of Gemini 2.5 Pro"
+  },
+  {
+    "id": "gemini-2.5-flash-preview-04-17",
+    "name": "Gemini 2.5 Flash Preview 04-17",
+    "provider": "google",
+    "maxTokens": 65536,
+    "supportsStreaming": true,
+    "category": "Experimental",
+    "isLatest": true,
+    "isExperimental": true,
+    "description": "Preview release (April 17th, 2025) of Gemini 2.5 Flash"
+  },
+  {
+    "id": "gemini-2.0-flash-thinking-exp-01-21",
+    "name": "Gemini 2.5 Flash Preview 04-17",
+    "provider": "google",
+    "maxTokens": 65536,
+    "supportsStreaming": true,
+    "category": "Experimental",
+    "isLatest": true,
+    "isExperimental": true,
+    "description": "Preview release (April 17th, 2025) of Gemini 2.5 Flash"
+  },
+  {
+    "id": "gemini-2.0-flash-thinking-exp",
+    "name": "Gemini 2.5 Flash Preview 04-17",
+    "provider": "google",
+    "maxTokens": 65536,
+    "supportsStreaming": true,
+    "category": "Experimental",
+    "isLatest": true,
+    "isExperimental": true,
+    "description": "Preview release (April 17th, 2025) of Gemini 2.5 Flash"
+  },
+  {
+    "id": "gemini-2.0-flash-thinking-exp-1219",
+    "name": "Gemini 2.5 Flash Preview 04-17",
+    "provider": "google",
+    "maxTokens": 65536,
+    "supportsStreaming": true,
+    "category": "Experimental",
+    "isLatest": true,
+    "isExperimental": true,
+    "description": "Preview release (April 17th, 2025) of Gemini 2.5 Flash"
+  },
+  {
+    "id": "gemini-2.5-flash-preview-04-17-thinking",
+    "name": "Gemini 2.5 Flash Preview 04-17 for cursor testing",
+    "provider": "google",
+    "maxTokens": 65536,
+    "supportsStreaming": true,
+    "category": "Experimental",
+    "isLatest": true,
+    "isExperimental": true,
+    "description": "Preview release (April 17th, 2025) of Gemini 2.5 Flash"
+  },
+  {
+    "id": "gemini-2.5-flash-preview-05-20",
+    "name": "Gemini 2.5 Flash Preview 05-20",
+    "provider": "google",
+    "maxTokens": 65536,
+    "supportsStreaming": true,
+    "category": "Experimental",
+    "isLatest": true,
+    "isExperimental": true,
+    "description": "Preview release (April 17th, 2025) of Gemini 2.5 Flash"
+  },
+  {
+    "id": "gemini-2.5-flash-preview-tts",
+    "name": "Gemini 2.5 Flash Preview TTS",
+    "provider": "google",
+    "maxTokens": 16384,
+    "supportsStreaming": true,
+    "category": "Experimental",
+    "isLatest": true,
+    "isExperimental": true,
+    "description": "Gemini 2.5 Flash Preview TTS"
+  },
+  {
+    "id": "gemini-2.5-flash-lite-preview-06-17",
+    "name": "Gemini 2.5 Flash-Lite Preview 06-17",
+    "provider": "google",
+    "maxTokens": 65536,
+    "supportsStreaming": true,
+    "category": "Experimental",
+    "isLatest": true,
+    "isExperimental": true,
+    "description": "Preview release (June 11th, 2025) of Gemini 2.5 Flash-Lite"
+  },
+  {
+    "id": "gemini-2.5-pro-exp-03-25",
+    "name": "Gemini 2.5 Pro Experimental 03-25",
+    "provider": "google",
+    "maxTokens": 65536,
+    "supportsStreaming": true,
+    "category": "Experimental",
+    "isLatest": true,
+    "isExperimental": true,
+    "description": "Experimental release (March 25th, 2025) of Gemini 2.5 Pro"
+  },
+  {
+    "id": "gemini-2.5-pro-preview-06-05",
+    "name": "Gemini 2.5 Pro Preview",
+    "provider": "google",
+    "maxTokens": 65536,
+    "supportsStreaming": true,
+    "category": "Experimental",
+    "isLatest": true,
+    "isExperimental": true,
+    "description": "Preview release (June 5th, 2025) of Gemini 2.5 Pro"
+  },
+  {
+    "id": "gemini-2.5-pro-preview-03-25",
+    "name": "Gemini 2.5 Pro Preview 03-25",
+    "provider": "google",
+    "maxTokens": 65536,
+    "supportsStreaming": true,
+    "category": "Experimental",
+    "isLatest": true,
+    "isExperimental": true,
+    "description": "Gemini 2.5 Pro Preview 03-25"
+  },
+  {
+    "id": "gemini-2.5-pro-preview-05-06",
+    "name": "Gemini 2.5 Pro Preview 05-06",
+    "provider": "google",
+    "maxTokens": 65536,
+    "supportsStreaming": true,
+    "category": "Experimental",
+    "isLatest": true,
+    "isExperimental": true,
+    "description": "Preview release (May 6th, 2025) of Gemini 2.5 Pro"
+  },
+  {
+    "id": "gemini-2.5-pro-preview-tts",
+    "name": "Gemini 2.5 Pro Preview TTS",
+    "provider": "google",
+    "maxTokens": 16384,
+    "supportsStreaming": true,
+    "category": "Experimental",
+    "isLatest": true,
+    "isExperimental": true,
+    "description": "Gemini 2.5 Pro Preview TTS"
+  },
+  {
+    "id": "gemini-embedding-exp",
+    "name": "Gemini Embedding Experimental",
+    "provider": "google",
+    "maxTokens": 1,
+    "supportsStreaming": true,
+    "category": "Experimental",
+    "isLatest": false,
+    "isExperimental": true,
+    "description": "Obtain a distributed representation of a text."
+  },
+  {
+    "id": "gemini-embedding-exp-03-07",
+    "name": "Gemini Embedding Experimental 03-07",
+    "provider": "google",
+    "maxTokens": 1,
+    "supportsStreaming": true,
+    "category": "Experimental",
+    "isLatest": false,
+    "isExperimental": true,
+    "description": "Obtain a distributed representation of a text."
+  },
+  {
+    "id": "gemini-exp-1206",
+    "name": "Gemini Experimental 1206",
+    "provider": "google",
+    "maxTokens": 65536,
+    "supportsStreaming": true,
+    "category": "Experimental",
+    "isLatest": false,
+    "isExperimental": true,
+    "description": "Experimental release (March 25th, 2025) of Gemini 2.5 Pro"
+  },
+  {
+    "id": "learnlm-2.0-flash-experimental",
+    "name": "LearnLM 2.0 Flash Experimental",
+    "provider": "google",
+    "maxTokens": 32768,
+    "supportsStreaming": true,
+    "category": "Experimental",
+    "isLatest": true,
+    "isExperimental": true,
+    "description": "LearnLM 2.0 Flash Experimental"
+  },
+  {
+    "id": "embedding-001",
+    "name": "Embedding 001",
+    "provider": "google",
+    "maxTokens": 1,
+    "supportsStreaming": true,
+    "category": "Production",
+    "isLatest": false,
+    "isExperimental": false,
+    "description": "Obtain a distributed representation of a text."
+  },
+  {
+    "id": "embedding-gecko-001",
+    "name": "Embedding Gecko",
+    "provider": "google",
+    "maxTokens": 1,
+    "supportsStreaming": true,
+    "category": "Production",
+    "isLatest": false,
+    "isExperimental": false,
+    "description": "Obtain a distributed representation of a text."
+  },
+  {
+    "id": "gemini-1.0-pro-vision-latest",
+    "name": "Gemini 1.0 Pro Vision",
+    "provider": "google",
+    "maxTokens": 4096,
+    "supportsStreaming": true,
+    "category": "Production",
+    "isLatest": false,
+    "isExperimental": false,
+    "description": "The original Gemini 1.0 Pro Vision model version which was optimized for image understanding. Gemini 1.0 Pro Vision was deprecated on July 12, 2024. Move to a newer Gemini version."
+  },
+  {
+    "id": "gemini-pro-vision",
+    "name": "Gemini 1.0 Pro Vision",
+    "provider": "google",
+    "maxTokens": 4096,
+    "supportsStreaming": true,
+    "category": "Production",
+    "isLatest": false,
+    "isExperimental": false,
+    "description": "The original Gemini 1.0 Pro Vision model version which was optimized for image understanding. Gemini 1.0 Pro Vision was deprecated on July 12, 2024. Move to a newer Gemini version."
+  },
+  {
+    "id": "gemini-1.5-flash",
+    "name": "Gemini 1.5 Flash",
+    "provider": "google",
+    "maxTokens": 8192,
+    "supportsStreaming": true,
+    "category": "Production",
+    "isLatest": false,
+    "isExperimental": false,
+    "description": "Alias that points to the most recent stable version of Gemini 1.5 Flash, our fast and versatile multimodal model for scaling across diverse tasks."
+  },
+  {
+    "id": "gemini-1.5-flash-002",
+    "name": "Gemini 1.5 Flash 002",
+    "provider": "google",
+    "maxTokens": 8192,
+    "supportsStreaming": true,
+    "category": "Production",
+    "isLatest": false,
+    "isExperimental": false,
+    "description": "Stable version of Gemini 1.5 Flash, our fast and versatile multimodal model for scaling across diverse tasks, released in September of 2024."
+  },
+  {
+    "id": "gemini-1.5-flash-latest",
+    "name": "Gemini 1.5 Flash Latest",
+    "provider": "google",
+    "maxTokens": 8192,
+    "supportsStreaming": true,
+    "category": "Production",
+    "isLatest": false,
+    "isExperimental": false,
+    "description": "Alias that points to the most recent production (non-experimental) release of Gemini 1.5 Flash, our fast and versatile multimodal model for scaling across diverse tasks."
+  },
+  {
+    "id": "gemini-1.5-flash-8b",
+    "name": "Gemini 1.5 Flash-8B",
+    "provider": "google",
+    "maxTokens": 8192,
+    "supportsStreaming": true,
+    "category": "Production",
+    "isLatest": false,
+    "isExperimental": false,
+    "description": "Stable version of Gemini 1.5 Flash-8B, our smallest and most cost effective Flash model, released in October of 2024."
+  },
+  {
+    "id": "gemini-1.5-flash-8b-001",
+    "name": "Gemini 1.5 Flash-8B 001",
+    "provider": "google",
+    "maxTokens": 8192,
+    "supportsStreaming": true,
+    "category": "Production",
+    "isLatest": false,
+    "isExperimental": false,
+    "description": "Stable version of Gemini 1.5 Flash-8B, our smallest and most cost effective Flash model, released in October of 2024."
+  },
+  {
+    "id": "gemini-1.5-flash-8b-latest",
+    "name": "Gemini 1.5 Flash-8B Latest",
+    "provider": "google",
+    "maxTokens": 8192,
+    "supportsStreaming": true,
+    "category": "Production",
+    "isLatest": false,
+    "isExperimental": false,
+    "description": "Alias that points to the most recent production (non-experimental) release of Gemini 1.5 Flash-8B, our smallest and most cost effective Flash model, released in October of 2024."
+  },
+  {
+    "id": "gemini-1.5-pro",
+    "name": "Gemini 1.5 Pro",
+    "provider": "google",
+    "maxTokens": 8192,
+    "supportsStreaming": true,
+    "category": "Production",
+    "isLatest": false,
+    "isExperimental": false,
+    "description": "Stable version of Gemini 1.5 Pro, our mid-size multimodal model that supports up to 2 million tokens, released in May of 2024."
+  },
+  {
+    "id": "gemini-1.5-pro-002",
+    "name": "Gemini 1.5 Pro 002",
+    "provider": "google",
+    "maxTokens": 8192,
+    "supportsStreaming": true,
+    "category": "Production",
+    "isLatest": false,
+    "isExperimental": false,
+    "description": "Stable version of Gemini 1.5 Pro, our mid-size multimodal model that supports up to 2 million tokens, released in September of 2024."
+  },
+  {
+    "id": "gemini-1.5-pro-latest",
+    "name": "Gemini 1.5 Pro Latest",
+    "provider": "google",
+    "maxTokens": 8192,
+    "supportsStreaming": true,
+    "category": "Production",
+    "isLatest": false,
+    "isExperimental": false,
+    "description": "Alias that points to the most recent production (non-experimental) release of Gemini 1.5 Pro, our mid-size multimodal model that supports up to 2 million tokens."
+  },
+  {
+    "id": "gemma-3-12b-it",
+    "name": "Gemma 3 12B",
+    "provider": "google",
+    "maxTokens": 8192,
+    "supportsStreaming": true,
+    "category": "Production",
+    "isLatest": false,
+    "isExperimental": false,
+    "description": "Google Gemini model - gemma-3-12b-it"
+  },
+  {
+    "id": "gemma-3-1b-it",
+    "name": "Gemma 3 1B",
+    "provider": "google",
+    "maxTokens": 8192,
+    "supportsStreaming": true,
+    "category": "Production",
+    "isLatest": false,
+    "isExperimental": false,
+    "description": "Google Gemini model - gemma-3-1b-it"
+  },
+  {
+    "id": "gemma-3-27b-it",
+    "name": "Gemma 3 27B",
+    "provider": "google",
+    "maxTokens": 8192,
+    "supportsStreaming": true,
+    "category": "Production",
+    "isLatest": false,
+    "isExperimental": false,
+    "description": "Google Gemini model - gemma-3-27b-it"
+  },
+  {
+    "id": "gemma-3-4b-it",
+    "name": "Gemma 3 4B",
+    "provider": "google",
+    "maxTokens": 8192,
+    "supportsStreaming": true,
+    "category": "Production",
+    "isLatest": false,
+    "isExperimental": false,
+    "description": "Google Gemini model - gemma-3-4b-it"
+  },
+  {
+    "id": "gemma-3n-e4b-it",
+    "name": "Gemma 3n E4B",
+    "provider": "google",
+    "maxTokens": 2048,
+    "supportsStreaming": true,
+    "category": "Production",
+    "isLatest": false,
+    "isExperimental": false,
+    "description": "Google Gemini model - gemma-3n-e4b-it"
+  },
+  {
+    "id": "aqa",
+    "name": "Model that performs Attributed Question Answering.",
+    "provider": "google",
+    "maxTokens": 1024,
+    "supportsStreaming": true,
+    "category": "Production",
+    "isLatest": false,
+    "isExperimental": false,
+    "description": "Model trained to return answers to questions that are grounded in provided sources, along with estimating answerable probability."
+  },
+  {
+    "id": "text-embedding-004",
+    "name": "Text Embedding 004",
+    "provider": "google",
+    "maxTokens": 1,
+    "supportsStreaming": true,
+    "category": "Production",
+    "isLatest": false,
+    "isExperimental": false,
+    "description": "Obtain a distributed representation of a text."
   }
 ];
 
-export default SUPPORTED_MODELS; 
+export default SUPPORTED_MODELS;
