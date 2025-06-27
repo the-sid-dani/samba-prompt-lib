@@ -1,5 +1,5 @@
 // ⚠️  AUTO-GENERATED — DO NOT EDIT.
-// Last refresh: 2025-06-26T08:54:40.221Z
+// Last refresh: 2025-06-27T08:54:22.980Z
 // Total models: 61
 // Sources: anthropic, google, openrouter APIs
 
@@ -358,17 +358,6 @@ export const SUPPORTED_MODELS: ModelInfo[] = [
     "description": "Preview release (June 11th, 2025) of Gemini 2.5 Flash-Lite"
   },
   {
-    "id": "gemini-2.5-pro-exp-03-25",
-    "name": "Gemini 2.5 Pro Experimental 03-25",
-    "provider": "google",
-    "maxTokens": 65536,
-    "supportsStreaming": true,
-    "category": "Experimental",
-    "isLatest": true,
-    "isExperimental": true,
-    "description": "Experimental release (March 25th, 2025) of Gemini 2.5 Pro"
-  },
-  {
     "id": "gemini-2.5-pro-preview-06-05",
     "name": "Gemini 2.5 Pro Preview",
     "provider": "google",
@@ -642,6 +631,17 @@ export const SUPPORTED_MODELS: ModelInfo[] = [
     "isLatest": false,
     "isExperimental": false,
     "description": "Google Gemini model - gemma-3-4b-it"
+  },
+  {
+    "id": "gemma-3n-e2b-it",
+    "name": "Gemma 3n E2B",
+    "provider": "google",
+    "maxTokens": 2048,
+    "supportsStreaming": true,
+    "category": "Production",
+    "isLatest": false,
+    "isExperimental": false,
+    "description": "Google Gemini model - gemma-3n-e2b-it"
   },
   {
     "id": "gemma-3n-e4b-it",
