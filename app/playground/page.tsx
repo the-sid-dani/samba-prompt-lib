@@ -73,12 +73,45 @@ type PlaygroundFormData = z.infer<typeof playgroundSchema>;
 function PlaygroundContent() {
   console.log('[Playground] Rendering playground page');
   
+  // All hooks must be at the top, before any conditional logic
   const { data: session, status } = useSession();
   const router = useRouter();
   const searchParams = useSearchParams();
   const { toast } = useToast();
   const messagesEndRef = useRef<HTMLDivElement>(null);
   const chatContainerRef = useRef<HTMLDivElement>(null);
+
+  // State management - moved to top to avoid conditional hook calls
+  const [messages, setMessages] = useState<Message[]>([]);
+  const [inputText, setInputText] = useState('');
+  const [systemPrompt, setSystemPrompt] = useState('You are a helpful assistant.');
+  const [systemPromptDisplay, setSystemPromptDisplay] = useState(''); // For display with markup
+  const [selectedModel, setSelectedModel] = useState<string>('claude-3-7-sonnet-20250219');
+  const [loading, setLoading] = useState(false);
+  const [error, setError] = useState('');
+  const [variables, setVariables] = useState<Record<string, string>>({});
+  const [temperature, setTemperature] = useState(0.7);
+  const [maxTokens, setMaxTokens] = useState(1000);
+  const [topP, setTopP] = useState(1.0);
+  const [frequencyPenalty, setFrequencyPenalty] = useState(0);
+  const [presencePenalty, setPresencePenalty] = useState(0);
+  const [estimatedTokens, setEstimatedTokens] = useState(0);
+  const [showModelPreferences, setShowModelPreferences] = useState(false);
+  const [variablesFilled, setVariablesFilled] = useState(false);
+  const [showSaveModal, setShowSaveModal] = useState(false);
+  const [savePromptTitle, setSavePromptTitle] = useState('');
+  const [savePromptDescription, setSavePromptDescription] = useState('');
+  const [savePromptContent, setSavePromptContent] = useState('');
+  const [savePromptCategory, setSavePromptCategory] = useState('General');
+  const [savePromptTags, setSavePromptTags] = useState<string[]>([]);
+  const [tagInput, setTagInput] = useState('');
+  const [availableModels, setAvailableModels] = useState<ModelInfo[]>([]);
+
+  // Model preferences - moved to top
+  const { getFilteredModels, loading: modelPrefsLoading, preferences } = useModelPreferences();
+
+  // Track if prompt has been loaded to prevent duplicate loads - moved to top
+  const promptLoadedRef = useRef<string | null>(null);
 
   // Redirect unauthenticated users to sign-in (company internal tool)
   useEffect(() => {
@@ -110,30 +143,6 @@ function PlaygroundContent() {
     );
   }
 
-  // State management
-  const [messages, setMessages] = useState<Message[]>([]);
-  const [inputText, setInputText] = useState('');
-  const [systemPrompt, setSystemPrompt] = useState('You are a helpful assistant.');
-  const [systemPromptDisplay, setSystemPromptDisplay] = useState(''); // For display with markup
-  const [selectedModel, setSelectedModel] = useState<string>('claude-3-7-sonnet-20250219');
-  const [loading, setLoading] = useState(false);
-  const [error, setError] = useState('');
-  const [variables, setVariables] = useState<Record<string, string>>({});
-  const [temperature, setTemperature] = useState(0.7);
-  const [maxTokens, setMaxTokens] = useState(1000);
-  const [topP, setTopP] = useState(1.0);
-  const [frequencyPenalty, setFrequencyPenalty] = useState(0);
-  const [presencePenalty, setPresencePenalty] = useState(0);
-  const [estimatedTokens, setEstimatedTokens] = useState(0);
-  const [showModelPreferences, setShowModelPreferences] = useState(false);
-  const [variablesFilled, setVariablesFilled] = useState(false);
-
-  // Model preferences
-  const { getFilteredModels, loading: modelPrefsLoading, preferences } = useModelPreferences();
-  
-  // Get current filtered models - this will re-run when preferences change
-  const [availableModels, setAvailableModels] = useState<ModelInfo[]>([]);
-  
   // Update available models when preferences change
   useEffect(() => {
     if (!modelPrefsLoading) {
@@ -185,14 +194,6 @@ function PlaygroundContent() {
     setEstimatedTokens(totalTokens + inputTokens);
   }, [calculateTotalTokens, inputText]);
 
-  const [showSaveModal, setShowSaveModal] = useState(false);
-  const [savePromptTitle, setSavePromptTitle] = useState('');
-  const [savePromptDescription, setSavePromptDescription] = useState('');
-  const [savePromptContent, setSavePromptContent] = useState('');
-  const [savePromptCategory, setSavePromptCategory] = useState('General');
-  const [savePromptTags, setSavePromptTags] = useState<string[]>([]);
-  const [tagInput, setTagInput] = useState('');
-
   // Auto-scroll to bottom when new messages are added
   const scrollToBottom = () => {
     setTimeout(() => {
@@ -207,9 +208,6 @@ function PlaygroundContent() {
       scrollToBottom();
     }
   }, [messages, loading]);
-
-  // Track if prompt has been loaded to prevent duplicate loads
-  const promptLoadedRef = useRef<string | null>(null);
 
   // Load prompt from URL if prompt ID is provided
   useEffect(() => {
