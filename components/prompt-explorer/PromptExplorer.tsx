@@ -508,7 +508,6 @@ export default function PromptExplorer({
             </div>
 
             <div className="text-xs sm:text-sm text-muted-foreground text-center sm:text-right flex items-center gap-2">
-              {loading && <div className="w-4 h-4 border-2 border-primary border-t-transparent rounded-full animate-spin" />}
               Showing {prompts.length} prompts
             </div>
           </div>

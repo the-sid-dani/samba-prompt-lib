@@ -407,7 +407,8 @@ export default function SubmitPromptPage() {
                         <FormControl>
                           <Textarea 
                             placeholder="Enter your full prompt content here. You can use markdown for formatting."
-                            className="resize-y border-muted-foreground/20 focus:border-primary transition-colors min-h-[350px] max-h-[700px]"
+                            className="resize-y border-muted-foreground/20 focus:border-primary transition-colors min-h-[200px] max-h-[1600px]"
+                            style={{ height: '500px' }}
                             {...field} 
                           />
                         </FormControl>

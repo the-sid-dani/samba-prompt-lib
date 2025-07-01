@@ -73,12 +73,42 @@ type PlaygroundFormData = z.infer<typeof playgroundSchema>;
 function PlaygroundContent() {
   console.log('[Playground] Rendering playground page');
   
-  const { data: session } = useSession();
+  const { data: session, status } = useSession();
   const router = useRouter();
   const searchParams = useSearchParams();
   const { toast } = useToast();
   const messagesEndRef = useRef<HTMLDivElement>(null);
   const chatContainerRef = useRef<HTMLDivElement>(null);
+
+  // Redirect unauthenticated users to sign-in (company internal tool)
+  useEffect(() => {
+    if (status === 'loading') return; // Still loading auth status
+    
+    if (!session?.user) {
+      console.log('🔒 [Playground] Unauthenticated user redirected to sign-in');
+      router.push('/auth/signin?callbackUrl=' + encodeURIComponent('/playground'));
+      return;
+    }
+  }, [session, status, router]);
+
+  // Show loading while redirecting unauthenticated users
+  if (status === 'loading' || !session?.user) {
+    return (
+      <div className="min-h-screen bg-background">
+        <Navigation />
+        <div className="flex h-[calc(100vh-64px)]">
+          <div className="flex-1 flex items-center justify-center">
+            <div className="flex items-center gap-2">
+              <Loader2 className="h-6 w-6 animate-spin text-red-600" />
+              <span className="text-lg text-muted-foreground">
+                {!session?.user ? 'Redirecting to sign-in...' : 'Loading playground...'}
+              </span>
+            </div>
+          </div>
+        </div>
+      </div>
+    );
+  }
 
   // State management
   const [messages, setMessages] = useState<Message[]>([]);

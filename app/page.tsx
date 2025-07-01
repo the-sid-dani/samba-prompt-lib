@@ -1,13 +1,19 @@
 import { auth } from "@/lib/auth";
 import { fetchPrompts, getCategories } from "@/app/actions/prompts";
 import PromptExplorer from '@/components/prompt-explorer/PromptExplorer';
+import { redirect } from 'next/navigation';
 
 export default async function Home() {
   console.log('🏠 [Homepage] Server-side rendering started');
   
-  // Fetch initial data server-side
+  // Check authentication first - redirect if not signed in
   const session = await auth();
   const user = session?.user;
+  
+  if (!user) {
+    console.log('🔒 [Homepage] Unauthenticated user redirected to sign-in');
+    redirect('/auth/signin');
+  }
   
   try {
     // Fetch initial prompts and categories in parallel

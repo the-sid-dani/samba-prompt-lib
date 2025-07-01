@@ -1,0 +1,69 @@
+---
+description:
+globs:
+alwaysApply: false
+---
+# Function Troubleshooting & Debugging Guide
+
+**When helping with function issues, always provide concrete code solutions, not high-level explanations.**
+
+## Problem Analysis Pattern
+
+- **Always ask for the specific code** - Don't provide generic advice without seeing the actual implementation
+- **Request the exact error/test failure** - Need specific error messages or test output
+- **Understand the expected vs actual behavior** - Get concrete examples of what should happen
+- **Identify recurring patterns** - Look for similar issues across multiple instances
+
+## Solution Approach
+
+- **Provide actual code fixes** - Show exact code changes, not "here's how you can..."
+- **Include before/after comparisons** - Show what needs to change specifically
+- **Address root causes** - Fix the underlying pattern, not just symptoms
+- **Consider multiple instances** - If it's a recurring issue, provide a reusable solution
+
+## Code Examples Format
+
+```typescript
+// ❌ Current problematic code
+const problematicFunction = () => {
+  // Show the actual failing code
+}
+
+// ✅ Fixed implementation
+const fixedFunction = () => {
+  // Show the concrete solution
+}
+```
+
+## Common Function Issues in This Codebase
+
+- **Auth-related functions** - Check [auth.ts](mdc:lib/auth.ts) and [middleware.ts](mdc:middleware.ts)
+- **Database operations** - Reference [database.types.ts](mdc:types/database.types.ts) and Supabase client patterns
+- **API routes** - Follow patterns in [app/api](mdc:app/api) directory
+- **Component state management** - Check existing patterns in [components](mdc:components) directory
+
+## Testing Patterns
+
+- **Unit tests** - Follow patterns in [__tests__](mdc:components/__tests__) directories
+- **API testing** - Reference [health.test.ts](mdc:app/api/__tests__/health.test.ts)
+- **Integration tests** - Use existing test setup in [test](mdc:test) directory
+
+## Debugging Checklist
+
+1. **Get the exact code** that's failing
+2. **See the specific error message** or test output
+3. **Understand the expected behavior** with concrete examples
+4. **Check for similar patterns** elsewhere in the codebase
+5. **Provide targeted fix** with actual code changes
+6. **Test the solution** against the specific use case
+
+## Anti-Patterns to Avoid
+
+- Don't give generic "here's how you can..." responses
+- Don't provide solutions without seeing the actual code
+- Don't assume the problem without concrete evidence
+- Don't give high-level architectural advice when a specific fix is needed
+
+
+
+

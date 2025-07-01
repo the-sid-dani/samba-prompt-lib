@@ -1,0 +1,71 @@
+PRODUCT REQUIREMENTS DOCUMENT (PRD)
+Performance Optimization for Samba Prompt Library
+
+OVERVIEW:
+The Samba Prompt Library is experiencing significant performance issues that impact user experience. Users report constant loading states, delayed responses when changing sort options, and excessive API calls causing server strain. This PRD outlines the requirements for optimizing the application's performance.
+
+PROBLEM STATEMENT:
+1. The application shows perpetual loading spinners when navigating between pages
+2. Sorting changes (Popular/Trending/Newest) require multiple clicks to take effect
+3. Excessive database queries are being made (bypassing cache completely)
+4. Page visibility changes trigger unnecessary data refetches
+5. No proper request deduplication causing race conditions
+
+GOALS:
+- Eliminate unnecessary loading states and provide instant UI feedback
+- Implement proper caching strategy to reduce database load by 80%
+- Ensure sorting and filtering work on first click
+- Optimize data fetching to prevent duplicate requests
+- Improve overall application responsiveness
+
+TECHNICAL REQUIREMENTS:
+
+1. Caching System Overhaul
+   - Remove the BYPASS_CACHE flag from fetchPrompts function
+   - Implement proper Next.js unstable_cache with appropriate TTL
+   - Configure cache tags for granular invalidation
+   - Set up proper cache revalidation strategies
+
+2. React Query Integration
+   - Integrate React Query for client-side data management
+   - Configure proper staleTime and cacheTime values
+   - Implement request deduplication
+   - Set up optimistic updates for user interactions
+
+3. Data Fetching Optimization
+   - Fix loading state management in PromptExplorer component
+   - Remove redundant fetch prevention logic
+   - Implement proper debouncing for search inputs
+   - Optimize window focus/visibility handlers
+
+4. State Management Improvements
+   - Centralize loading states to prevent race conditions
+   - Implement proper error boundaries
+   - Add loading skeletons instead of full-page spinners
+   - Cache user preferences (sort order, filters)
+
+5. Performance Monitoring
+   - Add performance metrics tracking
+   - Implement error logging for failed requests
+   - Monitor cache hit rates
+   - Track API response times
+
+SUCCESS METRICS:
+- Page load time under 1 second
+- Cache hit rate above 70%
+- Zero duplicate API calls for same data
+- Sorting/filtering responds within 100ms
+- No loading spinners for cached data
+
+TECHNICAL CONSTRAINTS:
+- Must maintain compatibility with existing Supabase backend
+- Cannot modify database schema
+- Must work with current Next.js App Router architecture
+- Should not require additional infrastructure
+
+DELIVERABLES:
+1. Updated caching configuration with proper TTL values
+2. React Query integration with optimized settings
+3. Refactored PromptExplorer component with fixed loading states
+4. Performance monitoring dashboard
+5. Documentation of caching strategy and best practices 

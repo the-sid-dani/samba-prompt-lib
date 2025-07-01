@@ -10,6 +10,10 @@ const authConfig = {
 	pages: {
 		signIn: '/auth/signin',
 	},
+	session: {
+		strategy: "jwt" as const,
+		maxAge: 30 * 24 * 60 * 60, // 30 days
+	},
 	providers: [
 		GoogleProvider({
 			allowDangerousEmailAccountLinking: true,
@@ -22,7 +26,9 @@ const authConfig = {
 					response_type: "code"
 					// Removed hd restriction to allow all Google accounts
 				}
-			}
+			},
+			// Disable PKCE in development to fix callback issues
+			checks: process.env.NODE_ENV === 'development' ? [] : ["pkce", "state"]
 		}),
 	],
 	// Only use Supabase adapter if environment variables are available
@@ -76,6 +82,7 @@ const authConfig = {
 			return session
 		},
 	},
+	debug: process.env.NODE_ENV === 'development',
 } satisfies NextAuthConfig
 
 export const { auth } = NextAuth(authConfig)

@@ -8,6 +8,7 @@ import { useToast } from '@/hooks/use-toast'
 import Link from 'next/link'
 import Image from 'next/image'
 import { Loader2 } from 'lucide-react'
+import { ThemeProvider } from '@/hooks/use-theme'
 
 function SignInForm() {
   const searchParams = useSearchParams()
@@ -40,7 +41,7 @@ function SignInForm() {
         variant="outline"
         onClick={handleGoogleSignIn}
         disabled={isLoading}
-        className="flex w-full justify-center rounded-md border border-gray-300 bg-white px-3 py-2 text-sm font-semibold text-gray-700 shadow-sm hover:bg-gray-50 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-gray-300 disabled:opacity-50 disabled:cursor-not-allowed"
+        className="flex w-full justify-center rounded-md px-3 py-2 text-sm font-semibold shadow-sm disabled:opacity-50 disabled:cursor-not-allowed"
       >
         {isLoading ? (
           <Loader2 className="w-4 h-4 mr-2 animate-spin" />
@@ -60,65 +61,67 @@ function SignInForm() {
 
 export default function SignInPage() {
   return (
-    <div className="min-h-screen bg-gray-50 flex flex-col justify-center py-12 sm:px-6 lg:px-8">
-      <div className="sm:mx-auto sm:w-full sm:max-w-md">
-        <div className="bg-white py-8 px-4 shadow-lg sm:rounded-lg sm:px-10 border border-gray-200">
-          <div className="flex justify-center mb-8">
-            <Image 
-              src="/samba_logo_heart_Wordmark_Black_2018-01.png" 
-              alt="SambaTV Logo" 
-              width={160}
-              height={40}
-              priority
-              className="h-10 w-auto dark:invert"
-              sizes="160px"
-            />
-          </div>
-          
-          <div className="text-center mb-8">
-            <h2 className="text-3xl font-bold tracking-tight text-gray-900 mb-2">
-              Welcome back!
-            </h2>
-            <p className="text-sm text-gray-600">
-              Sign in to the AI Task Force platform.
-            </p>
-          </div>
+    <ThemeProvider defaultTheme="system" storageKey="sambatv-theme">
+      <div className="min-h-screen bg-background flex flex-col justify-center py-12 sm:px-6 lg:px-8">
+        <div className="sm:mx-auto sm:w-full sm:max-w-md">
+          <div className="bg-card py-8 px-4 shadow-lg sm:rounded-lg sm:px-10 border border-border">
+            <div className="flex justify-center mb-8">
+              <Image 
+                src="/samba_logo_heart_Wordmark_Black_2018-01.png" 
+                alt="SambaTV Logo" 
+                width={160}
+                height={40}
+                priority
+                className="h-10 w-auto dark:invert"
+                sizes="160px"
+              />
+            </div>
+            
+            <div className="text-center mb-8">
+              <h2 className="text-3xl font-bold tracking-tight text-foreground mb-2">
+                Welcome back!
+              </h2>
+              <p className="text-sm text-muted-foreground">
+                Sign in to the AI Task Force platform.
+              </p>
+            </div>
 
-          <Suspense fallback={
-            <Button
-              type="button"
-              variant="outline"
-              disabled
-              className="flex w-full justify-center rounded-md border border-gray-300 bg-white px-3 py-2 text-sm font-semibold text-gray-700 shadow-sm"
-            >
-              <Loader2 className="w-4 h-4 mr-2 animate-spin" />
-              Loading...
-            </Button>
-          }>
-            <SignInForm />
-          </Suspense>
+            <Suspense fallback={
+              <Button
+                type="button"
+                variant="outline"
+                disabled
+                className="flex w-full justify-center rounded-md px-3 py-2 text-sm font-semibold shadow-sm"
+              >
+                <Loader2 className="w-4 h-4 mr-2 animate-spin" />
+                Loading...
+              </Button>
+            }>
+              <SignInForm />
+            </Suspense>
 
-          <div className="mt-6">
-            <p className="text-center text-xs text-gray-500">
-              You acknowledge that you read, and agree, to our{' '}
-              <Link href="/terms" className="text-gray-700 hover:text-gray-900 underline">
-                Terms of Service
-              </Link>{' '}
-              and our{' '}
-              <Link href="/privacy" className="text-gray-700 hover:text-gray-900 underline">
-                Privacy Policy
-              </Link>
-              .
-            </p>
+            <div className="mt-6">
+              <p className="text-center text-xs text-muted-foreground">
+                You acknowledge that you read, and agree, to our{' '}
+                <Link href="/terms" className="text-foreground hover:text-primary underline">
+                  Terms of Service
+                </Link>{' '}
+                and our{' '}
+                <Link href="/privacy" className="text-foreground hover:text-primary underline">
+                  Privacy Policy
+                </Link>
+                .
+              </p>
+            </div>
           </div>
         </div>
-      </div>
 
-      <div className="mt-8">
-        <p className="text-center text-xs text-gray-400">
-          © 2025 SambaTV. All rights reserved.
-        </p>
+        <div className="mt-8">
+          <p className="text-center text-xs text-muted-foreground">
+            © 2025 SambaTV. All rights reserved.
+          </p>
+        </div>
       </div>
-    </div>
+    </ThemeProvider>
   )
 } 

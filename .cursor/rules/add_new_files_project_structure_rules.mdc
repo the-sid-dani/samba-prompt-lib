@@ -1,3 +1,8 @@
+---
+description: 
+globs: 
+alwaysApply: false
+---
 Below is an example of the “tree view” project structure for the SambaTV Internal Prompt Library. In this proposal we reuse the existing Next.js SaaS Starter Template while adding new authenticated routes and UI components for the Prompt Library features. Note that the auth and payment (Stripe) code remain untouched so that those integrations still work.
 
 ----------------------------------------------------------------------------------------------------
