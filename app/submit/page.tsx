@@ -117,7 +117,9 @@ export default function SubmitPromptPage() {
   useEffect(() => {
     const savedDraft = localStorage.getItem('prompt-draft')
     const isExplicitDraft = localStorage.getItem('prompt-draft-explicit')
-    const autoSavedContent = localStorage.getItem('prompt-auto-save')
+    
+    // Clear any auto-saved content on page load to prevent unwanted auto-fill
+    localStorage.removeItem('prompt-auto-save')
     
     if (savedDraft && isExplicitDraft === 'true') {
       try {
@@ -131,49 +133,11 @@ export default function SubmitPromptPage() {
       } catch (error) {
         console.error('Error loading draft:', error)
       }
-    } else if (autoSavedContent) {
-      // Show option to restore auto-saved content
-      try {
-        const autoSaved = JSON.parse(autoSavedContent)
-        // Only show if there's meaningful content
-        if (autoSaved.title || autoSaved.description || autoSaved.content) {
-          toast({
-            title: 'Auto-saved content found',
-            description: 'Would you like to restore your previous work? Use "Save as Draft" to keep your work.',
-          })
-          
-          // Optional: Auto-restore after a delay if user doesn't interact
-          setTimeout(() => {
-            const currentForm = form.getValues()
-            // Only auto-restore if form is still empty
-            if (!currentForm.title && !currentForm.description && !currentForm.content) {
-              form.reset(autoSaved)
-              localStorage.removeItem('prompt-auto-save')
-              toast({
-                title: 'Content restored',
-                description: 'Your previous work has been restored',
-              })
-            }
-          }, 5000)
-        }
-      } catch (error) {
-        console.error('Error loading auto-saved content:', error)
-        localStorage.removeItem('prompt-auto-save') // Clear corrupted data
-      }
     }
   }, [form, toast])
   
-  // Auto-save form state (but don't mark as draft)
-  useEffect(() => {
-    const subscription = form.watch((value) => {
-      if (form.formState.isDirty) {
-        localStorage.setItem('prompt-auto-save', JSON.stringify(value))
-        setLastSaved(new Date())
-      }
-    })
-    
-    return () => subscription.unsubscribe()
-  }, [form])
+  // Removed auto-save to prevent unwanted form data persistence
+  // Users should explicitly save drafts using the "Save as Draft" button
   
   // Fetch tag suggestions
   const handleFetchTagSuggestions = async (query: string): Promise<string[]> => {
@@ -231,7 +195,6 @@ export default function SubmitPromptPage() {
   const confirmDiscardDraft = () => {
     localStorage.removeItem('prompt-draft')
     localStorage.removeItem('prompt-draft-explicit')
-    localStorage.removeItem('prompt-auto-save')
     form.reset()
     setIsDraft(false)
     setLastSaved(null)
@@ -265,7 +228,6 @@ export default function SubmitPromptPage() {
     if (result) {
       localStorage.removeItem('prompt-draft')
       localStorage.removeItem('prompt-draft-explicit')
-      localStorage.removeItem('prompt-auto-save')
       setIsDraft(false)
       
       toast({
@@ -439,7 +401,7 @@ export default function SubmitPromptPage() {
                                     "flex items-center justify-center px-3 py-2 rounded-full text-sm font-medium whitespace-nowrap transition-colors min-h-[36px]",
                                     field.value === category.id.toString()
                                       ? "bg-primary text-white"
-                                      : "bg-gray-100 text-gray-700 hover:bg-gray-200"
+                                      : "bg-muted text-muted-foreground hover:bg-muted/80 dark:bg-muted/50"
                                   )}
                                 >
                                   {category.name}
@@ -450,7 +412,7 @@ export default function SubmitPromptPage() {
                                 <button
                                   type="button"
                                   onClick={() => setShowNewCategoryInput(true)}
-                                  className="flex items-center justify-center px-3 py-2 rounded-full text-sm font-medium whitespace-nowrap transition-colors bg-gray-100 text-gray-700 hover:bg-gray-200 border-2 border-dashed border-gray-300 min-h-[36px]"
+                                  className="flex items-center justify-center px-3 py-2 rounded-full text-sm font-medium whitespace-nowrap transition-colors bg-muted text-muted-foreground hover:bg-muted/80 dark:bg-muted/50 border-2 border-dashed border-muted-foreground/30 min-h-[36px]"
                                 >
                                   <Plus className="h-4 w-4 mr-1" />
                                   Add New

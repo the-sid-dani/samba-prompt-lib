@@ -148,7 +148,6 @@ export function TemplateVariables({
             
             <Button
               onClick={copyToClipboard}
-              variant="outline" 
               size="sm"
               className="flex items-center gap-2"
             >
@@ -158,6 +157,7 @@ export function TemplateVariables({
             
               <Button
               onClick={testInPlayground}
+              variant="outline"
                 size="sm"
               className="flex items-center gap-2"
               >
