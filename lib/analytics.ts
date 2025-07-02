@@ -44,7 +44,7 @@ export class Analytics {
    */
   static async trackEvent(event: AnalyticsEvent): Promise<void> {
     try {
-      const supabase = await createSupabaseAdminClient()
+      const supabase = createSupabaseAdminClient()
 
       // Insert into analytics_events table
       const { error } = await supabase
@@ -83,7 +83,7 @@ export class Analytics {
    */
   static async logApiUsage(usage: ApiUsageLog): Promise<void> {
     try {
-      const supabase = await createSupabaseAdminClient()
+      const supabase = createSupabaseAdminClient()
 
       // Calculate cost if not provided
       let costUsd = usage.costUsd
@@ -169,7 +169,7 @@ export class Analytics {
   static async getAnalyticsData(days: number = 30) {
     try {
       console.log(`🔍 [Analytics] Getting analytics data for last ${days} days...`)
-      const supabase = await createSupabaseAdminClient()
+      const supabase = createSupabaseAdminClient()
       const startDate = new Date()
       startDate.setDate(startDate.getDate() - days)
       console.log(`📅 [Analytics] Start date: ${startDate.toISOString()}`)
@@ -277,7 +277,7 @@ export class Analytics {
   }> {
     try {
       console.log(`💰 [Analytics] Getting cost analysis for last ${days} days...`)
-      const supabase = await createSupabaseAdminClient()
+      const supabase = createSupabaseAdminClient()
       const startDate = new Date()
       startDate.setDate(startDate.getDate() - days)
       console.log(`📅 [Analytics] Cost analysis start date: ${startDate.toISOString()}`)
