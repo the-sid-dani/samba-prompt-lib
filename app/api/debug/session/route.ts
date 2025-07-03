@@ -14,25 +14,42 @@ export async function GET() {
 
     // Get the user profile from profiles table
     const supabase = await createSupabaseAdminClient()
+    
+    // Check if we have required user data
+    if (!session.user?.id) {
+      return NextResponse.json({ 
+        error: 'Session user ID is missing',
+        session: session.user 
+      })
+    }
+
     const { data: profile, error: profileError } = await supabase
       .from('profiles')
       .select('*')
-      .eq('id', session.user?.id)
+      .eq('id', session.user.id)
       .single()
 
     // Also check if there's a profile with the email
-    const { data: profileByEmail, error: emailError } = await supabase
-      .from('profiles')
-      .select('*')
-      .eq('email', session.user?.email)
-      .single()
+    let profileByEmail = null
+    let emailError = null
+    if (session.user.email) {
+      const { data, error } = await supabase
+        .from('profiles')
+        .select('*')
+        .eq('email', session.user.email)
+        .single()
+      profileByEmail = data
+      emailError = error
+    }
 
-    // Check next_auth users table too
-    const { data: authUser, error: authError } = await supabase
-      .from('next_auth.users')
-      .select('*')
-      .eq('id', session.user?.id)
-      .single()
+    // Check next_auth users table too (commented out due to TypeScript type issues)
+    // const { data: authUser, error: authError } = await supabase
+    //   .from('next_auth.users')
+    //   .select('*')
+    //   .eq('id', session.user.id)
+    //   .single()
+    const authUser = null
+    const authError = null
 
     return NextResponse.json({
       session: {
@@ -44,7 +61,7 @@ export async function GET() {
       profileByEmail: profileByEmail || null,
       emailError: emailError?.message || null,
       authUser: authUser || null,
-      authError: authError?.message || null,
+      authError: 'NextAuth users table query disabled',
       debug: {
         sessionUserId: session.user?.id,
         sessionUserEmail: session.user?.email,
