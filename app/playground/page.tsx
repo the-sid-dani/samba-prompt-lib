@@ -1,38 +1,38 @@
 'use client';
 
 import { useState, useEffect, useCallback, useRef, Suspense } from 'react';
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
+import { Card, CardContent } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
-import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
-import { Slider } from '@/components/ui/slider';
-import { Switch } from '@/components/ui/switch';
 import { Textarea } from '@/components/ui/textarea';
 import { Alert, AlertDescription } from '@/components/ui/alert';
 import { Badge } from '@/components/ui/badge';
-import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from '@/components/ui/dialog';
+import { Collapsible, CollapsibleContent, CollapsibleTrigger } from '@/components/ui/collapsible';
+import { Sheet, SheetContent, SheetHeader, SheetTitle, SheetTrigger } from '@/components/ui/sheet';
+import { Slider } from '@/components/ui/slider';
+import { Switch } from '@/components/ui/switch';
 import { 
   Copy, 
-  Send, 
   AlertCircle, 
   Loader2, 
-  MessageSquare,
   Settings,
-  Sliders,
-  Download,
-  Save,
   RotateCcw,
-  Bot,
-  X,
-  Search,
-  Cpu,
+  Menu,
+  Plus,
+  Play,
+  Code,
+  ChevronRight,
+  ChevronDown,
   Info,
-  SlidersHorizontal
+  Edit3,
+  MessageSquarePlus,
+  Sparkles,
+  SlidersHorizontal,
+  Cpu,
+  Send,
+  ExternalLink
 } from 'lucide-react';
-import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from '@/components/ui/accordion';
-import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip';
-import { ScrollArea } from '@/components/ui/scroll-area';
 import { useToast } from '@/hooks/use-toast';
 import { useSession } from 'next-auth/react';
 import { useRouter, useSearchParams } from 'next/navigation';
@@ -40,15 +40,7 @@ import { PromptContentRenderer } from '@/components/prompt-content-renderer';
 import Navigation from '@/components/navigation/Navigation';
 import { SUPPORTED_MODELS } from '@/lib/ai';
 import { useModelPreferences } from '@/hooks/useModelPreferences';
-import { ModelInfo } from '@/lib/ai/generated-models';
-import { ModelPreferences } from '@/components/playground/ModelPreferences';
 import { estimateTokensFallback } from '@/lib/tokenization';
-import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from "@/components/ui/form";
-import { useForm } from "react-hook-form";
-import { zodResolver } from "@hookform/resolvers/zod";
-import * as z from "zod";
-import { Wand2, History } from "lucide-react";
 import SignIn from '@/components/sign-in';
 
 interface Message {
@@ -58,64 +50,62 @@ interface Message {
   timestamp: Date;
 }
 
-// Update the form schema
-const playgroundSchema = z.object({
-  model: z.string().min(1, "Model is required"),
-  prompt: z.string().min(1, "Prompt is required"),
-  temperature: z.number().min(0).max(2),
-  maxTokens: z.number().min(1).max(4000),
-  topP: z.number().min(0).max(1),
-  frequencyPenalty: z.number().min(-2).max(2),
-  presencePenalty: z.number().min(-2).max(2),
-});
-
-type PlaygroundFormData = z.infer<typeof playgroundSchema>;
+interface PlaygroundState {
+  projectTitle: string;
+  model: string;
+  systemPrompt: string;
+  userPrompt: string;
+  response: string;
+  isRunning: boolean;
+  lastSaved: string;
+  temperature: number;
+  maxTokens: number;
+  topP: number;
+  frequencyPenalty: number;
+  presencePenalty: number;
+  messages: Message[];
+  estimatedTokens: number;
+}
 
 function PlaygroundContent() {
-  console.log('[Playground] Rendering playground page');
+  console.log('[Playground] Rendering modern playground page');
   
   // ALL HOOKS MUST BE AT THE TOP - BEFORE ANY CONDITIONAL LOGIC
-  // Session and authentication
   const { data: session, status } = useSession();
   const router = useRouter();
   const searchParams = useSearchParams();
   const { toast } = useToast();
   
   // Refs
-  const messagesEndRef = useRef<HTMLDivElement>(null);
-  const chatContainerRef = useRef<HTMLDivElement>(null);
+  const userPromptRef = useRef<HTMLTextAreaElement>(null);
   const promptLoadedRef = useRef<string | null>(null);
 
   // State management
-  const [messages, setMessages] = useState<Message[]>([]);
-  const [inputText, setInputText] = useState('');
-  const [systemPrompt, setSystemPrompt] = useState('You are a helpful assistant.');
-  const [systemPromptDisplay, setSystemPromptDisplay] = useState(''); // For display with markup
-  const [selectedModel, setSelectedModel] = useState('gpt-3.5-turbo');
+  const [state, setState] = useState<PlaygroundState>({
+    projectTitle: "AI Playground Session",
+    model: "gpt-3.5-turbo",
+    systemPrompt: "",
+    userPrompt: "",
+    response: "",
+    isRunning: false,
+    lastSaved: new Date().toLocaleString(),
+    temperature: 0.7,
+    maxTokens: 1000,
+    topP: 1,
+    frequencyPenalty: 0,
+    presencePenalty: 0,
+    messages: [],
+    estimatedTokens: 0,
+  });
+
+  const [isSystemPromptOpen, setIsSystemPromptOpen] = useState(false);
+  const [isModelSettingsOpen, setIsModelSettingsOpen] = useState(false);
   const [availableModels, setAvailableModels] = useState<typeof SUPPORTED_MODELS>([]);
-  const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
-  const [estimatedTokens, setEstimatedTokens] = useState(0);
-  
-  // Model parameters
-  const [temperature, setTemperature] = useState(0.7);
-  const [maxTokens, setMaxTokens] = useState(1000);
-  const [topP, setTopP] = useState(1);
-  const [frequencyPenalty, setFrequencyPenalty] = useState(0);
-  const [presencePenalty, setPresencePenalty] = useState(0);
   
   // Template variables state
   const [variables, setVariables] = useState<Record<string, string>>({});
   const [variablesFilled, setVariablesFilled] = useState(false);
-
-  // Save prompt modal state
-  const [showSaveModal, setShowSaveModal] = useState(false);
-  const [savePromptTitle, setSavePromptTitle] = useState('');
-  const [savePromptDescription, setSavePromptDescription] = useState('');
-  const [savePromptContent, setSavePromptContent] = useState('');
-  const [savePromptCategory, setSavePromptCategory] = useState('General');
-  const [savePromptTags, setSavePromptTags] = useState<string[]>([]);
-  const [tagInput, setTagInput] = useState('');
 
   // Model preferences
   const { preferences, loading: modelPrefsLoading } = useModelPreferences();
@@ -128,7 +118,6 @@ function PlaygroundContent() {
     });
   }, [preferences]);
 
-  // Accurate token counting using tiktoken
   // Estimate tokens with lightweight fallback for immediate UI feedback
   const estimateTokens = useCallback((text: string): number => {
     return estimateTokensFallback(text);
@@ -139,64 +128,22 @@ function PlaygroundContent() {
     let total = 0;
     
     // Add system prompt tokens
-    if (systemPrompt.trim()) {
-      total += estimateTokens(systemPrompt);
+    if (state.systemPrompt.trim()) {
+      total += estimateTokens(state.systemPrompt);
+    }
+    
+    // Add user prompt tokens
+    if (state.userPrompt.trim()) {
+      total += estimateTokens(state.userPrompt);
     }
     
     // Add all message tokens
-    messages.forEach(message => {
+    state.messages.forEach(message => {
       total += estimateTokens(message.content);
     });
     
     return total;
-  }, [systemPrompt, messages, estimateTokens]);
-
-  // Handle template variable changes
-  const handleVariableChange = useCallback((varName: string, value: string) => {
-    console.log('[Playground] Variable changed:', varName, value);
-    setVariables(prev => ({ ...prev, [varName]: value }));
-    
-    // Update display version with filled variables
-    setSystemPromptDisplay(prev => {
-      let updated = systemPrompt; // Start with clean text
-      if (value.trim()) {
-        // Replace standard variable format {{KEY}}
-        const regex = new RegExp(`\\{\\{\\s*${varName}\\s*\\}\\}`, 'g');
-        updated = updated.replace(regex, `<mark class="filled-variable">${value}</mark>`);
-        
-        // Replace markdown list format: - `KEY`: Description (e.g., "example") or (default: "example")
-        const mdListRegex = new RegExp(`-\\s*\`${varName}\`:\\s*[^\\n]*\\((e\\.g\\.,|default:)\\s*["'][^"']*["']\\)`, 'g');
-        updated = updated.replace(mdListRegex, `<mark class="filled-variable">${value}</mark>`);
-      }
-      
-      // Apply all other variables too
-      Object.entries(variables).forEach(([key, val]) => {
-        if (key !== varName && val.trim()) {
-          const regex = new RegExp(`\\{\\{\\s*${key}\\s*\\}\\}`, 'g');
-          updated = updated.replace(regex, `<mark class="filled-variable">${val}</mark>`);
-          
-          const mdListRegex = new RegExp(`-\\s*\`${key}\`:\\s*[^\\n]*\\((e\\.g\\.,|default:)\\s*["'][^"']*["']\\)`, 'g');
-          updated = updated.replace(mdListRegex, `<mark class="filled-variable">${val}</mark>`);
-        }
-      });
-      
-      return updated;
-    });
-  }, [systemPrompt, variables]);
-
-  // Form hook
-  const form = useForm<PlaygroundFormData>({
-    resolver: zodResolver(playgroundSchema),
-    defaultValues: {
-      model: "gpt-3.5-turbo",
-      prompt: "",
-      temperature: 0.7,
-      maxTokens: 1000,
-      topP: 1,
-      frequencyPenalty: 0,
-      presencePenalty: 0,
-    },
-  });
+  }, [state.systemPrompt, state.userPrompt, state.messages, estimateTokens]);
 
   // Update available models when preferences change
   useEffect(() => {
@@ -209,34 +156,18 @@ function PlaygroundContent() {
   // Handle selected model becoming unavailable
   useEffect(() => {
     if (!modelPrefsLoading && availableModels.length > 0) {
-      const isSelectedModelAvailable = availableModels.find(m => m.id === selectedModel);
+      const isSelectedModelAvailable = availableModels.find(m => m.id === state.model);
       if (!isSelectedModelAvailable) {
-        setSelectedModel(availableModels[0].id);
+        setState(prev => ({ ...prev, model: availableModels[0].id }));
       }
     }
-  }, [availableModels, selectedModel, modelPrefsLoading]);
+  }, [availableModels, state.model, modelPrefsLoading]);
 
   // Update token count when conversation changes
   useEffect(() => {
     const totalTokens = calculateTotalTokens();
-    // Add current input text tokens
-    const inputTokens = inputText.trim() ? estimateTokens(inputText) : 0;
-    setEstimatedTokens(totalTokens + inputTokens);
-  }, [calculateTotalTokens, inputText, estimateTokens]);
-
-  // Auto-scroll to bottom when new messages are added
-  useEffect(() => {
-    if (messages.length > 0) {
-      const scrollToBottom = () => {
-        setTimeout(() => {
-          if (chatContainerRef.current) {
-            chatContainerRef.current.scrollTop = chatContainerRef.current.scrollHeight;
-          }
-        }, 100);
-      };
-      scrollToBottom();
-    }
-  }, [messages, loading]);
+    setState(prev => ({ ...prev, estimatedTokens: totalTokens }));
+  }, [calculateTotalTokens]);
 
   // Load prompt from URL if prompt ID is provided
   useEffect(() => {
@@ -246,27 +177,14 @@ function PlaygroundContent() {
     // Load prompt data
     const loadPrompt = async (promptId: string) => {
       try {
-        console.log('[Playground] loadPrompt called with promptId:', promptId)
+        console.log('[Playground] loadPrompt called with promptId:', promptId);
         
         // Check if we have processed content from template variables
-        const processedContent = localStorage.getItem('playground-processed-content')
-        const storedPromptId = localStorage.getItem('playground-prompt-id')
+        const processedContent = localStorage.getItem('playground-processed-content');
+        const storedPromptId = localStorage.getItem('playground-prompt-id');
         
-        console.log('[Playground] localStorage check:')
-        console.log('- processedContent exists:', !!processedContent)
-        console.log('- processedContent length:', processedContent?.length || 0)
-        console.log('- storedPromptId:', storedPromptId)
-        console.log('- promptId:', promptId)
-        console.log('- IDs match:', String(storedPromptId) === String(promptId))
-        
-        if (processedContent) {
-          console.log('- processedContent includes {{PROJECT_KEY}}:', processedContent.includes('{{PROJECT_KEY}}'))
-          console.log('- processedContent includes SAMBA-123:', processedContent.includes('SAMBA-123'))
-        }
-        
-        // Ensure both IDs are strings and match
         if (processedContent && storedPromptId && String(storedPromptId) === String(promptId)) {
-          console.log('[Playground] Using processed content from localStorage')
+          console.log('[Playground] Using processed content from localStorage');
           
           // Clean up HTML markup for plain text input
           const cleanContent = processedContent
@@ -275,66 +193,49 @@ function PlaygroundContent() {
             .replace(/<[^>]*>/g, '') // Remove any other HTML tags
             .trim();
           
-          // Put processed content in user input field, clear system prompt
-          setInputText(cleanContent)
-          setSystemPrompt('') // Clear system prompt
-          setSystemPromptDisplay('') // Clear display markup
-          setVariables({})
-          setVariablesFilled(true)
+          setState(prev => ({
+            ...prev,
+            userPrompt: cleanContent,
+            systemPrompt: '',
+          }));
           
           // Clear the localStorage items AFTER setting the content
-          localStorage.removeItem('playground-processed-content')
-          localStorage.removeItem('playground-prompt-id')
+          localStorage.removeItem('playground-processed-content');
+          localStorage.removeItem('playground-prompt-id');
           
           toast({
             title: "Prompt Loaded",
-            description: "Loaded prompt with filled variables in message input",
-          })
-          return
+            description: "Loaded prompt with filled variables",
+          });
+          return;
         }
-        
-        console.log('[Playground] Falling back to API')
         
         // Fallback to API if no processed content
         const response = await fetch(`/api/playground/prompt/${promptId}`);
         
         if (!response.ok) {
           const errorData = await response.json();
-          console.error('[Playground] API Error Response:', errorData);
-          
-          if (errorData.available) {
-            throw new Error(`Prompt ${promptId} not found. Available IDs: ${errorData.available.join(', ')}`);
-          }
-          
-          throw new Error(`Failed to load prompt (${response.status}): ${errorData.error || 'Unknown error'}`);
+          throw new Error(errorData.error || 'Failed to load prompt');
         }
         
         const data = await response.json();
-        console.log('[Playground] Loaded prompt data:', data);
         
-        // Check if the response has the expected structure
         if (!data || !data.success || !data.prompt) {
-          console.error('[Playground] Invalid response structure:', data);
           throw new Error('Invalid response structure - missing prompt data');
         }
         
-        // The new API returns { success: true, prompt: { ... } }
         const prompt = data.prompt;
         
-        // Put content in user input field, clear system prompt
-        setInputText(prompt.content); // Put content in user input
-        setSystemPrompt(''); // Clear system prompt
-        setSystemPromptDisplay(''); // Clear display markup
-        if (prompt.model) setSelectedModel(prompt.model);
-        
-        // Don't extract template variables when loading from playground
-        // Clear any existing variables
-        setVariables({});
-        setVariablesFilled(false)
+        setState(prev => ({
+          ...prev,
+          userPrompt: prompt.content,
+          systemPrompt: '',
+          model: prompt.model || prev.model,
+        }));
         
         toast({
           title: "Prompt Loaded",
-          description: `Loaded "${prompt.title}" in message input`,
+          description: `Loaded "${prompt.title}"`,
         });
       } catch (error) {
         console.error('[Playground] Error loading prompt:', error);
@@ -346,17 +247,16 @@ function PlaygroundContent() {
       }
     };
     
-    // Handle direct prompt content (from Test in Playground button)
+    // Handle direct prompt content
     if (directPrompt && !promptLoadedRef.current) {
       promptLoadedRef.current = 'direct-prompt';
-      // Clean up highlight markers if present
       const cleanedPrompt = directPrompt
         .replace(/\|\|\|HIGHLIGHT\|\|\|/g, '')
         .trim();
-      setInputText(cleanedPrompt);
+      setState(prev => ({ ...prev, userPrompt: cleanedPrompt }));
       toast({
         title: "Prompt Loaded",
-        description: "Prompt loaded in message input",
+        description: "Prompt loaded successfully",
       });
     } else if (promptId && promptLoadedRef.current !== promptId) {
       promptLoadedRef.current = promptId;
@@ -364,7 +264,7 @@ function PlaygroundContent() {
     }
   }, [searchParams, toast]);
 
-  // NOW HANDLE CONDITIONAL LOGIC AFTER ALL HOOKS
+  // Handle conditional logic after all hooks
   if (status === 'loading') {
     return (
       <div className="min-h-screen bg-background flex items-center justify-center">
@@ -382,7 +282,6 @@ function PlaygroundContent() {
         <Navigation />
         <div className="container mx-auto px-4 py-8">
           <div className="max-w-md mx-auto text-center">
-            <MessageSquare className="h-16 w-16 mx-auto mb-6 text-muted-foreground" />
             <h1 className="text-2xl font-bold mb-4">Authentication Required</h1>
             <p className="text-muted-foreground mb-6">
               Please sign in to access the playground and test prompts with AI models.
@@ -394,46 +293,37 @@ function PlaygroundContent() {
     );
   }
 
-  // Send message function
-  const sendMessage = async () => {
-    if (!inputText.trim() || loading) return;
+  // Run prompt function
+  const handleRun = async () => {
+    if (!state.userPrompt.trim() || state.isRunning) return;
 
-    const userMessage: Message = {
-      id: Date.now().toString(),
-      role: 'user',
-      content: inputText.trim(),
-      timestamp: new Date(),
-    };
+    console.log("Running prompt with:", {
+      model: state.model,
+      systemPrompt: state.systemPrompt,
+      userPrompt: state.userPrompt,
+      temperature: state.temperature,
+      maxTokens: state.maxTokens,
+    });
 
-    setMessages(prev => [...prev, userMessage]);
-    setInputText('');
-    setLoading(true);
+    setState(prev => ({ ...prev, isRunning: true, response: "" }));
     setError('');
 
     try {
-      // Build the conversation context for the prompt
-      const conversationHistory = [...messages, userMessage]
-        .map(msg => `${msg.role === 'user' ? 'Human' : 'Assistant'}: ${msg.content}`)
-        .join('\n\n');
-      
-      // Create the full prompt with conversation context
-      const fullPrompt = messages.length === 0 ? userMessage.content : conversationHistory;
-
       const response = await fetch('/api/playground/generate', {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
         },
         body: JSON.stringify({
-          prompt: fullPrompt,
-          model: selectedModel,
-          systemPrompt: systemPrompt.trim() || undefined,
+          prompt: state.userPrompt,
+          model: state.model,
+          systemPrompt: state.systemPrompt.trim() || undefined,
           parameters: {
-            temperature,
-            maxTokens,
-            topP,
-            frequencyPenalty,
-            presencePenalty,
+            temperature: state.temperature,
+            maxTokens: state.maxTokens,
+            topP: state.topP,
+            frequencyPenalty: state.frequencyPenalty,
+            presencePenalty: state.presencePenalty,
           },
         }),
       });
@@ -449,62 +339,367 @@ function PlaygroundContent() {
         throw new Error(data.error);
       }
 
-      const assistantMessage: Message = {
-        id: (Date.now() + 1).toString(),
-        role: 'assistant',
-        content: data.output, // API returns 'output', not 'content'
-        timestamp: new Date(),
-      };
+      setState(prev => ({
+        ...prev,
+        response: data.output,
+        lastSaved: new Date().toLocaleString(),
+      }));
 
-      setMessages(prev => [...prev, assistantMessage]);
     } catch (error) {
-      console.error('Error sending message:', error);
+      console.error('Error running prompt:', error);
       setError(error instanceof Error ? error.message : 'An unexpected error occurred');
       toast({
         title: "Error",
-        description: error instanceof Error ? error.message : 'Failed to send message',
+        description: error instanceof Error ? error.message : 'Failed to run prompt',
         variant: "destructive",
       });
     } finally {
-      setLoading(false);
+      setState(prev => ({ ...prev, isRunning: false }));
     }
   };
 
-  // Clear conversation
-  const clearConversation = () => {
-    setMessages([]);
-    setError('');
+  // Handle model settings change
+  const handleModelSettingsChange = (newSettings: Partial<PlaygroundState>) => {
+    setState(prev => ({ ...prev, ...newSettings }));
   };
 
-  // Copy message content
-  const copyMessage = (content: string) => {
-    navigator.clipboard.writeText(content);
+  // Copy response content
+  const copyResponse = () => {
+    navigator.clipboard.writeText(state.response);
     toast({
       title: "Copied",
-      description: "Message copied to clipboard",
+      description: "Response copied to clipboard",
     });
   };
 
-  // Main playground UI - full functionality restored
+  // Clear everything
+  const clearAll = () => {
+    setState(prev => ({
+      ...prev,
+      userPrompt: '',
+      systemPrompt: '',
+      response: '',
+      messages: [],
+    }));
+    setError('');
+  };
+
+  // Get code functionality
+  const handleGetCode = () => {
+    const codeSnippet = `// AI Playground Configuration
+const prompt = ${JSON.stringify(state.userPrompt, null, 2)};
+const systemPrompt = ${JSON.stringify(state.systemPrompt, null, 2)};
+const model = "${state.model}";
+const parameters = {
+  temperature: ${state.temperature},
+  maxTokens: ${state.maxTokens},
+  topP: ${state.topP},
+  frequencyPenalty: ${state.frequencyPenalty},
+  presencePenalty: ${state.presencePenalty},
+};`;
+
+    navigator.clipboard.writeText(codeSnippet);
+    toast({
+      title: "Code Copied",
+      description: "Playground configuration copied as code",
+    });
+  };
+
   return (
-    <div className="min-h-screen bg-background">
+    <div className="h-screen flex flex-col bg-background">
       <Navigation />
-      <div className="container mx-auto px-4 py-4">
-        <div className="grid grid-cols-1 lg:grid-cols-4 gap-6 h-[calc(100vh-120px)]">
-          {/* Settings Panel */}
-          <div className="lg:col-span-1 space-y-4">
-            <Card>
-              <CardHeader className="pb-3">
-                <CardTitle className="text-lg flex items-center gap-2">
-                  <Settings className="h-5 w-5" />
-                  Model Settings
-                </CardTitle>
-              </CardHeader>
-              <CardContent className="space-y-4">
+      {/* Top Header */}
+      <div className="flex items-center justify-between p-4 border-b">
+        <div className="flex items-center space-x-3">
+          <Select 
+            value={state.model} 
+            onValueChange={(value) => setState(prev => ({ ...prev, model: value }))}
+          >
+            <SelectTrigger className="w-[280px]">
+              <SelectValue />
+            </SelectTrigger>
+            <SelectContent>
+              {availableModels.map((model) => (
+                <SelectItem key={model.id} value={model.id}>
+                  <div className="flex items-center gap-2">
+                    <span>{model.name}</span>
+                    <Badge variant="secondary" className="text-xs">
+                      {model.provider}
+                    </Badge>
+                  </div>
+                </SelectItem>
+              ))}
+            </SelectContent>
+          </Select>
+        </div>
+
+        <div className="flex items-center space-x-3">
+          <Button variant="outline" onClick={handleGetCode}>
+            <Code className="mr-2 h-4 w-4" />
+            Get Code
+          </Button>
+          <Button 
+            onClick={handleRun} 
+            disabled={state.isRunning || !state.userPrompt.trim()}
+            className="bg-primary hover:bg-primary/90"
+          >
+            <Play className="mr-2 h-4 w-4" />
+            {state.isRunning ? "Running..." : "Run"}
+          </Button>
+        </div>
+      </div>
+
+      {/* Project Header */}
+      <div className="p-4 border-b">
+        <div className="flex items-center justify-between">
+          <div>
+            <h1 className="text-xl font-semibold flex items-center">
+              {state.projectTitle}
+              <Button variant="ghost" size="sm" className="ml-2">
+                <Edit3 className="h-4 w-4" />
+              </Button>
+            </h1>
+            <div className="flex items-center space-x-4 text-sm text-muted-foreground mt-1">
+              <span>Last saved {state.lastSaved}</span>
+              <Button 
+                variant="link" 
+                size="sm" 
+                className="p-0 h-auto"
+                onClick={() => setState(prev => ({ ...prev, lastSaved: new Date().toLocaleString() }))}
+              >
+                Save changes
+              </Button>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      {/* Model Info Bar */}
+      <div className="px-4 py-2 bg-muted/50 border-b">
+        <div className="flex items-center justify-between">
+          <div className="flex items-center space-x-4">
+            <Button 
+              variant="outline" 
+              size="sm" 
+              className="font-mono text-xs"
+              onClick={() => setIsModelSettingsOpen(true)}
+            >
+              <Settings className="h-3 w-3 mr-2" />
+              {state.model}
+            </Button>
+            <div className="flex items-center gap-2 text-sm">
+              <Cpu className="h-4 w-4" />
+              <span>Estimated Tokens: {state.estimatedTokens.toLocaleString()}</span>
+            </div>
+          </div>
+          <Button variant="ghost" size="sm">
+            <Sparkles className="h-4 w-4 mr-1" />
+            Templatize
+          </Button>
+        </div>
+      </div>
+
+      <div className="flex-1 flex overflow-hidden">
+        {/* Left Panel - Prompt Configuration */}
+        <div className="w-1/2 flex flex-col border-r">
+          <div className="flex-1 flex flex-col p-4 space-y-4">
+            {/* System Prompt Section */}
+            <Collapsible open={isSystemPromptOpen} onOpenChange={setIsSystemPromptOpen}>
+              <CollapsibleTrigger asChild>
+                <Button
+                  variant="ghost"
+                  className="w-full justify-between p-3 h-auto border rounded-lg"
+                >
+                  <div className="flex items-center space-x-2">
+                    <span className="font-medium">System Prompt</span>
+                    <span className="text-sm text-muted-foreground">Define a role, tone or context (optional)</span>
+                  </div>
+                  <div className="flex items-center space-x-2">
+                    <Info className="h-4 w-4 text-muted-foreground" />
+                    {isSystemPromptOpen ? <ChevronDown className="h-4 w-4" /> : <ChevronRight className="h-4 w-4" />}
+                  </div>
+                </Button>
+              </CollapsibleTrigger>
+              <CollapsibleContent className="mt-2">
+                <Textarea
+                  placeholder="You are a helpful assistant..."
+                  value={state.systemPrompt}
+                  onChange={(e) => setState(prev => ({ ...prev, systemPrompt: e.target.value }))}
+                  className="min-h-[100px] resize-none"
+                />
+              </CollapsibleContent>
+            </Collapsible>
+
+            {/* User Prompt Section */}
+            <div className="flex-1 flex flex-col">
+              <div className="flex items-center justify-between mb-2">
+                <label className="text-sm font-medium">User</label>
+                <Button variant="ghost" size="sm" onClick={clearAll}>
+                  <RotateCcw className="h-4 w-4" />
+                </Button>
+              </div>
+                                              <div className="flex-1 flex flex-col relative">
+                  {/* Hidden textarea for input handling */}
+                  <textarea
+                    ref={userPromptRef}
+                    value={state.userPrompt}
+                    onChange={(e) => setState(prev => ({ ...prev, userPrompt: e.target.value }))}
+                    className="absolute inset-0 w-full h-full p-3 text-base font-mono bg-transparent text-transparent caret-black resize-none border-0 outline-none z-10"
+                    style={{
+                      fontFamily: 'ui-monospace, SFMono-Regular, "SF Mono", Consolas, "Liberation Mono", Menlo, monospace'
+                    }}
+                  />
+                  
+                  {/* Visible syntax-highlighted content */}
+                  <div 
+                    className="flex-1 min-h-[300px] p-3 text-base font-mono border rounded-md bg-background pointer-events-none whitespace-pre-wrap break-words overflow-auto"
+                    style={{
+                      fontFamily: 'ui-monospace, SFMono-Regular, "SF Mono", Consolas, "Liberation Mono", Menlo, monospace',
+                      lineHeight: '1.5'
+                    }}
+                  >
+                    {state.userPrompt ? (
+                      <div
+                        dangerouslySetInnerHTML={{
+                          __html: state.userPrompt
+                            .replace(/&/g, '&amp;')
+                            .replace(/</g, '&lt;')
+                            .replace(/>/g, '&gt;')
+                            .replace(/\{\{([^}]+)\}\}/g, '<span style="color: #dc2626; background-color: rgba(220, 38, 38, 0.1); padding: 2px 4px; border-radius: 3px; font-weight: 600; border: 1px solid rgba(220, 38, 38, 0.2);">{{$1}}</span>')
+                        }}
+                      />
+                    ) : (
+                      <span className="text-muted-foreground">Enter your prompt here...</span>
+                    )}
+                  </div>
+                </div>
+            </div>
+
+
+          </div>
+        </div>
+
+        {/* Right Panel - Response */}
+        <div className="w-1/2 flex flex-col">
+          <div className="flex-1 p-4">
+            {state.isRunning ? (
+              <div className="flex items-center justify-center h-full">
+                <div className="text-center">
+                  <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary mx-auto mb-4"></div>
+                  <p className="text-muted-foreground">Running prompt...</p>
+                </div>
+              </div>
+            ) : state.response ? (
+              <Card className="h-full">
+                <CardContent className="p-0 h-full overflow-hidden flex flex-col">
+                  {/* Response Header */}
+                  <div className="flex items-center justify-between p-4 border-b">
+                    <span className="font-medium">Response</span>
+                    <Button variant="ghost" size="sm" onClick={copyResponse}>
+                      <Copy className="h-4 w-4" />
+                    </Button>
+                  </div>
+                  
+                  {/* Response Content */}
+                  <div className="flex-1 overflow-auto p-4">
+                    <div className="prose prose-sm max-w-none dark:prose-invert">
+                      <PromptContentRenderer content={state.response} />
+                    </div>
+                  </div>
+                </CardContent>
+              </Card>
+            ) : (
+              <div className="flex flex-col h-full">
+                {/* Welcome content */}
+                <div className="flex-1 p-6">
+                  <Card className="h-full bg-muted/50">
+                    <CardContent className="p-6 h-full">
+                      <div className="space-y-6">
+                        <h2 className="text-2xl font-semibold">
+                          Welcome to SambaTV AI Playground
+                        </h2>
+
+                        <div className="space-y-4 text-muted-foreground">
+                          <div className="flex items-start space-x-3">
+                            <span className="text-muted-foreground mt-1">→</span>
+                            <p>
+                              Write a prompt in the left column, and click <Play className="inline h-4 w-4 mx-1" />{" "}
+                              <strong>Run</strong> to see SambaTV AI's response
+                            </p>
+                          </div>
+
+                          <div className="flex items-start space-x-3">
+                            <span className="text-muted-foreground mt-1">→</span>
+                            <p>
+                              Editing the prompt, or changing{" "}
+                              <span className="inline-flex items-center mx-1">
+                                <SlidersHorizontal className="h-4 w-4" />
+                              </span>{" "}
+                              model parameters creates a new version
+                            </p>
+                          </div>
+
+                          <div className="flex items-start space-x-3">
+                            <span className="text-muted-foreground mt-1">→</span>
+                            <p>
+                              Write variables like this:{" "}
+                              <code className="bg-background px-2 py-1 rounded text-primary font-mono text-sm">
+                                {"{{VARIABLE_NAME}}"}
+                              </code>
+                            </p>
+                          </div>
+
+                          <div className="flex items-start space-x-3">
+                            <span className="text-muted-foreground mt-1">→</span>
+                            <p>
+                              Add messages using <MessageSquarePlus className="inline h-4 w-4 mx-1" /> to simulate a
+                              conversation
+                            </p>
+                          </div>
+
+                          <div className="flex items-start space-x-3">
+                            <span className="text-muted-foreground mt-1">→</span>
+                            <p>
+                              High quality examples greatly improve performance. After drafting a prompt, click{" "}
+                              <strong>EXAMPLES</strong> to add some
+                            </p>
+                          </div>
+                        </div>
+
+                        <div className="pt-4">
+                          <Button 
+                            variant="outline" 
+                            className="flex items-center space-x-2"
+                            onClick={() => window.open('https://docs.anthropic.com/en/docs/build-with-claude/prompt-engineering/overview', '_blank')}
+                          >
+                            <Info className="h-4 w-4" />
+                            <span>Learn about prompt design</span>
+                          </Button>
+                        </div>
+                      </div>
+                    </CardContent>
+                  </Card>
+                </div>
+              </div>
+            )}
+          </div>
+        </div>
+      </div>
+
+      {/* Model Settings Modal */}
+      <Sheet open={isModelSettingsOpen} onOpenChange={setIsModelSettingsOpen}>
+        <SheetContent side="right" className="w-[400px] sm:w-[540px]">
+          <SheetHeader>
+            <SheetTitle>Model</SheetTitle>
+          </SheetHeader>
+          
+          <div className="space-y-6 mt-6">
                 {/* Model Selection */}
                 <div className="space-y-2">
-                  <Label>Model</Label>
-                  <Select value={selectedModel} onValueChange={setSelectedModel}>
+              <Select 
+                value={state.model} 
+                onValueChange={(value) => setState(prev => ({ ...prev, model: value }))}
+              >
                     <SelectTrigger>
                       <SelectValue />
                     </SelectTrigger>
@@ -524,147 +719,56 @@ function PlaygroundContent() {
                 </div>
 
                 {/* Temperature */}
-                <div className="space-y-2">
-                  <div className="flex justify-between">
+            <div className="space-y-3">
+              <div className="flex justify-between items-center">
                     <Label>Temperature</Label>
-                    <span className="text-sm text-muted-foreground">{temperature}</span>
+                <span className="text-sm font-mono">{state.temperature}</span>
                   </div>
                   <Slider
-                    value={[temperature]}
-                    onValueChange={(value) => setTemperature(value[0])}
+                value={[state.temperature]}
+                onValueChange={(value) => setState(prev => ({ ...prev, temperature: value[0] }))}
                     max={2}
                     min={0}
                     step={0.1}
+                className="w-full"
                   />
                 </div>
 
                 {/* Max Tokens */}
-                <div className="space-y-2">
-                  <div className="flex justify-between">
-                    <Label>Max Tokens</Label>
-                    <span className="text-sm text-muted-foreground">{maxTokens}</span>
+            <div className="space-y-3">
+              <div className="flex justify-between items-center">
+                <Label>Max tokens</Label>
+                <span className="text-sm font-mono">{state.maxTokens}</span>
                   </div>
                   <Slider
-                    value={[maxTokens]}
-                    onValueChange={(value) => setMaxTokens(value[0])}
-                    max={4000}
+                value={[state.maxTokens]}
+                onValueChange={(value) => setState(prev => ({ ...prev, maxTokens: value[0] }))}
+                max={20000}
                     min={1}
                     step={1}
+                className="w-full"
                   />
                 </div>
 
-                {/* System Prompt */}
-                <div className="space-y-2">
-                  <Label>System Prompt</Label>
-                  <Textarea
-                    value={systemPrompt}
-                    onChange={(e) => setSystemPrompt(e.target.value)}
-                    placeholder="You are a helpful assistant..."
-                    className="min-h-[100px] text-sm"
-                  />
-                </div>
 
-                {/* Actions */}
-                <div className="space-y-2">
+
+            {/* Run Button */}
+            <div className="pt-4">
                   <Button
-                    onClick={clearConversation}
-                    variant="outline"
-                    size="sm"
-                    className="w-full"
-                    disabled={messages.length === 0}
-                  >
-                    <RotateCcw className="h-4 w-4 mr-2" />
-                    Clear Chat
+                onClick={() => {
+                  handleRun();
+                  setIsModelSettingsOpen(false);
+                }}
+                disabled={state.isRunning || !state.userPrompt.trim()}
+                className="w-full bg-primary hover:bg-primary/90"
+              >
+                <Play className="mr-2 h-4 w-4" />
+                {state.isRunning ? "Running..." : "Run"}
                   </Button>
                 </div>
-
-                {/* Token Counter */}
-                <div className="bg-muted/50 rounded-lg p-3">
-                  <div className="flex items-center gap-2 text-sm">
-                    <Cpu className="h-4 w-4" />
-                    <span className="font-medium">Estimated Tokens</span>
-                  </div>
-                  <div className="text-lg font-mono mt-1">{estimatedTokens.toLocaleString()}</div>
-                </div>
-              </CardContent>
-            </Card>
           </div>
-
-          {/* Chat Area */}
-          <div className="lg:col-span-3 flex flex-col">
-            <Card className="flex-1 flex flex-col">
-              <CardHeader className="pb-3 border-b">
-                <CardTitle className="text-lg flex items-center gap-2">
-                  <MessageSquare className="h-5 w-5" />
-                  AI Playground
-                </CardTitle>
-                <CardDescription>
-                  Test and experiment with AI models. Messages are not saved.
-                </CardDescription>
-              </CardHeader>
-
-              {/* Messages */}
-              <CardContent className="flex-1 flex flex-col p-0">
-                <ScrollArea
-                  ref={chatContainerRef}
-                  className="flex-1 p-4"
-                >
-                  {messages.length === 0 ? (
-                    <div className="flex items-center justify-center h-full text-muted-foreground">
-                      <div className="text-center">
-                        <Bot className="h-12 w-12 mx-auto mb-4 opacity-50" />
-                        <p className="text-lg mb-2">Start a conversation</p>
-                        <p className="text-sm">Send a message to begin testing the AI model</p>
-                      </div>
-                    </div>
-                  ) : (
-                    <div className="space-y-4">
-                      {messages.map((message) => (
-                        <div
-                          key={message.id}
-                          className={`flex gap-3 ${
-                            message.role === 'user' ? 'justify-end' : 'justify-start'
-                          }`}
-                        >
-                          <div
-                            className={`max-w-[80%] rounded-lg p-3 ${
-                              message.role === 'user'
-                                ? 'bg-primary text-primary-foreground'
-                                : 'bg-muted'
-                            }`}
-                          >
-                            <div className="flex items-start justify-between gap-2">
-                              <div className="flex-1">
-                                <PromptContentRenderer content={message.content} />
-                              </div>
-                              <Button
-                                onClick={() => copyMessage(message.content)}
-                                variant="ghost"
-                                size="sm"
-                                className="h-6 w-6 p-0 opacity-60 hover:opacity-100"
-                              >
-                                <Copy className="h-3 w-3" />
-                              </Button>
-                            </div>
-                          </div>
-                        </div>
-                      ))}
-                      {loading && (
-                        <div className="flex gap-3 justify-start">
-                          <div className="bg-muted rounded-lg p-3">
-                            <div className="flex items-center gap-2">
-                              <Loader2 className="h-4 w-4 animate-spin" />
-                              <span className="text-sm text-muted-foreground">
-                                AI is thinking...
-                              </span>
-                            </div>
-                          </div>
-                        </div>
-                      )}
-                    </div>
-                  )}
-                  <div ref={messagesEndRef} />
-                </ScrollArea>
+        </SheetContent>
+      </Sheet>
 
                 {/* Error Display */}
                 {error && (
@@ -675,41 +779,6 @@ function PlaygroundContent() {
                     </Alert>
                   </div>
                 )}
-
-                {/* Input Area */}
-                <div className="border-t p-4">
-                  <div className="flex gap-2">
-                    <Textarea
-                      value={inputText}
-                      onChange={(e) => setInputText(e.target.value)}
-                      placeholder="Type your message here..."
-                      className="flex-1 min-h-[60px] max-h-[200px] resize-none"
-                      onKeyDown={(e) => {
-                        if (e.key === 'Enter' && !e.shiftKey) {
-                          e.preventDefault();
-                          sendMessage();
-                        }
-                      }}
-                    />
-                    <Button
-                      onClick={sendMessage}
-                      disabled={!inputText.trim() || loading}
-                      size="default"
-                      className="self-end"
-                    >
-                      <Send className="h-4 w-4" />
-                    </Button>
-                  </div>
-                  <div className="flex justify-between items-center mt-2 text-xs text-muted-foreground">
-                    <span>Press Enter to send, Shift+Enter for new line</span>
-                    <span>{inputText.length} characters</span>
-                  </div>
-                </div>
-              </CardContent>
-            </Card>
-          </div>
-        </div>
-      </div>
     </div>
   );
 }
@@ -722,7 +791,7 @@ export default function PlaygroundPage() {
         <div className="flex h-[calc(100vh-64px)]">
           <div className="flex-1 flex items-center justify-center">
             <div className="flex items-center gap-2">
-              <Loader2 className="h-6 w-6 animate-spin text-red-600" />
+              <Loader2 className="h-6 w-6 animate-spin text-primary" />
               <span className="text-lg text-muted-foreground">Loading playground...</span>
             </div>
           </div>
