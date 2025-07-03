@@ -4,7 +4,6 @@ import { useState, useCallback } from 'react'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import { TemplateVariables } from '@/components/template-variables'
 import { PromptContentRenderer } from '@/components/prompt-content-renderer'
-import { ForkButton } from '@/components/fork-button'
 import { PromptExamples } from '@/components/prompt-examples'
 
 interface PromptContentSectionProps {
@@ -71,20 +70,14 @@ export function PromptContentSection({ prompt, user, isOwner }: PromptContentSec
               showVariables={true}
             />
           </div>
-          <div className="mt-3 sm:mt-4 flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3 sm:gap-4">
-            <div className="text-xs text-muted-foreground flex-1">
+          <div className="mt-3 sm:mt-4">
+            <div className="text-xs text-muted-foreground">
               {processedContent ? (
                 <span>Variables filled! Your customized values are highlighted in <span className="text-red-600 font-medium">red</span> above.</span>
               ) : (
                 <span>Tip: Variables in <span className="text-red-600 font-medium">{`{{red}}`}</span> can be customized above</span>
               )}
             </div>
-            {user && (
-              <ForkButton
-                promptId={prompt.id}
-                className="bg-primary text-white hover:bg-primary/90 w-full sm:w-auto shrink-0"
-              />
-            )}
           </div>
         </CardContent>
       </Card>

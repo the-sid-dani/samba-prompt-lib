@@ -735,19 +735,19 @@ export async function createPrompt(input: z.infer<typeof createPromptSchema>) {
     try {
       // Check if analytics environment is configured before attempting to track
       if (process.env.NEXT_PUBLIC_SUPABASE_URL && process.env.SUPABASE_SERVICE_ROLE_KEY) {
-        const { Analytics } = await import('@/lib/analytics')
-        await Analytics.trackEvent({
-          userId: session.user.id,
-          promptId: prompt.id,
-          eventType: 'prompt_create',
-          eventData: {
-            title: prompt.title,
-            category_id: prompt.category_id,
-            tags: prompt.tags,
-            is_fork: !!forked_from,
-            forked_from: forked_from
-          }
-        })
+      const { Analytics } = await import('@/lib/analytics')
+      await Analytics.trackEvent({
+        userId: session.user.id,
+        promptId: prompt.id,
+        eventType: 'prompt_create',
+        eventData: {
+          title: prompt.title,
+          category_id: prompt.category_id,
+          tags: prompt.tags,
+          is_fork: !!forked_from,
+          forked_from: forked_from
+        }
+      })
       }
     } catch (analyticsError) {
       console.error('Failed to track prompt creation analytics:', analyticsError)
@@ -784,16 +784,16 @@ export async function createPrompt(input: z.infer<typeof createPromptSchema>) {
       // Track fork analytics
       try {
         if (process.env.NEXT_PUBLIC_SUPABASE_URL && process.env.SUPABASE_SERVICE_ROLE_KEY) {
-          const { Analytics } = await import('@/lib/analytics')
-          await Analytics.trackEvent({
-            userId: session.user.id,
-            promptId: forked_from,
-            eventType: 'fork',
-            eventData: {
-              new_prompt_id: prompt.id,
-              new_prompt_title: prompt.title
-            }
-          })
+        const { Analytics } = await import('@/lib/analytics')
+        await Analytics.trackEvent({
+          userId: session.user.id,
+          promptId: forked_from,
+          eventType: 'fork',
+          eventData: {
+            new_prompt_id: prompt.id,
+            new_prompt_title: prompt.title
+          }
+        })
         }
       } catch (analyticsError) {
         console.error('Failed to track fork analytics:', analyticsError)

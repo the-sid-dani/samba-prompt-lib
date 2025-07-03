@@ -540,10 +540,7 @@ export default function SubmitPromptPage() {
             </CardContent>
           </Card>
           
-          {/* Help text section */}
-          <div className="mt-6 md:mt-8 text-center text-sm text-muted-foreground px-4">
-            <p>Need help? Check out our <a href="/guide" className="text-primary hover:underline">prompt writing guide</a></p>
-          </div>
+
         </div>
       </div>
       

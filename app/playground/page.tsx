@@ -394,17 +394,319 @@ function PlaygroundContent() {
     );
   }
 
-  // Main playground UI - simplified version for now
+  // Send message function
+  const sendMessage = async () => {
+    if (!inputText.trim() || loading) return;
+
+    const userMessage: Message = {
+      id: Date.now().toString(),
+      role: 'user',
+      content: inputText.trim(),
+      timestamp: new Date(),
+    };
+
+    setMessages(prev => [...prev, userMessage]);
+    setInputText('');
+    setLoading(true);
+    setError('');
+
+    try {
+      // Build the conversation context for the prompt
+      const conversationHistory = [...messages, userMessage]
+        .map(msg => `${msg.role === 'user' ? 'Human' : 'Assistant'}: ${msg.content}`)
+        .join('\n\n');
+      
+      // Create the full prompt with conversation context
+      const fullPrompt = messages.length === 0 ? userMessage.content : conversationHistory;
+
+      const response = await fetch('/api/playground/generate', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          prompt: fullPrompt,
+          model: selectedModel,
+          systemPrompt: systemPrompt.trim() || undefined,
+          parameters: {
+            temperature,
+            maxTokens,
+            topP,
+            frequencyPenalty,
+            presencePenalty,
+          },
+        }),
+      });
+
+      if (!response.ok) {
+        const errorData = await response.json();
+        throw new Error(errorData.error || `HTTP ${response.status}: ${response.statusText}`);
+      }
+
+      const data = await response.json();
+
+      if (data.error) {
+        throw new Error(data.error);
+      }
+
+      const assistantMessage: Message = {
+        id: (Date.now() + 1).toString(),
+        role: 'assistant',
+        content: data.output, // API returns 'output', not 'content'
+        timestamp: new Date(),
+      };
+
+      setMessages(prev => [...prev, assistantMessage]);
+    } catch (error) {
+      console.error('Error sending message:', error);
+      setError(error instanceof Error ? error.message : 'An unexpected error occurred');
+      toast({
+        title: "Error",
+        description: error instanceof Error ? error.message : 'Failed to send message',
+        variant: "destructive",
+      });
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  // Clear conversation
+  const clearConversation = () => {
+    setMessages([]);
+    setError('');
+  };
+
+  // Copy message content
+  const copyMessage = (content: string) => {
+    navigator.clipboard.writeText(content);
+    toast({
+      title: "Copied",
+      description: "Message copied to clipboard",
+    });
+  };
+
+  // Main playground UI - full functionality restored
   return (
     <div className="min-h-screen bg-background">
       <Navigation />
-      <div className="container mx-auto px-4 py-8">
-        <div className="max-w-4xl mx-auto">
-          <h1 className="text-2xl font-bold mb-6">AI Playground</h1>
-          <div className="text-center py-12">
-            <MessageSquare className="h-16 w-16 mx-auto mb-4 text-muted-foreground" />
-            <p className="text-lg text-muted-foreground">Playground is currently being rebuilt...</p>
-            <p className="text-sm text-muted-foreground mt-2">Please check back soon.</p>
+      <div className="container mx-auto px-4 py-4">
+        <div className="grid grid-cols-1 lg:grid-cols-4 gap-6 h-[calc(100vh-120px)]">
+          {/* Settings Panel */}
+          <div className="lg:col-span-1 space-y-4">
+            <Card>
+              <CardHeader className="pb-3">
+                <CardTitle className="text-lg flex items-center gap-2">
+                  <Settings className="h-5 w-5" />
+                  Model Settings
+                </CardTitle>
+              </CardHeader>
+              <CardContent className="space-y-4">
+                {/* Model Selection */}
+                <div className="space-y-2">
+                  <Label>Model</Label>
+                  <Select value={selectedModel} onValueChange={setSelectedModel}>
+                    <SelectTrigger>
+                      <SelectValue />
+                    </SelectTrigger>
+                    <SelectContent>
+                      {availableModels.map((model) => (
+                        <SelectItem key={model.id} value={model.id}>
+                          <div className="flex items-center gap-2">
+                            <span>{model.name}</span>
+                            <Badge variant="secondary" className="text-xs">
+                              {model.provider}
+                            </Badge>
+                          </div>
+                        </SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+                </div>
+
+                {/* Temperature */}
+                <div className="space-y-2">
+                  <div className="flex justify-between">
+                    <Label>Temperature</Label>
+                    <span className="text-sm text-muted-foreground">{temperature}</span>
+                  </div>
+                  <Slider
+                    value={[temperature]}
+                    onValueChange={(value) => setTemperature(value[0])}
+                    max={2}
+                    min={0}
+                    step={0.1}
+                  />
+                </div>
+
+                {/* Max Tokens */}
+                <div className="space-y-2">
+                  <div className="flex justify-between">
+                    <Label>Max Tokens</Label>
+                    <span className="text-sm text-muted-foreground">{maxTokens}</span>
+                  </div>
+                  <Slider
+                    value={[maxTokens]}
+                    onValueChange={(value) => setMaxTokens(value[0])}
+                    max={4000}
+                    min={1}
+                    step={1}
+                  />
+                </div>
+
+                {/* System Prompt */}
+                <div className="space-y-2">
+                  <Label>System Prompt</Label>
+                  <Textarea
+                    value={systemPrompt}
+                    onChange={(e) => setSystemPrompt(e.target.value)}
+                    placeholder="You are a helpful assistant..."
+                    className="min-h-[100px] text-sm"
+                  />
+                </div>
+
+                {/* Actions */}
+                <div className="space-y-2">
+                  <Button
+                    onClick={clearConversation}
+                    variant="outline"
+                    size="sm"
+                    className="w-full"
+                    disabled={messages.length === 0}
+                  >
+                    <RotateCcw className="h-4 w-4 mr-2" />
+                    Clear Chat
+                  </Button>
+                </div>
+
+                {/* Token Counter */}
+                <div className="bg-muted/50 rounded-lg p-3">
+                  <div className="flex items-center gap-2 text-sm">
+                    <Cpu className="h-4 w-4" />
+                    <span className="font-medium">Estimated Tokens</span>
+                  </div>
+                  <div className="text-lg font-mono mt-1">{estimatedTokens.toLocaleString()}</div>
+                </div>
+              </CardContent>
+            </Card>
+          </div>
+
+          {/* Chat Area */}
+          <div className="lg:col-span-3 flex flex-col">
+            <Card className="flex-1 flex flex-col">
+              <CardHeader className="pb-3 border-b">
+                <CardTitle className="text-lg flex items-center gap-2">
+                  <MessageSquare className="h-5 w-5" />
+                  AI Playground
+                </CardTitle>
+                <CardDescription>
+                  Test and experiment with AI models. Messages are not saved.
+                </CardDescription>
+              </CardHeader>
+
+              {/* Messages */}
+              <CardContent className="flex-1 flex flex-col p-0">
+                <ScrollArea
+                  ref={chatContainerRef}
+                  className="flex-1 p-4"
+                >
+                  {messages.length === 0 ? (
+                    <div className="flex items-center justify-center h-full text-muted-foreground">
+                      <div className="text-center">
+                        <Bot className="h-12 w-12 mx-auto mb-4 opacity-50" />
+                        <p className="text-lg mb-2">Start a conversation</p>
+                        <p className="text-sm">Send a message to begin testing the AI model</p>
+                      </div>
+                    </div>
+                  ) : (
+                    <div className="space-y-4">
+                      {messages.map((message) => (
+                        <div
+                          key={message.id}
+                          className={`flex gap-3 ${
+                            message.role === 'user' ? 'justify-end' : 'justify-start'
+                          }`}
+                        >
+                          <div
+                            className={`max-w-[80%] rounded-lg p-3 ${
+                              message.role === 'user'
+                                ? 'bg-primary text-primary-foreground'
+                                : 'bg-muted'
+                            }`}
+                          >
+                            <div className="flex items-start justify-between gap-2">
+                              <div className="flex-1">
+                                <PromptContentRenderer content={message.content} />
+                              </div>
+                              <Button
+                                onClick={() => copyMessage(message.content)}
+                                variant="ghost"
+                                size="sm"
+                                className="h-6 w-6 p-0 opacity-60 hover:opacity-100"
+                              >
+                                <Copy className="h-3 w-3" />
+                              </Button>
+                            </div>
+                          </div>
+                        </div>
+                      ))}
+                      {loading && (
+                        <div className="flex gap-3 justify-start">
+                          <div className="bg-muted rounded-lg p-3">
+                            <div className="flex items-center gap-2">
+                              <Loader2 className="h-4 w-4 animate-spin" />
+                              <span className="text-sm text-muted-foreground">
+                                AI is thinking...
+                              </span>
+                            </div>
+                          </div>
+                        </div>
+                      )}
+                    </div>
+                  )}
+                  <div ref={messagesEndRef} />
+                </ScrollArea>
+
+                {/* Error Display */}
+                {error && (
+                  <div className="p-4 border-t">
+                    <Alert variant="destructive">
+                      <AlertCircle className="h-4 w-4" />
+                      <AlertDescription>{error}</AlertDescription>
+                    </Alert>
+                  </div>
+                )}
+
+                {/* Input Area */}
+                <div className="border-t p-4">
+                  <div className="flex gap-2">
+                    <Textarea
+                      value={inputText}
+                      onChange={(e) => setInputText(e.target.value)}
+                      placeholder="Type your message here..."
+                      className="flex-1 min-h-[60px] max-h-[200px] resize-none"
+                      onKeyDown={(e) => {
+                        if (e.key === 'Enter' && !e.shiftKey) {
+                          e.preventDefault();
+                          sendMessage();
+                        }
+                      }}
+                    />
+                    <Button
+                      onClick={sendMessage}
+                      disabled={!inputText.trim() || loading}
+                      size="default"
+                      className="self-end"
+                    >
+                      <Send className="h-4 w-4" />
+                    </Button>
+                  </div>
+                  <div className="flex justify-between items-center mt-2 text-xs text-muted-foreground">
+                    <span>Press Enter to send, Shift+Enter for new line</span>
+                    <span>{inputText.length} characters</span>
+                  </div>
+                </div>
+              </CardContent>
+            </Card>
           </div>
         </div>
       </div>

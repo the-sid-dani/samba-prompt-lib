@@ -1,0 +1,179 @@
+---
+description: 
+globs: 
+alwaysApply: true
+---
+# Samba Prompt Library - Hierarchical Architecture Rules
+
+## **Architecture Overview**
+
+This app follows a 3-level hierarchical structure. All new features MUST follow this architecture:
+
+- **Level 3 (High-level)**: Main App coordination
+- **Level 2 (Mid-level)**: System boundaries  
+- **Level 1 (Low-level)**: Individual services and components
+
+## **System Boundaries (Level 2)**
+
+### **User Management System**
+- **Authentication**: Login, signup, session management
+- **Profile Management**: User profiles, preferences
+- **File Patterns**: 
+  - Pages: `app/auth/`, `app/profile/`
+  - APIs: `app/api/auth/`, `app/api/profile/`
+  - Components: `components/user/`, `components/profile/`
+  - Services: `lib/auth*`, `lib/authSendRequest.ts`
+
+### **Prompt Management System**
+- **Prompts**: CRUD operations, search, filtering
+- **Categories**: Prompt categorization
+- **Tags**: Tagging and discovery
+- **File Patterns**:
+  - Pages: `app/prompt/`, `app/categories/`, `app/tags/`
+  - APIs: `app/api/prompts/`, `app/api/categories/`
+  - Components: `components/prompt*`, `components/tag*`
+  - Actions: `app/actions/prompts.ts`, `app/actions/tags.ts`
+
+### **Admin System**
+- **User Management**: Admin user operations
+- **Content Moderation**: Cleanup, fixes
+- **Analytics**: Stats and reporting
+- **File Patterns**:
+  - Pages: `app/admin/`
+  - APIs: `app/api/admin/`
+  - Components: Admin-specific components in respective directories
+
+### **API System**
+- **External Integrations**: Third-party services
+- **Internal Services**: Cross-system communication
+- **File Patterns**:
+  - APIs: `app/api/playground/`, `app/api/health/`
+  - Services: `lib/ai/`, `lib/email.ts`, `lib/analytics.ts`
+
+## **Implementation Rules**
+
+### **✅ DO: Follow System Boundaries**
+
+```typescript
+// ✅ User Management System - Authentication
+// File: app/api/auth/signin/route.ts
+import { authConfig } from '@/lib/auth.config'
+import { createUser } from '@/lib/auth-utils'
+
+// ✅ Prompt Management System - Prompts
+// File: app/api/prompts/route.ts
+import { getPrompts } from '@/app/actions/prompts'
+import { validatePrompt } from '@/lib/prompt-utils'
+```
+
+### **✅ DO: Maintain Service Separation**
+
+```typescript
+// ✅ Keep authentication separate from prompts
+// File: app/actions/prompts.ts
+import { getCurrentUser } from '@/lib/auth-utils'  // Import from auth system
+import { createPrompt } from '@/lib/prompt-service'  // Local to prompt system
+
+export async function createPromptAction(data: PromptData) {
+  const user = await getCurrentUser()  // Auth system boundary
+  return createPrompt(data, user.id)   // Prompt system boundary
+}
+```
+
+### **✅ DO: Database Layer Consistency**
+
+```typescript
+// ✅ Use consistent database patterns
+// File: utils/supabase/prompts.ts
+import { createClient } from '@/utils/supabase/client'
+
+export async function getPromptsByCategory(categoryId: string) {
+  const supabase = createClient()
+  return supabase
+    .from('prompts')
+    .select('*, categories(*)')
+    .eq('category_id', categoryId)
+}
+```
+
+### **❌ DON'T: Cross System Boundaries Inappropriately**
+
+```typescript
+// ❌ Don't put prompt logic in auth files
+// File: lib/auth-utils.ts
+export async function createUserWithPrompts() {  // Wrong system!
+  // User creation logic mixed with prompt logic
+}
+
+// ❌ Don't put admin logic in user components
+// File: components/user/UserProfile.tsx
+export function UserProfile() {
+  const adminStats = useAdminStats()  // Wrong system boundary!
+  return <div>...</div>
+}
+```
+
+## **New Feature Checklist**
+
+When adding a new feature, follow these steps:
+
+1. **Identify System**: Which Level 2 system does your feature belong to?
+   - User Management, Prompt Management, Admin, or API?
+
+2. **Create Level 1 Components**: 
+   - Service layer: `lib/[system]-service.ts`
+   - Database layer: `utils/supabase/[system].ts`
+   - API endpoints: `app/api/[system]/route.ts`
+
+3. **Follow File Patterns**:
+   - Pages: `app/[system]/[feature]/page.tsx`
+   - Components: `components/[system]/[Feature]Component.tsx`
+   - Actions: `app/actions/[system].ts`
+
+4. **Maintain Boundaries**:
+   - Import from other systems only at boundaries
+   - Use proper service abstractions
+   - Keep database queries in appropriate utils
+
+## **Example: Adding a New Feature**
+
+**Feature**: Comment system for prompts
+
+**System**: Prompt Management System
+
+**Required Files**:
+```
+app/api/prompts/[id]/comments/route.ts       # API endpoint
+app/actions/comments.ts                       # Server actions
+components/prompt/CommentSection.tsx         # UI component
+lib/comment-service.ts                       # Business logic
+utils/supabase/comments.ts                   # Database layer
+```
+
+**Cross-system Integration**:
+```typescript
+// File: app/actions/comments.ts
+import { getCurrentUser } from '@/lib/auth-utils'      // Auth system
+import { createComment } from '@/lib/comment-service'   // Local service
+import { getPromptById } from '@/utils/supabase/prompts' // Local database
+```
+
+## **Architecture Validation**
+
+Before merging new features, ensure:
+
+- [ ] Feature is placed in correct Level 2 system
+- [ ] Service boundaries are respected
+- [ ] Database queries follow established patterns
+- [ ] Components are organized by system
+- [ ] Cross-system imports are minimal and at boundaries
+- [ ] Tests cover the service layer appropriately
+
+## **Reference Files**
+
+- Authentication: [lib/auth.config.ts](mdc:lib/auth.config.ts), [lib/auth-utils.ts](mdc:lib/auth-utils.ts)
+- Prompt Actions: [app/actions/prompts.ts](mdc:app/actions/prompts.ts)
+- Database Utils: [utils/supabase/client.ts](mdc:utils/supabase/client.ts)
+- API Structure: [app/api/prompts/route.ts](mdc:app/api/prompts/route.ts)
+
+This architecture ensures maintainability, testability, and clear separation of concerns as the application grows.

@@ -39,6 +39,14 @@ const authConfig = {
 		}),
 	}),
 	callbacks: {
+		async jwt({ token, user, account }) {
+			// When user signs in, store their ID in the JWT token
+			if (user) {
+				token.sub = user.id
+				console.log('[AUTH-CONFIG] JWT callback - storing user ID:', user.id)
+			}
+			return token
+		},
 		async signIn({ user, account, profile }) {
 			// Allow all users to sign in (they will be created with 'member' role by default)
 			
@@ -61,15 +69,24 @@ const authConfig = {
 
 			return true; // Allow sign-in
 		},
-		async session({ session, user }) {
+		async session({ session, user, token }) {
+			// Ensure user ID is set in session (critical for admin checks)
+			if (token?.sub) {
+				session.user.id = token.sub
+			} else if (user?.id) {
+				session.user.id = user.id
+			}
+
+			console.log('[AUTH-CONFIG] Session callback - user ID set to:', session.user.id)
+
 			const signingSecret = process.env.SUPABASE_JWT_SECRET
 
 			if (signingSecret) {
 				const payload = {
 					aud: "authenticated",
 					exp: Math.floor(new Date(session.expires).getTime() / 1000),
-					sub: user.id,
-					email: user.email,
+					sub: session.user.id || user?.id,
+					email: session.user.email || user?.email,
 					role: "authenticated",
 				}
 

@@ -106,16 +106,7 @@ const Footer = () => {
 								#ai-enablement
 								<ExternalLink className="w-3 h-3 opacity-0 group-hover:opacity-100 transition-opacity" />
 							</a>
-							<a
-								href="https://sambatv.enterprise.slack.com/archives/C09084P3E9F"
-								target="_blank"
-								rel="noopener noreferrer"
-								className="text-muted-foreground hover:text-foreground transition-colors flex items-center gap-2 group"
-							>
-								<MessageSquare className="w-4 h-4" />
-								#ai-policy-qa
-								<ExternalLink className="w-3 h-3 opacity-0 group-hover:opacity-100 transition-opacity" />
-							</a>
+
 						</div>
 					</div>
 				</div>
