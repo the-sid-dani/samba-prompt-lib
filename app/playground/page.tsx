@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useEffect, useCallback, useRef, Suspense } from 'react';
+import { useState, useEffect, useCallback, useRef, Suspense, useMemo } from 'react';
 import { Card, CardContent } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Label } from '@/components/ui/label';
@@ -43,6 +43,7 @@ import { useModelPreferences } from '@/hooks/useModelPreferences';
 import { estimateTokensFallback } from '@/lib/tokenization';
 import SignIn from '@/components/sign-in';
 import { ModelVisibilityManager } from '@/components/playground/ModelVisibilityManager';
+import { Input } from '@/components/ui/input';
 
 interface Message {
   id: string;
@@ -102,8 +103,8 @@ function PlaygroundContent() {
   const [isSystemPromptOpen, setIsSystemPromptOpen] = useState(false);
   const [isModelSettingsOpen, setIsModelSettingsOpen] = useState(false);
   const [isModelVisibilityOpen, setIsModelVisibilityOpen] = useState(false);
-  const [availableModels, setAvailableModels] = useState<typeof SUPPORTED_MODELS>([]);
   const [error, setError] = useState('');
+  const [modelSearchQuery, setModelSearchQuery] = useState('');
   
   // Template variables state
   const [variables, setVariables] = useState<Record<string, string>>({});
@@ -132,6 +133,26 @@ function PlaygroundContent() {
     });
   }, [preferences]);
 
+  // Memoize available models to prevent unnecessary recalculations
+  const availableModels = useMemo(() => {
+    if (modelPrefsLoading) return [];
+    return getFilteredModels();
+  }, [getFilteredModels, modelPrefsLoading]);
+
+  // Filter models based on search query
+  const filteredModels = useMemo(() => {
+    if (!modelSearchQuery.trim()) {
+      return availableModels.slice(0, 50); // Show first 50 when no search
+    }
+    
+    const query = modelSearchQuery.toLowerCase();
+    return availableModels.filter(model => 
+      model.name.toLowerCase().includes(query) ||
+      model.id.toLowerCase().includes(query) ||
+      model.provider.toLowerCase().includes(query)
+    ).slice(0, 50); // Limit search results to 50
+  }, [availableModels, modelSearchQuery]);
+
   // Estimate tokens with lightweight fallback for immediate UI feedback
   const estimateTokens = useCallback((text: string): number => {
     return estimateTokensFallback(text);
@@ -159,13 +180,13 @@ function PlaygroundContent() {
     return total;
   }, [state.systemPrompt, state.userPrompt, state.messages, estimateTokens]);
 
-  // Update available models when preferences change
-  useEffect(() => {
-    if (!modelPrefsLoading) {
-      const filtered = getFilteredModels();
-      setAvailableModels(filtered);
-    }
-  }, [getFilteredModels, modelPrefsLoading, preferences.enabledModels]);
+  // Update available models when preferences change - REMOVE THIS EFFECT
+  // useEffect(() => {
+  //   if (!modelPrefsLoading) {
+  //     const filtered = getFilteredModels();
+  //     setAvailableModels(filtered);
+  //   }
+  // }, [getFilteredModels, modelPrefsLoading, preferences.enabledModels]);
   
   // Handle selected model becoming unavailable
   useEffect(() => {
@@ -440,22 +461,49 @@ const parameters = {
         <div className="flex items-center space-x-3">
           <Select 
             value={state.model} 
-            onValueChange={(value) => setState(prev => ({ ...prev, model: value }))}
+            onValueChange={(value) => {
+              setState(prev => ({ ...prev, model: value }));
+              setModelSearchQuery(''); // Clear search on selection
+            }}
           >
             <SelectTrigger className="w-[280px]">
               <SelectValue />
             </SelectTrigger>
             <SelectContent>
-              {availableModels.map((model) => (
-                <SelectItem key={model.id} value={model.id}>
-                  <div className="flex items-center gap-2">
-                    <span>{model.name}</span>
-                    <Badge variant="secondary" className="text-xs">
-                      {model.provider}
-                    </Badge>
+              <div className="sticky top-0 p-2 bg-background border-b">
+                <Input
+                  placeholder="Search models..."
+                  value={modelSearchQuery}
+                  onChange={(e) => setModelSearchQuery(e.target.value)}
+                  className="h-8"
+                  onClick={(e) => e.stopPropagation()}
+                />
+              </div>
+              <div className="max-h-[300px] overflow-y-auto">
+                {filteredModels.length === 0 ? (
+                  <div className="p-4 text-sm text-muted-foreground text-center">
+                    No models found matching "{modelSearchQuery}"
                   </div>
-                </SelectItem>
-              ))}
+                ) : (
+                  <>
+                    {filteredModels.map((model) => (
+                      <SelectItem key={model.id} value={model.id}>
+                        <div className="flex items-center gap-2">
+                          <span>{model.name}</span>
+                          <Badge variant="secondary" className="text-xs">
+                            {model.provider}
+                          </Badge>
+                        </div>
+                      </SelectItem>
+                    ))}
+                    {modelSearchQuery.trim() === '' && availableModels.length > 50 && (
+                      <div className="p-2 text-xs text-muted-foreground text-center">
+                        Showing 50 of {availableModels.length} models. Use search to find more.
+                      </div>
+                    )}
+                  </>
+                )}
+              </div>
             </SelectContent>
           </Select>
           
@@ -813,7 +861,7 @@ const parameters = {
             // If closing the modal, refresh the available models
             if (!open) {
               const filtered = getFilteredModels();
-              setAvailableModels(filtered);
+              // setAvailableModels(filtered); // This line is removed as availableModels is now a memoized value
             }
           }}
         />
