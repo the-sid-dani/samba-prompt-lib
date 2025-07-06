@@ -17,6 +17,7 @@ import {
   revalidateAfterFavorite,
   revalidateAllPromptCaches
 } from '@/lib/cache'
+import { Analytics } from '@/lib/analytics' // Add static import for Analytics
 
 type Prompt = Database['public']['Tables']['prompt']['Row']
 type PromptInsert = Database['public']['Tables']['prompt']['Insert']
@@ -749,9 +750,7 @@ export async function createPrompt(input: z.infer<typeof createPromptSchema>) {
       console.log('📊 [CreatePrompt] Attempting to track analytics...')
       // Check if analytics environment is configured before attempting to track
       if (process.env.NEXT_PUBLIC_SUPABASE_URL && process.env.SUPABASE_SERVICE_ROLE_KEY) {
-        console.log('📊 [CreatePrompt] Analytics environment configured, importing module...')
-        const { Analytics } = await import('@/lib/analytics')
-        console.log('📊 [CreatePrompt] Analytics module imported, tracking event...')
+        console.log('📊 [CreatePrompt] Analytics environment configured, tracking event...')
         await Analytics.trackEvent({
           userId: session.user.id,
           promptId: prompt.id,
@@ -803,16 +802,15 @@ export async function createPrompt(input: z.infer<typeof createPromptSchema>) {
       // Track fork analytics
       try {
         if (process.env.NEXT_PUBLIC_SUPABASE_URL && process.env.SUPABASE_SERVICE_ROLE_KEY) {
-        const { Analytics } = await import('@/lib/analytics')
-        await Analytics.trackEvent({
-          userId: session.user.id,
-          promptId: forked_from,
-          eventType: 'fork',
-          eventData: {
-            new_prompt_id: prompt.id,
-            new_prompt_title: prompt.title
-          }
-        })
+          await Analytics.trackEvent({
+            userId: session.user.id,
+            promptId: forked_from,
+            eventType: 'fork',
+            eventData: {
+              new_prompt_id: prompt.id,
+              new_prompt_title: prompt.title
+            }
+          })
         }
       } catch (analyticsError) {
         console.error('Failed to track fork analytics:', analyticsError)
