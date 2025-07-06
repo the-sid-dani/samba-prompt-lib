@@ -18,7 +18,7 @@ type PromptInsert = Database['public']['Tables']['prompt']['Insert']
 // Schema for creating a new prompt
 const createPromptSchema = z.object({
   title: z.string().min(1).max(255),
-  description: z.string().min(1).max(1000),
+  description: z.string().min(1).max(50000), // Increased from 1000 to 50000
   content: z.string().min(1),
   category_id: z.number().nullable().optional(),
   tags: z.array(z.string()).optional().default([]),

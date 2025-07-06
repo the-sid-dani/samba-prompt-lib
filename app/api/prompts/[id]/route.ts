@@ -23,7 +23,7 @@ type PromptUpdate = Database['public']['Tables']['prompt']['Update']
 // Schema for updating a prompt
 const updatePromptSchema = z.object({
   title: z.string().min(1).max(255).optional(),
-  description: z.string().min(1).max(1000).optional(),
+  description: z.string().min(1).max(50000).optional(), // Increased from 1000 to 50000
   content: z.string().min(1).optional(),
   category_id: z.number().nullable().optional(),
   tags: z.array(z.string()).optional(),
