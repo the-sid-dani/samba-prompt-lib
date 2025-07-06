@@ -169,7 +169,7 @@ export default async function PromptDetailPage({ params }: { params: Promise<{ i
                   promptId={promptId}
                   text={prompt.content}
                   label="Copy"
-                  className="bg-coral-600 hover:bg-coral-700 w-full sm:w-auto"
+                  className="bg-coral-600 hover:bg-coral-700 border-2 border-coral-700 shadow-lg hover:shadow-xl transition-all duration-200 font-medium w-full sm:w-auto"
                 />
               </div>
             </div>

@@ -1,4 +1,8 @@
 import fs from 'node:fs/promises';
+import * as dotenv from 'dotenv';
+
+// Load environment variables from .env file
+dotenv.config();
 
 interface ModelInfo {
   id: string;
@@ -47,9 +51,38 @@ const sources: ApiSource[] = [
     }),
   },
   {
+    provider: 'openai',
+    apiKey: process.env.OPENAI_API_KEY,
+    getUrl: () => 'https://api.openai.com/v1/models',
+    getHeaders: () => ({
+      'Authorization': `Bearer ${process.env.OPENAI_API_KEY!}`,
+      'Content-Type': 'application/json'
+    }),
+    map: (m: any): ModelInfo => {
+      const id = m.id;
+      const isGPT4 = id.includes('gpt-4');
+      const isO1 = id.includes('o1');
+      const isO3 = id.includes('o3');
+      const isLatest = id.includes('gpt-4.1') || id.includes('gpt-4o') || id.includes('gpt-4.5') || isO1 || isO3;
+      const isExperimental = id.includes('preview') || isO1 || isO3;
+      
+      return {
+        id,
+        name: id.replace(/-/g, ' ').replace(/gpt/gi, 'GPT').replace(/\b(\w)/g, (l) => l.toUpperCase()),
+        provider: 'openai',
+        maxTokens: isGPT4 ? 128000 : 16384,
+        supportsStreaming: !isO1 && !isO3, // o1 and o3 models don't support streaming
+        category: isExperimental ? 'Experimental' : isLatest ? 'Latest' : 'Production',
+        isLatest,
+        isExperimental,
+        description: `OpenAI ${id}`,
+      };
+    },
+  },
+  {
     provider: 'google',
-    apiKey: process.env.GEMINI_API_KEY,
-    getUrl: () => `https://generativelanguage.googleapis.com/v1beta/models?key=${process.env.GEMINI_API_KEY}`,
+    apiKey: process.env.GEMINI_API_KEY || process.env.GOOGLE_AI_API_KEY,
+    getUrl: () => `https://generativelanguage.googleapis.com/v1beta/models?key=${process.env.GEMINI_API_KEY || process.env.GOOGLE_AI_API_KEY}`,
     getHeaders: () => ({}),
     map: (m: any): ModelInfo => {
       const id = m.name.replace('models/', '');
@@ -126,6 +159,7 @@ async function fetchWithRetry(url: string, options: any, retries = 3): Promise<a
   if (availableProviders.length === 0) {
     console.error('❌ No valid API keys found! Please set environment variables:');
     console.error('   - ANTHROPIC_API_KEY');
+    console.error('   - OPENAI_API_KEY');
     console.error('   - GEMINI_API_KEY (or GOOGLE_AI_API_KEY)');
     console.error('   - OPENROUTER_API_KEY');
     process.exit(1);
@@ -161,7 +195,7 @@ async function fetchWithRetry(url: string, options: any, retries = 3): Promise<a
   // Sort models by provider, then by category, then by name
   allModels.sort((a, b) => {
     if (a.provider !== b.provider) {
-      const providerOrder = ['anthropic', 'google', 'openrouter'];
+      const providerOrder = ['anthropic', 'openai', 'google', 'openrouter'];
       return providerOrder.indexOf(a.provider) - providerOrder.indexOf(b.provider);
     }
     if (a.category !== b.category) {

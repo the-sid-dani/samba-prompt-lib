@@ -65,8 +65,18 @@ export const DEFAULT_MODEL_PREFERENCES: ModelPreferences = {
     'gemini-1.5-pro-002',
     'gemini-1.5-flash-002',
     // Latest OpenAI models
+    'gpt-4.1',
+    'gpt-4.1-2025-04-14',
+    'gpt-4.1-mini',
+    'gpt-4.1-mini-2025-04-14',
+    'gpt-4.5-preview',
+    'gpt-4.5-preview-2025-02-27',
+    'gpt-4o',
+    'gpt-4o-mini',
+    'gpt-4-turbo',
     'o1-preview',
     'o1-mini',
+    'o3-mini',
     'gpt-4o-mini-search-preview',
     // Popular open source models
     'deepseek-v3-base:free',

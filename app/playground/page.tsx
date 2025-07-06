@@ -42,6 +42,7 @@ import { SUPPORTED_MODELS } from '@/lib/ai';
 import { useModelPreferences } from '@/hooks/useModelPreferences';
 import { estimateTokensFallback } from '@/lib/tokenization';
 import SignIn from '@/components/sign-in';
+import { ModelVisibilityManager } from '@/components/playground/ModelVisibilityManager';
 
 interface Message {
   id: string;
@@ -83,7 +84,7 @@ function PlaygroundContent() {
   // State management
   const [state, setState] = useState<PlaygroundState>({
     projectTitle: "AI Playground Session",
-    model: "gpt-3.5-turbo",
+    model: "claude-sonnet-4-20250514",
     systemPrompt: "",
     userPrompt: "",
     response: "",
@@ -100,6 +101,7 @@ function PlaygroundContent() {
 
   const [isSystemPromptOpen, setIsSystemPromptOpen] = useState(false);
   const [isModelSettingsOpen, setIsModelSettingsOpen] = useState(false);
+  const [isModelVisibilityOpen, setIsModelVisibilityOpen] = useState(false);
   const [availableModels, setAvailableModels] = useState<typeof SUPPORTED_MODELS>([]);
   const [error, setError] = useState('');
   
@@ -107,13 +109,25 @@ function PlaygroundContent() {
   const [variables, setVariables] = useState<Record<string, string>>({});
   const [variablesFilled, setVariablesFilled] = useState(false);
 
+  // Check if user is admin
+  const isAdmin = session?.user?.email?.endsWith('@samba.tv') || false;
+
   // Model preferences
   const { preferences, loading: modelPrefsLoading } = useModelPreferences();
 
-  // Get filtered models based on preferences 
+  // Get filtered models based on preferences and admin visibility settings
   const getFilteredModels = useCallback(() => {
+    // Get admin visibility settings from localStorage
+    const adminVisibilityStr = localStorage.getItem('admin-model-visibility');
+    const adminVisibility = adminVisibilityStr ? JSON.parse(adminVisibilityStr) : null;
+    
     return SUPPORTED_MODELS.filter(model => {
-      // Only include models that are explicitly enabled in preferences
+      // First check admin visibility settings (if they exist)
+      if (adminVisibility && adminVisibility[model.id] === false) {
+        return false;
+      }
+      
+      // Then check user preferences
       return preferences.enabledModels?.has(model.id) ?? false;
     });
   }, [preferences]);
@@ -191,6 +205,7 @@ function PlaygroundContent() {
             .replace(/<mark class="filled-variable">/g, '')
             .replace(/<\/mark>/g, '')
             .replace(/<[^>]*>/g, '') // Remove any other HTML tags
+            .replace(/\|\|\|HIGHLIGHT\|\|\|/g, '') // Remove highlight markers
             .trim();
           
           setState(prev => ({
@@ -347,12 +362,24 @@ function PlaygroundContent() {
 
     } catch (error) {
       console.error('Error running prompt:', error);
-      setError(error instanceof Error ? error.message : 'An unexpected error occurred');
-      toast({
-        title: "Error",
-        description: error instanceof Error ? error.message : 'Failed to run prompt',
-        variant: "destructive",
-      });
+      const errorMessage = error instanceof Error ? error.message : 'An unexpected error occurred';
+      setError(errorMessage);
+      
+      // Show enhanced toast for quota errors
+      if (errorMessage.includes('quota exceeded')) {
+        toast({
+          title: "OpenAI Quota Exceeded",
+          description: "Your OpenAI API key has exceeded its usage quota. Try switching to Claude or Gemini models in the dropdown above.",
+          variant: "destructive",
+          duration: 10000, // Show for longer
+        });
+      } else {
+        toast({
+          title: "Error",
+          description: errorMessage,
+          variant: "destructive",
+        });
+      }
     } finally {
       setState(prev => ({ ...prev, isRunning: false }));
     }
@@ -431,6 +458,18 @@ const parameters = {
               ))}
             </SelectContent>
           </Select>
+          
+          {/* Admin-only Model Visibility Button */}
+          {isAdmin && (
+            <Button
+              variant="outline"
+              size="icon"
+              onClick={() => setIsModelVisibilityOpen(true)}
+              title="Manage Model Visibility"
+            >
+              <SlidersHorizontal className="h-4 w-4" />
+            </Button>
+          )}
         </div>
 
         <div className="flex items-center space-x-3">
@@ -449,30 +488,7 @@ const parameters = {
         </div>
       </div>
 
-      {/* Project Header */}
-      <div className="p-4 border-b">
-        <div className="flex items-center justify-between">
-          <div>
-            <h1 className="text-xl font-semibold flex items-center">
-              {state.projectTitle}
-              <Button variant="ghost" size="sm" className="ml-2">
-                <Edit3 className="h-4 w-4" />
-              </Button>
-            </h1>
-            <div className="flex items-center space-x-4 text-sm text-muted-foreground mt-1">
-              <span>Last saved {state.lastSaved}</span>
-              <Button 
-                variant="link" 
-                size="sm" 
-                className="p-0 h-auto"
-                onClick={() => setState(prev => ({ ...prev, lastSaved: new Date().toLocaleString() }))}
-              >
-                Save changes
-              </Button>
-            </div>
-          </div>
-        </div>
-      </div>
+
 
       {/* Model Info Bar */}
       <div className="px-4 py-2 bg-muted/50 border-b">
@@ -492,10 +508,6 @@ const parameters = {
               <span>Estimated Tokens: {state.estimatedTokens.toLocaleString()}</span>
             </div>
           </div>
-          <Button variant="ghost" size="sm">
-            <Sparkles className="h-4 w-4 mr-1" />
-            Templatize
-          </Button>
         </div>
       </div>
 
@@ -538,41 +550,49 @@ const parameters = {
                   <RotateCcw className="h-4 w-4" />
                 </Button>
               </div>
-                                              <div className="flex-1 flex flex-col relative">
-                  {/* Hidden textarea for input handling */}
-                  <textarea
-                    ref={userPromptRef}
-                    value={state.userPrompt}
-                    onChange={(e) => setState(prev => ({ ...prev, userPrompt: e.target.value }))}
-                    className="absolute inset-0 w-full h-full p-3 text-base font-mono bg-transparent text-transparent caret-black resize-none border-0 outline-none z-10"
-                    style={{
-                      fontFamily: 'ui-monospace, SFMono-Regular, "SF Mono", Consolas, "Liberation Mono", Menlo, monospace'
-                    }}
-                  />
-                  
-                  {/* Visible syntax-highlighted content */}
-                  <div 
-                    className="flex-1 min-h-[300px] p-3 text-base font-mono border rounded-md bg-background pointer-events-none whitespace-pre-wrap break-words overflow-auto"
-                    style={{
-                      fontFamily: 'ui-monospace, SFMono-Regular, "SF Mono", Consolas, "Liberation Mono", Menlo, monospace',
-                      lineHeight: '1.5'
-                    }}
-                  >
-                    {state.userPrompt ? (
-                      <div
-                        dangerouslySetInnerHTML={{
-                          __html: state.userPrompt
-                            .replace(/&/g, '&amp;')
-                            .replace(/</g, '&lt;')
-                            .replace(/>/g, '&gt;')
-                            .replace(/\{\{([^}]+)\}\}/g, '<span style="color: #dc2626; background-color: rgba(220, 38, 38, 0.1); padding: 2px 4px; border-radius: 3px; font-weight: 600; border: 1px solid rgba(220, 38, 38, 0.2);">{{$1}}</span>')
-                        }}
-                      />
-                    ) : (
-                      <span className="text-muted-foreground">Enter your prompt here...</span>
-                    )}
-                  </div>
+              <div className="flex-1 flex flex-col relative">
+                {/* Hidden textarea for input handling */}
+                <textarea
+                  ref={userPromptRef}
+                  value={state.userPrompt}
+                  onChange={(e) => setState(prev => ({ ...prev, userPrompt: e.target.value }))}
+                  onScroll={(e) => {
+                    // Sync scroll position to the visible div
+                    const visibleDiv = e.currentTarget.nextElementSibling as HTMLDivElement;
+                    if (visibleDiv) {
+                      visibleDiv.scrollTop = e.currentTarget.scrollTop;
+                      visibleDiv.scrollLeft = e.currentTarget.scrollLeft;
+                    }
+                  }}
+                  className="absolute inset-0 w-full h-full p-3 text-base font-mono bg-transparent text-transparent caret-black resize-none border-0 outline-none z-10 overflow-auto"
+                  style={{
+                    fontFamily: 'ui-monospace, SFMono-Regular, "SF Mono", Consolas, "Liberation Mono", Menlo, monospace'
+                  }}
+                />
+                
+                {/* Visible syntax-highlighted content */}
+                <div 
+                  className="absolute inset-0 p-3 text-base font-mono border rounded-md bg-background pointer-events-none whitespace-pre-wrap break-words overflow-hidden"
+                  style={{
+                    fontFamily: 'ui-monospace, SFMono-Regular, "SF Mono", Consolas, "Liberation Mono", Menlo, monospace',
+                    lineHeight: '1.5'
+                  }}
+                >
+                  {state.userPrompt ? (
+                    <div
+                      dangerouslySetInnerHTML={{
+                        __html: state.userPrompt
+                          .replace(/&/g, '&amp;')
+                          .replace(/</g, '&lt;')
+                          .replace(/>/g, '&gt;')
+                          .replace(/\{\{([^}]+)\}\}/g, '<span style="color: #dc2626; background-color: rgba(220, 38, 38, 0.1); padding: 2px 4px; border-radius: 3px; font-weight: 600; border: 1px solid rgba(220, 38, 38, 0.2);">{{$1}}</span>')
+                      }}
+                    />
+                  ) : (
+                    <span className="text-muted-foreground">Enter your prompt here...</span>
+                  )}
                 </div>
+              </div>
             </div>
 
 
@@ -633,7 +653,7 @@ const parameters = {
                             <p>
                               Editing the prompt, or changing{" "}
                               <span className="inline-flex items-center mx-1">
-                                <SlidersHorizontal className="h-4 w-4" />
+                                <Settings className="h-4 w-4" />
                               </span>{" "}
                               model parameters creates a new version
                             </p>
@@ -646,14 +666,6 @@ const parameters = {
                               <code className="bg-background px-2 py-1 rounded text-primary font-mono text-sm">
                                 {"{{VARIABLE_NAME}}"}
                               </code>
-                            </p>
-                          </div>
-
-                          <div className="flex items-start space-x-3">
-                            <span className="text-muted-foreground mt-1">→</span>
-                            <p>
-                              Add messages using <MessageSquarePlus className="inline h-4 w-4 mx-1" /> to simulate a
-                              conversation
                             </p>
                           </div>
 
@@ -775,10 +787,37 @@ const parameters = {
                   <div className="p-4 border-t">
                     <Alert variant="destructive">
                       <AlertCircle className="h-4 w-4" />
-                      <AlertDescription>{error}</AlertDescription>
+                      <AlertDescription>
+                        {error}
+                        {error.includes('quota exceeded') && (
+                          <div className="mt-2 text-sm">
+                            <p className="font-semibold">Suggestions:</p>
+                            <ul className="list-disc ml-4 mt-1 space-y-1">
+                              <li>Check your OpenAI billing at: <a href="https://platform.openai.com/account/billing" target="_blank" rel="noopener noreferrer" className="underline">platform.openai.com/account/billing</a></li>
+                              <li>Switch to Claude models (Anthropic) in the dropdown above</li>
+                              <li>Try Gemini models (Google) as an alternative</li>
+                            </ul>
+                          </div>
+                        )}
+                      </AlertDescription>
                     </Alert>
                   </div>
                 )}
+                
+      {/* Model Visibility Manager - Admin Only */}
+      {isAdmin && (
+        <ModelVisibilityManager
+          open={isModelVisibilityOpen}
+          onOpenChange={(open) => {
+            setIsModelVisibilityOpen(open);
+            // If closing the modal, refresh the available models
+            if (!open) {
+              const filtered = getFilteredModels();
+              setAvailableModels(filtered);
+            }
+          }}
+        />
+      )}
     </div>
   );
 }

@@ -415,9 +415,9 @@ export async function fetchPrompts(input?: Partial<z.infer<typeof fetchPromptsSc
           query = query.contains('tags', [params.tag])
         }
         
-        // Multi-tag filtering (all tags must be present)
+        // Multi-tag filtering (any tag can be present - OR logic)
         if (params.tags && params.tags.length > 0) {
-          query = query.contains('tags', params.tags)
+          query = query.overlaps('tags', params.tags)
         }
         
         if (params.featured !== undefined) {

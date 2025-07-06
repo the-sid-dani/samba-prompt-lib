@@ -85,9 +85,9 @@ export function TemplateVariables({
     extractedVariables.forEach(variable => {
       const value = variables[variable.name] || variable.defaultValue || ''
       if (value) {
-        // When a variable has a value, wrap it with highlight markers
+        // When a variable has a value, keep the curly braces and wrap the entire thing with highlight markers
         const regex = new RegExp(`\\{\\{\\s*${variable.name}(\\|[^}]*)?\\s*\\}\\}`, 'g')
-        processed = processed.replace(regex, `|||HIGHLIGHT|||${value}|||HIGHLIGHT|||`)
+        processed = processed.replace(regex, `|||HIGHLIGHT|||{{${value}}}|||HIGHLIGHT|||`)
       }
     })
     setProcessedContent(processed)

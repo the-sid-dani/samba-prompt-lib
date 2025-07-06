@@ -194,6 +194,7 @@ export function useModelPreferences() {
     resetToDefaults,
     updatePreferences,
     getFilteredModels,
+    savePreferences,
     allModels: SUPPORTED_MODELS
   };
 } 

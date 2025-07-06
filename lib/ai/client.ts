@@ -1,6 +1,7 @@
 import { GoogleAIProvider } from './providers/google';
 import { AnthropicAIProvider } from './providers/anthropic';
 import { OpenRouterAIProvider } from './providers/openrouter';
+import { OpenAIProvider } from './providers/openai';
 import { AIProvider, GenerationParams, GenerationResponse } from './types';
 import { SUPPORTED_MODELS, ModelInfo } from './generated-models';
 
@@ -36,6 +37,9 @@ export class AIClient {
         break;
       case 'anthropic':
         provider = new AnthropicAIProvider();
+        break;
+      case 'openai':
+        provider = new OpenAIProvider();
         break;
       case 'openrouter':
         provider = new OpenRouterAIProvider();

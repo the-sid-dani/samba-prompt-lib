@@ -402,25 +402,38 @@ export default function PromptExplorer({
         <div className="w-full">
           {/* Filters */}
           <div className="mb-4 space-y-3">
-            {/* Category Filter - Hidden for now */}
-            <div className="hidden">
-              <h3 className="text-sm font-medium text-foreground mb-2">Filter by category</h3>
-              <div className="flex gap-2 overflow-x-auto pb-2">
-                {displayCategories.map((category) => (
-                  <button
-                    key={category.id}
-                    onClick={() => handleFilterChange({ selectedCategory: category.id })}
-                    className={`px-3 py-1.5 rounded-full text-sm font-medium whitespace-nowrap transition-colors ${
-                      filters.selectedCategory === category.id
-                        ? "bg-primary text-primary-foreground"
-                        : "bg-muted text-muted-foreground hover:bg-muted/80"
-                    }`}
-                  >
-                    {category.name}
-                  </button>
-                ))}
+            {/* Category Filter */}
+            {displayCategories.length > 1 && (
+              <div>
+                <div className="flex items-center justify-between mb-2">
+                  <h3 className="text-sm font-medium text-foreground">Filter by category</h3>
+                  <span className="text-xs text-muted-foreground">
+                    {displayCategories.length} categories available
+                  </span>
+                </div>
+                <div className="relative">
+                  <div className="flex gap-2 overflow-x-auto scrollbar-hide pb-2 scroll-smooth">
+                    {displayCategories.map((category) => (
+                      <button
+                        key={category.id}
+                        onClick={() => handleFilterChange({ selectedCategory: category.id })}
+                        className={`px-3 py-1.5 rounded-full text-sm font-medium whitespace-nowrap transition-colors flex items-center gap-1 shrink-0 ${
+                          filters.selectedCategory === category.id
+                            ? "bg-primary text-primary-foreground"
+                            : "bg-muted text-muted-foreground hover:bg-muted/80"
+                        }`}
+                      >
+                        {category.name}
+                      </button>
+                    ))}
+                  </div>
+                  {/* Scroll indicators */}
+                  <div className="absolute right-0 top-0 bottom-2 w-12 bg-gradient-to-l from-background via-background/80 to-transparent pointer-events-none flex items-center justify-end pr-1">
+                    <div className="text-xs text-muted-foreground animate-pulse">→</div>
+                  </div>
+                </div>
               </div>
-            </div>
+            )}
 
             {/* Tag Filter */}
             {availableTags.length > 0 && (
