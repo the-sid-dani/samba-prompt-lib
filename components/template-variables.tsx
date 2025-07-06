@@ -102,7 +102,9 @@ export function TemplateVariables({
 
   const copyToClipboard = useCallback(async () => {
     try {
-      await navigator.clipboard.writeText(processedContent)
+      // Remove highlight markers before copying
+      const cleanContent = processedContent.replace(/\|\|\|HIGHLIGHT\|\|\|/g, '')
+      await navigator.clipboard.writeText(cleanContent)
       toast({
             title: "Copied!",
             description: "Customized prompt copied to clipboard",
@@ -117,8 +119,10 @@ export function TemplateVariables({
   }, [processedContent, toast])
 
   const testInPlayground = useCallback(() => {
+    // Also remove highlight markers when testing in playground
+    const cleanContent = processedContent.replace(/\|\|\|HIGHLIGHT\|\|\|/g, '')
     const params = new URLSearchParams({
-      prompt: processedContent
+      prompt: cleanContent
     })
     router.push(`/playground?${params.toString()}`)
   }, [processedContent, router])
