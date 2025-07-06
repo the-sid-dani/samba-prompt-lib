@@ -704,14 +704,22 @@ export async function fetchPromptById(id: number, userId?: string): Promise<Prom
 // Create a new prompt
 export async function createPrompt(input: z.infer<typeof createPromptSchema>) {
   try {
+    console.log('🚀 [CreatePrompt] Starting prompt creation with input:', JSON.stringify(input, null, 2))
+    
     const session = await auth()
     if (!session?.user?.id) {
+      console.error('❌ [CreatePrompt] No session or user ID found')
       throw new Error('Unauthorized: Must be logged in to create prompts')
     }
     
+    console.log('✅ [CreatePrompt] User authenticated:', session.user.id)
+    
     const validatedData = createPromptSchema.parse(input)
+    console.log('✅ [CreatePrompt] Data validated successfully')
+    
     // Use admin client to avoid redirect issues in server actions
     const supabase = createSupabaseAdminClient()
+    console.log('✅ [CreatePrompt] Supabase admin client created')
     
     // Separate forked_from from the main prompt data
     const { forked_from, ...promptDataWithoutFork } = validatedData
@@ -721,6 +729,8 @@ export async function createPrompt(input: z.infer<typeof createPromptSchema>) {
       user_id: session.user.id,
     }
     
+    console.log('📝 [CreatePrompt] Inserting prompt data:', JSON.stringify(promptData, null, 2))
+    
     const { data: prompt, error } = await supabase
       .from('prompt')
       .insert(promptData)
@@ -728,29 +738,38 @@ export async function createPrompt(input: z.infer<typeof createPromptSchema>) {
       .single()
     
     if (error) {
+      console.error('❌ [CreatePrompt] Database error:', error)
       throw new Error(`Failed to create prompt: ${error.message}`)
     }
+    
+    console.log('✅ [CreatePrompt] Prompt created successfully:', prompt.id)
 
     // Track prompt creation analytics
     try {
+      console.log('📊 [CreatePrompt] Attempting to track analytics...')
       // Check if analytics environment is configured before attempting to track
       if (process.env.NEXT_PUBLIC_SUPABASE_URL && process.env.SUPABASE_SERVICE_ROLE_KEY) {
-      const { Analytics } = await import('@/lib/analytics')
-      await Analytics.trackEvent({
-        userId: session.user.id,
-        promptId: prompt.id,
-        eventType: 'prompt_create',
-        eventData: {
-          title: prompt.title,
-          category_id: prompt.category_id,
-          tags: prompt.tags,
-          is_fork: !!forked_from,
-          forked_from: forked_from
-        }
-      })
+        console.log('📊 [CreatePrompt] Analytics environment configured, importing module...')
+        const { Analytics } = await import('@/lib/analytics')
+        console.log('📊 [CreatePrompt] Analytics module imported, tracking event...')
+        await Analytics.trackEvent({
+          userId: session.user.id,
+          promptId: prompt.id,
+          eventType: 'prompt_create',
+          eventData: {
+            title: prompt.title,
+            category_id: prompt.category_id,
+            tags: prompt.tags,
+            is_fork: !!forked_from,
+            forked_from: forked_from
+          }
+        })
+        console.log('✅ [CreatePrompt] Analytics tracked successfully')
+      } else {
+        console.log('⚠️ [CreatePrompt] Analytics environment not configured, skipping')
       }
     } catch (analyticsError) {
-      console.error('Failed to track prompt creation analytics:', analyticsError)
+      console.error('❌ [CreatePrompt] Failed to track prompt creation analytics:', analyticsError)
       // Don't throw - analytics failure should not prevent prompt creation
     }
     
