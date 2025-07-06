@@ -661,18 +661,29 @@ const parameters = {
               <Card className="h-full">
                 <CardContent className="p-0 h-full overflow-hidden flex flex-col">
                   {/* Response Header */}
-                  <div className="flex items-center justify-between p-4 border-b">
+                  <div className="flex items-center justify-between p-4 border-b bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/60">
                     <span className="font-medium">Response</span>
                     <Button variant="ghost" size="sm" onClick={copyResponse}>
                       <Copy className="h-4 w-4" />
                     </Button>
                   </div>
                   
-                  {/* Response Content */}
-                  <div className="flex-1 overflow-auto p-4">
-                    <div className="prose prose-sm max-w-none dark:prose-invert">
-                      <PromptContentRenderer content={state.response} />
+                  {/* Response Content with Scrollable Area */}
+                  <div className="relative flex-1 overflow-hidden">
+                    <div 
+                      className="absolute inset-0 overflow-y-auto p-4 scroll-smooth"
+                      style={{
+                        scrollbarWidth: 'thin',
+                        scrollbarColor: 'rgba(156, 163, 175, 0.5) transparent'
+                      }}
+                    >
+                      <div className="prose prose-sm max-w-none dark:prose-invert break-words">
+                        <PromptContentRenderer content={state.response} />
+                      </div>
                     </div>
+                    
+                    {/* Scroll Indicator Shadow */}
+                    <div className="pointer-events-none absolute bottom-0 left-0 right-0 h-8 bg-gradient-to-t from-background/20 to-transparent opacity-0 transition-opacity duration-300 peer-scrollbar-thumb:opacity-100" />
                   </div>
                 </CardContent>
               </Card>
