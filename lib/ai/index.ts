@@ -4,6 +4,7 @@ export type {
   GenerationParams, 
   GenerationResponse 
 } from './types';
+import { SUPPORTED_MODELS } from './generated-models';
 export { SUPPORTED_MODELS } from './generated-models';
 export type { ModelInfo } from './generated-models';
 
