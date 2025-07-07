@@ -211,7 +211,7 @@ export default function TagInput({
                     Loading suggestions...
                   </div>
                 ) : suggestions.length > 0 ? (
-                  suggestions.slice(0, 15).map((suggestion) => (
+                  suggestions.map((suggestion) => (
                     <CommandItem
                       key={suggestion}
                       value={suggestion}

@@ -409,6 +409,28 @@ textarea:focus {
   scrollbar-width: none;  /* Firefox */
 }
 
+/* Template Variable Styling */
+.template-variable {
+  @apply inline-flex items-center px-2 py-0.5 rounded-md text-sm font-medium transition-all;
+  
+  /* Light mode styling */
+  @apply bg-blue-50 text-blue-700 border border-blue-200;
+}
+
+/* Dark mode template variable */
+.dark .template-variable {
+  @apply bg-blue-950/30 text-blue-400 border-blue-800/50;
+}
+
+/* Filled template variable (when user has provided a value) */
 .filled-variable {
-  @apply text-red-600 font-bold bg-red-100 dark:bg-red-900/30 rounded-sm px-1;
+  @apply inline-flex items-center px-2 py-0.5 rounded-md text-sm font-semibold transition-all;
+  
+  /* Light mode filled styling */
+  @apply bg-emerald-50 text-emerald-700 border border-emerald-200;
+}
+
+/* Dark mode filled variable */
+.dark .filled-variable {
+  @apply bg-emerald-950/30 text-emerald-400 border-emerald-800/50;
 }

@@ -142,7 +142,8 @@ function PlaygroundContent() {
   // Filter models based on search query
   const filteredModels = useMemo(() => {
     if (!modelSearchQuery.trim()) {
-      return availableModels.slice(0, 50); // Show first 50 when no search
+      // Show all enabled models when not searching
+      return availableModels;
     }
     
     const query = modelSearchQuery.toLowerCase();
@@ -150,7 +151,7 @@ function PlaygroundContent() {
       model.name.toLowerCase().includes(query) ||
       model.id.toLowerCase().includes(query) ||
       model.provider.toLowerCase().includes(query)
-    ).slice(0, 50); // Limit search results to 50
+    ).slice(0, 50); // Only limit search results to 50
   }, [availableModels, modelSearchQuery]);
 
   // Estimate tokens with lightweight fallback for immediate UI feedback
@@ -496,11 +497,6 @@ const parameters = {
                         </div>
                       </SelectItem>
                     ))}
-                    {modelSearchQuery.trim() === '' && availableModels.length > 50 && (
-                      <div className="p-2 text-xs text-muted-foreground text-center">
-                        Showing 50 of {availableModels.length} models. Use search to find more.
-                      </div>
-                    )}
                   </>
                 )}
               </div>
@@ -633,7 +629,7 @@ const parameters = {
                           .replace(/&/g, '&amp;')
                           .replace(/</g, '&lt;')
                           .replace(/>/g, '&gt;')
-                          .replace(/\{\{([^}]+)\}\}/g, '<span style="color: #dc2626; background-color: rgba(220, 38, 38, 0.1); padding: 2px 4px; border-radius: 3px; font-weight: 600; border: 1px solid rgba(220, 38, 38, 0.2);">{{$1}}</span>')
+                          .replace(/\{\{([^}]+)\}\}/g, '<span class="template-variable">{{$1}}</span>')
                       }}
                     />
                   ) : (

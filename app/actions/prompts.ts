@@ -396,7 +396,8 @@ export async function fetchPrompts(input?: Partial<z.infer<typeof fetchPromptsSc
             *,
             categories(*),
             user_favorites(user_id),
-            prompt_forks!prompt_forks_original_prompt_id_fkey(id)
+            prompt_forks!prompt_forks_original_prompt_id_fkey(id),
+            prompt_tags(tags(id, name))
           `, { count: 'exact' })
         
         console.log('🔧 [fetchPrompts] Built base query');
@@ -413,12 +414,59 @@ export async function fetchPrompts(input?: Partial<z.infer<typeof fetchPromptsSc
         }
         
         if (params.tag) {
-          query = query.contains('tags', [params.tag])
+          // Filter by tag using the normalized structure
+          const { data: tagData } = await supabase
+            .from('tags')
+            .select('id')
+            .eq('name', params.tag.toLowerCase().trim())
+            .single()
+          
+          if (tagData) {
+            const { data: promptIds } = await supabase
+              .from('prompt_tags')
+              .select('prompt_id')
+              .eq('tag_id', tagData.id)
+            
+            if (promptIds && promptIds.length > 0) {
+              query = query.in('id', promptIds.map(pt => pt.prompt_id))
+            } else {
+              // No prompts with this tag
+              query = query.eq('id', -1) // This will return no results
+            }
+          } else {
+            // Tag doesn't exist
+            query = query.eq('id', -1) // This will return no results
+          }
         }
         
         // Multi-tag filtering (any tag can be present - OR logic)
         if (params.tags && params.tags.length > 0) {
-          query = query.overlaps('tags', params.tags)
+          // Normalize tag names
+          const normalizedTags = params.tags.map(t => t.toLowerCase().trim())
+          
+          const { data: tagData } = await supabase
+            .from('tags')
+            .select('id')
+            .in('name', normalizedTags)
+          
+          if (tagData && tagData.length > 0) {
+            const tagIds = tagData.map(t => t.id)
+            const { data: promptIds } = await supabase
+              .from('prompt_tags')
+              .select('prompt_id')
+              .in('tag_id', tagIds)
+            
+            if (promptIds && promptIds.length > 0) {
+              const uniquePromptIds = [...new Set(promptIds.map(pt => pt.prompt_id))]
+              query = query.in('id', uniquePromptIds)
+            } else {
+              // No prompts with these tags
+              query = query.eq('id', -1) // This will return no results
+            }
+          } else {
+            // Tags don't exist
+            query = query.eq('id', -1) // This will return no results
+          }
         }
         
         if (params.featured !== undefined) {
@@ -509,8 +557,13 @@ export async function fetchPrompts(input?: Partial<z.infer<typeof fetchPromptsSc
           const userFavorites = (prompt.user_favorites || []) as Array<{ user_id: string }>
           const isFavorited = params.user_id ? userFavorites.some(fav => fav.user_id === params.user_id) : false
           
+          // Extract tags from the normalized structure
+          const promptTags = (prompt.prompt_tags || []) as Array<{ tags: { id: number; name: string } }>
+          const tags = promptTags.map(pt => pt.tags?.name).filter(Boolean)
+          
           return {
             ...prompt,
+            tags, // Include the normalized tags
             profiles: profileMap.get(prompt.user_id) || null,
             isFavorited,
             favoriteCount: userFavorites.length,
@@ -581,7 +634,8 @@ export async function fetchPromptById(id: number, userId?: string): Promise<Prom
             user_favorites(user_id),
             prompt_votes(vote_type, user_id),
             prompt_forks!prompt_forks_original_prompt_id_fkey(id),
-            prompt_versions(*)
+            prompt_versions(*),
+            prompt_tags(tags(id, name))
           `)
           .eq('id', promptId)
           .single()
@@ -644,6 +698,10 @@ export async function fetchPromptById(id: number, userId?: string): Promise<Prom
         const userFavorites = (promptData.user_favorites || []) as Array<{ user_id: string }>
         const promptForks = (promptData.prompt_forks || []) as Array<{ id: number }>
         
+        // Extract tags from the normalized structure
+        const promptTags = (promptData.prompt_tags || []) as Array<{ tags: { id: number; name: string } }>
+        const tags = promptTags.map(pt => pt.tags?.name).filter(Boolean)
+        
         const upvotes = promptVotes.filter(vote => vote.vote_type === 'up').length
         const downvotes = promptVotes.filter(vote => vote.vote_type === 'down').length
         const forkCount = promptForks.length
@@ -661,7 +719,7 @@ export async function fetchPromptById(id: number, userId?: string): Promise<Prom
           description: promptData.description,
           content: promptData.content,
           category_id: promptData.category_id,
-          tags: promptData.tags,
+          tags, // Use the extracted tags from normalized structure
           user_id: promptData.user_id,
           featured: promptData.featured,
           uses: promptData.uses,
@@ -722,12 +780,13 @@ export async function createPrompt(input: z.infer<typeof createPromptSchema>) {
     const supabase = createSupabaseAdminClient()
     console.log('✅ [CreatePrompt] Supabase admin client created')
     
-    // Separate forked_from from the main prompt data
-    const { forked_from, ...promptDataWithoutFork } = validatedData
+    // Separate forked_from and tags from the main prompt data
+    const { forked_from, tags, ...promptDataWithoutForkAndTags } = validatedData
     
     const promptData: PromptInsert = {
-      ...promptDataWithoutFork,
+      ...promptDataWithoutForkAndTags,
       user_id: session.user.id,
+      // Don't include tags here - they'll be stored in the normalized structure
     }
     
     console.log('📝 [CreatePrompt] Inserting prompt data:', JSON.stringify(promptData, null, 2))
@@ -744,6 +803,19 @@ export async function createPrompt(input: z.infer<typeof createPromptSchema>) {
     }
     
     console.log('✅ [CreatePrompt] Prompt created successfully:', prompt.id)
+    
+    // Handle tags normalization
+    if (tags && tags.length > 0) {
+      console.log('🏷️ [CreatePrompt] Processing tags:', tags)
+      try {
+        const tagIds = await ensureTagsExist(tags, supabase)
+        await updatePromptTags(prompt.id, tagIds, supabase)
+        console.log('✅ [CreatePrompt] Tags normalized and linked successfully')
+      } catch (tagError) {
+        console.error('❌ [CreatePrompt] Failed to process tags:', tagError)
+        // Don't throw - the prompt was created, just log the error
+      }
+    }
 
     // Track prompt creation analytics
     try {
@@ -758,7 +830,7 @@ export async function createPrompt(input: z.infer<typeof createPromptSchema>) {
           eventData: {
             title: prompt.title,
             category_id: prompt.category_id,
-            tags: prompt.tags,
+            tags: tags || [],
             is_fork: !!forked_from,
             forked_from: forked_from
           }
@@ -825,7 +897,7 @@ export async function createPrompt(input: z.infer<typeof createPromptSchema>) {
     revalidateAfterPromptCreate(
       session.user.id,
       validatedData.category_id || undefined,
-      validatedData.tags
+      tags
     )
     
     // Aggressive cache revalidation for immediate updates
@@ -839,8 +911,8 @@ export async function createPrompt(input: z.infer<typeof createPromptSchema>) {
     }
     
     // Revalidate tags pages
-    if (validatedData.tags && validatedData.tags.length > 0) {
-      validatedData.tags.forEach(tag => {
+    if (tags && tags.length > 0) {
+      tags.forEach(tag => {
         revalidatePath(`/tags/${encodeURIComponent(tag)}`)
       })
     }
@@ -870,7 +942,7 @@ export async function updatePrompt(id: number, input: z.infer<typeof updatePromp
     // Check ownership and get current data
     const { data: existingPrompt, error: fetchError } = await supabase
       .from('prompt')
-      .select('user_id, category_id, tags')
+      .select('user_id, category_id')
       .eq('id', id)
       .single()
     
@@ -882,9 +954,20 @@ export async function updatePrompt(id: number, input: z.infer<typeof updatePromp
       throw new Error('Forbidden: You can only update your own prompts')
     }
     
-    // Update the prompt
+    // Get existing tags for comparison
+    const { data: existingTags } = await supabase
+      .from('prompt_tags')
+      .select('tags(name)')
+      .eq('prompt_id', id)
+    
+    const existingTagNames = existingTags?.map(pt => (pt.tags as any)?.name).filter(Boolean) || []
+    
+    // Separate tags from the update data
+    const { tags, ...updateDataWithoutTags } = validatedData
+    
+    // Update the prompt without tags
     const updateData: PromptUpdate = {
-      ...validatedData,
+      ...updateDataWithoutTags,
       updated_at: new Date().toISOString(),
     }
     
@@ -899,14 +982,27 @@ export async function updatePrompt(id: number, input: z.infer<typeof updatePromp
       throw new Error(`Failed to update prompt: ${updateError.message}`)
     }
     
+    // Handle tags normalization if tags were provided
+    if (tags !== undefined) {
+      console.log('🏷️ [UpdatePrompt] Processing tags update:', tags)
+      try {
+        const tagIds = await ensureTagsExist(tags, supabase)
+        await updatePromptTags(id, tagIds, supabase)
+        console.log('✅ [UpdatePrompt] Tags normalized and updated successfully')
+      } catch (tagError) {
+        console.error('❌ [UpdatePrompt] Failed to update tags:', tagError)
+        // Don't throw - the prompt was updated, just log the error
+      }
+    }
+    
     // Revalidate caches - add more extensive revalidation
     revalidateAfterPromptUpdate(
       id,
       session.user.id,
       existingPrompt.category_id || undefined,
       validatedData.category_id !== undefined ? validatedData.category_id || undefined : existingPrompt.category_id || undefined,
-      existingPrompt.tags || undefined,
-      validatedData.tags || existingPrompt.tags || undefined
+      existingTagNames,
+      tags || existingTagNames
     )
     
     // Aggressive cache revalidation for immediate updates
@@ -924,14 +1020,14 @@ export async function updatePrompt(id: number, input: z.infer<typeof updatePromp
     }
     
     // Revalidate tags pages
-    const finalTags = validatedData.tags || existingPrompt.tags || []
+    const finalTags = tags || existingTagNames || []
     if (finalTags.length > 0) {
       finalTags.forEach(tag => {
         revalidatePath(`/tags/${encodeURIComponent(tag)}`)
       })
     }
-    if (existingPrompt.tags && existingPrompt.tags.length > 0) {
-      existingPrompt.tags.forEach(tag => {
+    if (existingTagNames && existingTagNames.length > 0) {
+      existingTagNames.forEach(tag => {
         revalidatePath(`/tags/${encodeURIComponent(tag)}`)
       })
     }
@@ -1520,11 +1616,9 @@ export async function fetchTags(query?: string): Promise<string[]> {
     // Use the normalized tags table with usage count from prompt_tags junction table
     let dbQuery = supabase
       .from('tags')
-      .select(`
-        name,
-        prompt_tags(count)
-      `)
+      .select('id, name')
       .order('name', { ascending: true })
+      .limit(1000) // Add explicit limit to ensure we get all tags
     
     // Apply query filter if provided
     if (query && query.length >= 2) {
@@ -1543,10 +1637,30 @@ export async function fetchTags(query?: string): Promise<string[]> {
     
     console.log('Tags fetched from normalized table:', tagsData?.length || 0)
     
+    // Get usage counts separately with a direct count query
+    const tagUsageCounts: Record<number, number> = {}
+    
+    if (tagsData && tagsData.length > 0) {
+      // Get counts for all tags in one query
+      const { data: countsData, error: countError } = await supabase
+        .from('prompt_tags')
+        .select('tag_id')
+        .in('tag_id', tagsData.map(t => t.id))
+      
+      if (countError) {
+        console.error('Error fetching tag usage counts:', countError)
+      } else if (countsData) {
+        // Count usage for each tag
+        countsData.forEach(pt => {
+          tagUsageCounts[pt.tag_id] = (tagUsageCounts[pt.tag_id] || 0) + 1
+        })
+      }
+    }
+    
     // Calculate usage count for each tag and sort by popularity
     const tagsWithUsage = tagsData?.map(tag => ({
       name: tag.name,
-      usage_count: tag.prompt_tags?.length || 0
+      usage_count: tagUsageCounts[tag.id] || 0
     })) || []
     
     // Sort by usage count (descending), then alphabetically
@@ -1737,7 +1851,10 @@ export async function forkPrompt(promptId: number) {
     // First, fetch the original prompt
     const { data: originalPrompt, error: fetchError } = await supabase
       .from('prompt')
-      .select('*')
+      .select(`
+        *,
+        prompt_tags(tags(id, name))
+      `)
       .eq('id', promptId)
       .single()
     
@@ -1745,13 +1862,16 @@ export async function forkPrompt(promptId: number) {
       throw new Error('Original prompt not found')
     }
     
-    // Create the forked prompt
+    // Extract tags from the normalized structure
+    const promptTags = (originalPrompt.prompt_tags || []) as Array<{ tags: { id: number; name: string } }>
+    const originalTagNames = promptTags.map(pt => pt.tags?.name).filter(Boolean)
+    
+    // Create the forked prompt (without tags)
     const forkedPromptData: PromptInsert = {
       title: originalPrompt.title, // Keep the same title
       description: originalPrompt.description,
       content: originalPrompt.content,
       category_id: originalPrompt.category_id,
-      tags: originalPrompt.tags || [],
       examples: originalPrompt.examples || [],
       user_id: userId,
       featured: false, // Forked prompts start as non-featured
@@ -1767,6 +1887,17 @@ export async function forkPrompt(promptId: number) {
     
     if (insertError) {
       throw new Error(`Failed to create forked prompt: ${insertError.message}`)
+    }
+    
+    // Copy tags to the forked prompt
+    if (originalTagNames.length > 0) {
+      try {
+        const tagIds = await ensureTagsExist(originalTagNames, supabase)
+        await updatePromptTags(forkedPrompt.id, tagIds, supabase)
+      } catch (tagError) {
+        console.error('Failed to copy tags to forked prompt:', tagError)
+        // Don't throw - the fork was successful even if tags couldn't be copied
+      }
     }
     
     // Record the fork relationship
@@ -1800,7 +1931,7 @@ export async function forkPrompt(promptId: number) {
     revalidateAfterPromptCreate(
       userId,
       forkedPrompt.category_id || undefined,
-      forkedPrompt.tags || undefined
+      originalTagNames // Use the extracted tag names
     )
     revalidateTag(CACHE_TAGS.prompt(promptId)) // Update original prompt's fork count
     
@@ -2148,3 +2279,105 @@ export async function fetchPromptForks(promptId: number) {
     return []; // Return empty array instead of throwing to prevent client crashes
   }
 } 
+
+// Helper function to ensure tags exist in the tags table and return their IDs
+async function ensureTagsExist(tagNames: string[], supabase: ReturnType<typeof createSupabaseAdminClient>): Promise<number[]> {
+  if (!tagNames || tagNames.length === 0) return []
+  
+  console.log('🏷️ [ensureTagsExist] Processing tags:', tagNames)
+  
+  // Normalize tag names (lowercase, trim)
+  const normalizedTags = tagNames.map(tag => tag.toLowerCase().trim()).filter(Boolean)
+  
+  // Check which tags already exist
+  const { data: existingTags, error: fetchError } = await supabase
+    .from('tags')
+    .select('id, name')
+    .in('name', normalizedTags)
+  
+  if (fetchError) {
+    console.error('Error fetching existing tags:', fetchError)
+    throw new Error('Failed to fetch existing tags')
+  }
+  
+  const existingTagMap = new Map(existingTags?.map((tag: {name: string, id: number}) => [tag.name, tag.id]) || [])
+  const tagsToCreate = normalizedTags.filter(tag => !existingTagMap.has(tag))
+  
+  // Create new tags
+  const tagIds: number[] = []
+  
+  if (tagsToCreate.length > 0) {
+    console.log('🏷️ [ensureTagsExist] Creating new tags:', tagsToCreate)
+    const { data: newTags, error: createError } = await supabase
+      .from('tags')
+      .insert(tagsToCreate.map(name => ({ name })))
+      .select('id, name')
+    
+    if (createError) {
+      console.error('Error creating tags:', createError)
+      // If it's a unique constraint error, fetch the tags that were created by another process
+      if (createError.code === '23505') {
+        const { data: refetchedTags } = await supabase
+          .from('tags')
+          .select('id, name')
+          .in('name', tagsToCreate)
+        
+        if (refetchedTags) {
+          refetchedTags.forEach((tag: {name: string, id: number}) => {
+            existingTagMap.set(tag.name, tag.id)
+          })
+        }
+      } else {
+        throw new Error('Failed to create tags')
+      }
+    } else if (newTags) {
+      newTags.forEach((tag: {name: string, id: number}) => {
+        existingTagMap.set(tag.name, tag.id)
+      })
+    }
+  }
+  
+  // Return all tag IDs in the original order
+  normalizedTags.forEach(tagName => {
+    const tagId = existingTagMap.get(tagName)
+    if (tagId) tagIds.push(tagId)
+  })
+  
+  console.log('🏷️ [ensureTagsExist] Returning tag IDs:', tagIds)
+  return tagIds
+}
+
+// Helper function to update prompt tags
+async function updatePromptTags(promptId: number, tagIds: number[], supabase: ReturnType<typeof createSupabaseAdminClient>): Promise<void> {
+  console.log('🏷️ [updatePromptTags] Updating tags for prompt:', promptId, 'with tag IDs:', tagIds)
+  
+  // First, delete existing prompt_tags entries
+  const { error: deleteError } = await supabase
+    .from('prompt_tags')
+    .delete()
+    .eq('prompt_id', promptId)
+  
+  if (deleteError) {
+    console.error('Error deleting existing prompt tags:', deleteError)
+    throw new Error('Failed to update prompt tags')
+  }
+  
+  // Then, insert new prompt_tags entries
+  if (tagIds.length > 0) {
+    const promptTagsData = tagIds.map(tagId => ({
+      prompt_id: promptId,
+      tag_id: tagId
+    }))
+    
+    const { error: insertError } = await supabase
+      .from('prompt_tags')
+      .insert(promptTagsData)
+    
+    if (insertError) {
+      console.error('Error inserting prompt tags:', insertError)
+      throw new Error('Failed to insert prompt tags')
+    }
+  }
+  
+  console.log('🏷️ [updatePromptTags] Successfully updated tags for prompt:', promptId)
+}

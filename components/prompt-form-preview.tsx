@@ -30,13 +30,13 @@ export function PromptFormPreview({ content, className }: PromptFormPreviewProps
           </CardTitle>
           {variables.length > 0 && (
             <div className="flex items-center gap-2">
-              <span className="text-xs text-gray-500">Variables:</span>
+              <span className="text-xs text-muted-foreground">Variables:</span>
               <div className="flex gap-1">
                 {variables.map((variable, index) => (
                   <Badge 
                     key={index} 
                     variant="secondary" 
-                    className="text-xs bg-red-100 text-red-700"
+                    className="text-xs bg-blue-50 text-blue-700 dark:bg-blue-950/30 dark:text-blue-400 border border-blue-200 dark:border-blue-800/50"
                   >
                     {variable}
                   </Badge>
@@ -47,7 +47,7 @@ export function PromptFormPreview({ content, className }: PromptFormPreviewProps
         </div>
       </CardHeader>
       <CardContent>
-        <div className="bg-gray-50 p-4 rounded-lg max-h-[300px] overflow-y-auto">
+        <div className="bg-muted p-4 rounded-lg max-h-[300px] overflow-y-auto">
           <PromptContentRenderer 
             content={content}
             showVariables={true}
@@ -55,8 +55,8 @@ export function PromptFormPreview({ content, className }: PromptFormPreviewProps
           />
         </div>
         {variables.length > 0 && (
-          <p className="text-xs text-gray-500 mt-3">
-            Tip: Use <span className="text-red-600 font-mono">{`{{variable}}`}</span> syntax to create dynamic placeholders
+          <p className="text-xs text-muted-foreground mt-3">
+            Tip: Use <span className="template-variable font-mono">{`{{variable}}`}</span> syntax to create dynamic placeholders
           </p>
         )}
       </CardContent>
