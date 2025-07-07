@@ -36,7 +36,7 @@ export function PromptFormPreview({ content, className }: PromptFormPreviewProps
                   <Badge 
                     key={index} 
                     variant="secondary" 
-                    className="text-xs bg-blue-50 text-blue-700 dark:bg-blue-950/30 dark:text-blue-400 border border-blue-200 dark:border-blue-800/50"
+                    className="text-xs bg-red-50 text-red-700 dark:bg-red-950/30 dark:text-red-400 border border-red-200 dark:border-red-800/50"
                   >
                     {variable}
                   </Badge>

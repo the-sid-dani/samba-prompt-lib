@@ -413,24 +413,24 @@ textarea:focus {
 .template-variable {
   @apply inline-flex items-center px-2 py-0.5 rounded-md text-sm font-medium transition-all;
   
-  /* Light mode styling */
-  @apply bg-blue-50 text-blue-700 border border-blue-200;
+  /* Light mode styling - Red */
+  @apply bg-red-50 text-red-700 border border-red-200;
 }
 
-/* Dark mode template variable */
+/* Dark mode template variable - Red */
 .dark .template-variable {
-  @apply bg-blue-950/30 text-blue-400 border-blue-800/50;
+  @apply bg-red-950/30 text-red-400 border-red-800/50;
 }
 
-/* Filled template variable (when user has provided a value) */
+/* Filled template variable (when user has provided a value) - Also Red */
 .filled-variable {
   @apply inline-flex items-center px-2 py-0.5 rounded-md text-sm font-semibold transition-all;
   
-  /* Light mode filled styling */
-  @apply bg-emerald-50 text-emerald-700 border border-emerald-200;
+  /* Light mode - Slightly darker red for filled */
+  @apply bg-red-100 text-red-800 border border-red-300;
 }
 
-/* Dark mode filled variable */
+/* Dark mode filled variable - Slightly brighter red for filled */
 .dark .filled-variable {
-  @apply bg-emerald-950/30 text-emerald-400 border-emerald-800/50;
+  @apply bg-red-900/40 text-red-300 border-red-700/60;
 }
