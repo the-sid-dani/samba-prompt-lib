@@ -164,7 +164,7 @@ export default function PromptExplorer({
       
       // Category filtering
       if (currentFilters.selectedCategory && currentFilters.selectedCategory !== 'all') {
-        searchParams.category = currentFilters.selectedCategory;
+        searchParams.category_id = parseInt(currentFilters.selectedCategory); // Convert to number
       }
       
       // Multi-tag filtering
