@@ -1,5 +1,5 @@
 // ⚠️  AUTO-GENERATED — DO NOT EDIT.
-// Last refresh: 2025-07-14T09:01:32.596Z
+// Last refresh: 2025-07-15T09:42:02.107Z
 // Total models: 61
 // Sources: anthropic, google, openrouter APIs
 
@@ -589,6 +589,17 @@ export const SUPPORTED_MODELS: ModelInfo[] = [
     "description": "Alias that points to the most recent production (non-experimental) release of Gemini 1.5 Pro, our mid-size multimodal model that supports up to 2 million tokens."
   },
   {
+    "id": "gemini-embedding-001",
+    "name": "Gemini Embedding 001",
+    "provider": "google",
+    "maxTokens": 1,
+    "supportsStreaming": true,
+    "category": "Production",
+    "isLatest": false,
+    "isExperimental": false,
+    "description": "Obtain a distributed representation of a text."
+  },
+  {
     "id": "gemma-3-12b-it",
     "name": "Gemma 3 12B",
     "provider": "google",
@@ -653,17 +664,6 @@ export const SUPPORTED_MODELS: ModelInfo[] = [
     "isLatest": false,
     "isExperimental": false,
     "description": "Google Gemini model - gemma-3n-e4b-it"
-  },
-  {
-    "id": "aqa",
-    "name": "Model that performs Attributed Question Answering.",
-    "provider": "google",
-    "maxTokens": 1024,
-    "supportsStreaming": true,
-    "category": "Production",
-    "isLatest": false,
-    "isExperimental": false,
-    "description": "Model trained to return answers to questions that are grounded in provided sources, along with estimating answerable probability."
   },
   {
     "id": "text-embedding-004",
