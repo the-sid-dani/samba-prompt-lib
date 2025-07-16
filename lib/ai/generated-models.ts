@@ -1,5 +1,5 @@
 // ⚠️  AUTO-GENERATED — DO NOT EDIT.
-// Last refresh: 2025-07-15T09:42:02.107Z
+// Last refresh: 2025-07-16T08:58:22.301Z
 // Total models: 61
 // Sources: anthropic, google, openrouter APIs
 
@@ -270,8 +270,8 @@ export const SUPPORTED_MODELS: ModelInfo[] = [
     "description": "Experimental release (March 25th, 2025) of Gemini 2.5 Pro"
   },
   {
-    "id": "gemini-2.5-flash-preview-04-17",
-    "name": "Gemini 2.5 Flash Preview 04-17",
+    "id": "gemini-2.5-flash-preview-05-20",
+    "name": "Gemini 2.5 Flash Preview 05-20",
     "provider": "google",
     "maxTokens": 65536,
     "supportsStreaming": true,
@@ -282,7 +282,7 @@ export const SUPPORTED_MODELS: ModelInfo[] = [
   },
   {
     "id": "gemini-2.0-flash-thinking-exp-01-21",
-    "name": "Gemini 2.5 Flash Preview 04-17",
+    "name": "Gemini 2.5 Flash Preview 05-20",
     "provider": "google",
     "maxTokens": 65536,
     "supportsStreaming": true,
@@ -293,7 +293,7 @@ export const SUPPORTED_MODELS: ModelInfo[] = [
   },
   {
     "id": "gemini-2.0-flash-thinking-exp",
-    "name": "Gemini 2.5 Flash Preview 04-17",
+    "name": "Gemini 2.5 Flash Preview 05-20",
     "provider": "google",
     "maxTokens": 65536,
     "supportsStreaming": true,
@@ -304,28 +304,6 @@ export const SUPPORTED_MODELS: ModelInfo[] = [
   },
   {
     "id": "gemini-2.0-flash-thinking-exp-1219",
-    "name": "Gemini 2.5 Flash Preview 04-17",
-    "provider": "google",
-    "maxTokens": 65536,
-    "supportsStreaming": true,
-    "category": "Experimental",
-    "isLatest": true,
-    "isExperimental": true,
-    "description": "Preview release (April 17th, 2025) of Gemini 2.5 Flash"
-  },
-  {
-    "id": "gemini-2.5-flash-preview-04-17-thinking",
-    "name": "Gemini 2.5 Flash Preview 04-17 for cursor testing",
-    "provider": "google",
-    "maxTokens": 65536,
-    "supportsStreaming": true,
-    "category": "Experimental",
-    "isLatest": true,
-    "isExperimental": true,
-    "description": "Preview release (April 17th, 2025) of Gemini 2.5 Flash"
-  },
-  {
-    "id": "gemini-2.5-flash-preview-05-20",
     "name": "Gemini 2.5 Flash Preview 05-20",
     "provider": "google",
     "maxTokens": 65536,
@@ -664,6 +642,28 @@ export const SUPPORTED_MODELS: ModelInfo[] = [
     "isLatest": false,
     "isExperimental": false,
     "description": "Google Gemini model - gemma-3n-e4b-it"
+  },
+  {
+    "id": "imagen-3.0-generate-002",
+    "name": "Imagen 3.0 002 model",
+    "provider": "google",
+    "maxTokens": 8192,
+    "supportsStreaming": true,
+    "category": "Production",
+    "isLatest": false,
+    "isExperimental": false,
+    "description": "Vertex served Imagen 3.0 002 model"
+  },
+  {
+    "id": "aqa",
+    "name": "Model that performs Attributed Question Answering.",
+    "provider": "google",
+    "maxTokens": 1024,
+    "supportsStreaming": true,
+    "category": "Production",
+    "isLatest": false,
+    "isExperimental": false,
+    "description": "Model trained to return answers to questions that are grounded in provided sources, along with estimating answerable probability."
   },
   {
     "id": "text-embedding-004",
