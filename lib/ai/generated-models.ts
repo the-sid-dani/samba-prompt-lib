@@ -1,6 +1,6 @@
 // ⚠️  AUTO-GENERATED — DO NOT EDIT.
-// Last refresh: 2025-07-21T08:45:59.561Z
-// Total models: 61
+// Last refresh: 2025-07-22T08:41:26.082Z
+// Total models: 58
 // Sources: anthropic, google, openrouter APIs
 
 export interface ModelInfo {
@@ -47,26 +47,6 @@ export const SUPPORTED_MODELS: ModelInfo[] = [
     "description": "Claude model - claude-3-5-sonnet-20240620"
   },
   {
-    "id": "claude-2.0",
-    "name": "Claude 2.0",
-    "provider": "anthropic",
-    "maxTokens": 8192,
-    "supportsStreaming": true,
-    "category": "Legacy",
-    "isLatest": false,
-    "description": "Claude model - claude-2.0"
-  },
-  {
-    "id": "claude-2.1",
-    "name": "Claude 2.1",
-    "provider": "anthropic",
-    "maxTokens": 8192,
-    "supportsStreaming": true,
-    "category": "Legacy",
-    "isLatest": false,
-    "description": "Claude model - claude-2.1"
-  },
-  {
     "id": "claude-3-haiku-20240307",
     "name": "Claude Haiku 3",
     "provider": "anthropic",
@@ -95,16 +75,6 @@ export const SUPPORTED_MODELS: ModelInfo[] = [
     "category": "Legacy",
     "isLatest": false,
     "description": "Claude model - claude-opus-4-20250514"
-  },
-  {
-    "id": "claude-3-sonnet-20240229",
-    "name": "Claude Sonnet 3",
-    "provider": "anthropic",
-    "maxTokens": 8192,
-    "supportsStreaming": true,
-    "category": "Legacy",
-    "isLatest": false,
-    "description": "Claude model - claude-3-sonnet-20240229"
   },
   {
     "id": "claude-3-7-sonnet-20250219",
