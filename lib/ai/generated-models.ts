@@ -1,5 +1,5 @@
 // ⚠️  AUTO-GENERATED — DO NOT EDIT.
-// Last refresh: 2025-07-22T08:41:26.082Z
+// Last refresh: 2025-07-23T08:42:20.046Z
 // Total models: 58
 // Sources: anthropic, google, openrouter APIs
 
@@ -150,6 +150,17 @@ export const SUPPORTED_MODELS: ModelInfo[] = [
     "isLatest": true,
     "isExperimental": false,
     "description": "Stable version of Gemini 2.5 Flash, our mid-size multimodal model that supports up to 1 million tokens, released in June of 2025."
+  },
+  {
+    "id": "gemini-2.5-flash-lite",
+    "name": "Gemini 2.5 Flash-Lite",
+    "provider": "google",
+    "maxTokens": 65536,
+    "supportsStreaming": true,
+    "category": "Latest",
+    "isLatest": true,
+    "isExperimental": false,
+    "description": "Stable verion of Gemini 2.5 Flash-Lite, released in July of 2025"
   },
   {
     "id": "gemini-2.5-pro",
@@ -612,17 +623,6 @@ export const SUPPORTED_MODELS: ModelInfo[] = [
     "isLatest": false,
     "isExperimental": false,
     "description": "Google Gemini model - gemma-3n-e4b-it"
-  },
-  {
-    "id": "imagen-3.0-generate-002",
-    "name": "Imagen 3.0 002 model",
-    "provider": "google",
-    "maxTokens": 8192,
-    "supportsStreaming": true,
-    "category": "Production",
-    "isLatest": false,
-    "isExperimental": false,
-    "description": "Vertex served Imagen 3.0 002 model"
   },
   {
     "id": "aqa",
