@@ -1,5 +1,5 @@
 // ⚠️  AUTO-GENERATED — DO NOT EDIT.
-// Last refresh: 2025-07-28T08:44:24.202Z
+// Last refresh: 2025-07-29T08:41:59.491Z
 // Total models: 58
 // Sources: anthropic, google, openrouter APIs
 
@@ -394,6 +394,17 @@ export const SUPPORTED_MODELS: ModelInfo[] = [
     "description": "Experimental release (March 25th, 2025) of Gemini 2.5 Pro"
   },
   {
+    "id": "imagen-4.0-generate-preview-06-06",
+    "name": "Imagen 4 (Preview)",
+    "provider": "google",
+    "maxTokens": 8192,
+    "supportsStreaming": true,
+    "category": "Experimental",
+    "isLatest": false,
+    "isExperimental": true,
+    "description": "Vertex served Imagen 4.0 model"
+  },
+  {
     "id": "learnlm-2.0-flash-experimental",
     "name": "LearnLM 2.0 Flash Experimental",
     "provider": "google",
@@ -425,28 +436,6 @@ export const SUPPORTED_MODELS: ModelInfo[] = [
     "isLatest": false,
     "isExperimental": false,
     "description": "Obtain a distributed representation of a text."
-  },
-  {
-    "id": "gemini-1.0-pro-vision-latest",
-    "name": "Gemini 1.0 Pro Vision",
-    "provider": "google",
-    "maxTokens": 4096,
-    "supportsStreaming": true,
-    "category": "Production",
-    "isLatest": false,
-    "isExperimental": false,
-    "description": "The original Gemini 1.0 Pro Vision model version which was optimized for image understanding. Gemini 1.0 Pro Vision was deprecated on July 12, 2024. Move to a newer Gemini version."
-  },
-  {
-    "id": "gemini-pro-vision",
-    "name": "Gemini 1.0 Pro Vision",
-    "provider": "google",
-    "maxTokens": 4096,
-    "supportsStreaming": true,
-    "category": "Production",
-    "isLatest": false,
-    "isExperimental": false,
-    "description": "The original Gemini 1.0 Pro Vision model version which was optimized for image understanding. Gemini 1.0 Pro Vision was deprecated on July 12, 2024. Move to a newer Gemini version."
   },
   {
     "id": "gemini-1.5-flash",
@@ -623,6 +612,17 @@ export const SUPPORTED_MODELS: ModelInfo[] = [
     "isLatest": false,
     "isExperimental": false,
     "description": "Google Gemini model - gemma-3n-e4b-it"
+  },
+  {
+    "id": "imagen-3.0-generate-002",
+    "name": "Imagen 3.0 002 model",
+    "provider": "google",
+    "maxTokens": 8192,
+    "supportsStreaming": true,
+    "category": "Production",
+    "isLatest": false,
+    "isExperimental": false,
+    "description": "Vertex served Imagen 3.0 002 model"
   },
   {
     "id": "aqa",
