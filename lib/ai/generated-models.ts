@@ -1,6 +1,6 @@
 // ⚠️  AUTO-GENERATED — DO NOT EDIT.
-// Last refresh: 2025-08-05T08:44:43.276Z
-// Total models: 58
+// Last refresh: 2025-08-06T08:44:17.918Z
+// Total models: 59
 // Sources: anthropic, google, openrouter APIs
 
 export interface ModelInfo {
@@ -75,6 +75,16 @@ export const SUPPORTED_MODELS: ModelInfo[] = [
     "category": "Legacy",
     "isLatest": false,
     "description": "Claude model - claude-opus-4-20250514"
+  },
+  {
+    "id": "claude-opus-4-1-20250805",
+    "name": "Claude Opus 4.1",
+    "provider": "anthropic",
+    "maxTokens": 8192,
+    "supportsStreaming": true,
+    "category": "Legacy",
+    "isLatest": false,
+    "description": "Claude model - claude-opus-4-1-20250805"
   },
   {
     "id": "claude-3-7-sonnet-20250219",
