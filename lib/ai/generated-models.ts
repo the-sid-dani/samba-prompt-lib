@@ -1,5 +1,5 @@
 // ⚠️  AUTO-GENERATED — DO NOT EDIT.
-// Last refresh: 2025-08-14T08:39:22.980Z
+// Last refresh: 2025-08-15T08:37:30.559Z
 // Total models: 59
 // Sources: anthropic, google, openrouter APIs
 
@@ -625,7 +625,7 @@ export const SUPPORTED_MODELS: ModelInfo[] = [
   },
   {
     "id": "imagen-3.0-generate-002",
-    "name": "Imagen 3.0 002 model",
+    "name": "Imagen 3.0",
     "provider": "google",
     "maxTokens": 8192,
     "supportsStreaming": true,
