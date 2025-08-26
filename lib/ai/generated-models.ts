@@ -1,5 +1,5 @@
 // ⚠️  AUTO-GENERATED — DO NOT EDIT.
-// Last refresh: 2025-08-25T08:38:44.142Z
+// Last refresh: 2025-08-26T08:37:49.559Z
 // Total models: 59
 // Sources: anthropic, google, openrouter APIs
 
@@ -170,7 +170,7 @@ export const SUPPORTED_MODELS: ModelInfo[] = [
     "category": "Latest",
     "isLatest": true,
     "isExperimental": false,
-    "description": "Stable verion of Gemini 2.5 Flash-Lite, released in July of 2025"
+    "description": "Stable version of Gemini 2.5 Flash-Lite, released in July of 2025"
   },
   {
     "id": "gemini-2.5-pro",
