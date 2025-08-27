@@ -1,5 +1,5 @@
 // ⚠️  AUTO-GENERATED — DO NOT EDIT.
-// Last refresh: 2025-08-26T08:37:49.559Z
+// Last refresh: 2025-08-27T08:35:19.864Z
 // Total models: 59
 // Sources: anthropic, google, openrouter APIs
 
@@ -261,6 +261,17 @@ export const SUPPORTED_MODELS: ModelInfo[] = [
     "description": "Experimental release (March 25th, 2025) of Gemini 2.5 Pro"
   },
   {
+    "id": "gemini-2.5-flash-image-preview",
+    "name": "Gemini 2.5 Flash Image Preview",
+    "provider": "google",
+    "maxTokens": 8192,
+    "supportsStreaming": true,
+    "category": "Experimental",
+    "isLatest": true,
+    "isExperimental": true,
+    "description": "Gemini 2.5 Flash Preview Image"
+  },
+  {
     "id": "gemini-2.5-flash-preview-05-20",
     "name": "Gemini 2.5 Flash Preview 05-20",
     "provider": "google",
@@ -402,17 +413,6 @@ export const SUPPORTED_MODELS: ModelInfo[] = [
     "isLatest": false,
     "isExperimental": true,
     "description": "Experimental release (March 25th, 2025) of Gemini 2.5 Pro"
-  },
-  {
-    "id": "imagen-4.0-generate-preview-06-06",
-    "name": "Imagen 4 (Preview)",
-    "provider": "google",
-    "maxTokens": 8192,
-    "supportsStreaming": true,
-    "category": "Experimental",
-    "isLatest": false,
-    "isExperimental": true,
-    "description": "Vertex served Imagen 4.0 model"
   },
   {
     "id": "learnlm-2.0-flash-experimental",
