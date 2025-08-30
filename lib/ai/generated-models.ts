@@ -1,5 +1,5 @@
 // ⚠️  AUTO-GENERATED — DO NOT EDIT.
-// Last refresh: 2025-08-29T08:35:09.254Z
+// Last refresh: 2025-08-30T08:31:25.208Z
 // Total models: 59
 // Sources: anthropic, google, openrouter APIs
 
@@ -261,17 +261,6 @@ export const SUPPORTED_MODELS: ModelInfo[] = [
     "description": "Experimental release (March 25th, 2025) of Gemini 2.5 Pro"
   },
   {
-    "id": "gemini-2.5-flash-image-preview",
-    "name": "Gemini 2.5 Flash Image Preview",
-    "provider": "google",
-    "maxTokens": 8192,
-    "supportsStreaming": true,
-    "category": "Experimental",
-    "isLatest": true,
-    "isExperimental": true,
-    "description": "Gemini 2.5 Flash Preview Image"
-  },
-  {
     "id": "gemini-2.5-flash-preview-05-20",
     "name": "Gemini 2.5 Flash Preview 05-20",
     "provider": "google",
@@ -424,6 +413,17 @@ export const SUPPORTED_MODELS: ModelInfo[] = [
     "isLatest": true,
     "isExperimental": true,
     "description": "LearnLM 2.0 Flash Experimental"
+  },
+  {
+    "id": "gemini-2.5-flash-image-preview",
+    "name": "Nano Banana",
+    "provider": "google",
+    "maxTokens": 8192,
+    "supportsStreaming": true,
+    "category": "Experimental",
+    "isLatest": true,
+    "isExperimental": true,
+    "description": "Gemini 2.5 Flash Preview Image"
   },
   {
     "id": "embedding-001",
