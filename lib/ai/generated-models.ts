@@ -1,5 +1,5 @@
 // ⚠️  AUTO-GENERATED — DO NOT EDIT.
-// Last refresh: 2025-09-25T08:35:53.845Z
+// Last refresh: 2025-09-26T08:35:59.144Z
 // Total models: 59
 // Sources: anthropic, google, openrouter APIs
 
@@ -305,6 +305,17 @@ export const SUPPORTED_MODELS: ModelInfo[] = [
     "description": "Preview release (April 17th, 2025) of Gemini 2.5 Flash"
   },
   {
+    "id": "gemini-2.5-flash-preview-09-2025",
+    "name": "Gemini 2.5 Flash Preview Sep 2025",
+    "provider": "google",
+    "maxTokens": 65536,
+    "supportsStreaming": true,
+    "category": "Experimental",
+    "isLatest": true,
+    "isExperimental": true,
+    "description": "Gemini 2.5 Flash Preview Sep 2025"
+  },
+  {
     "id": "gemini-2.5-flash-preview-tts",
     "name": "Gemini 2.5 Flash Preview TTS",
     "provider": "google",
@@ -325,6 +336,17 @@ export const SUPPORTED_MODELS: ModelInfo[] = [
     "isLatest": true,
     "isExperimental": true,
     "description": "Preview release (June 11th, 2025) of Gemini 2.5 Flash-Lite"
+  },
+  {
+    "id": "gemini-2.5-flash-lite-preview-09-2025",
+    "name": "Gemini 2.5 Flash-Lite Preview Sep 2025",
+    "provider": "google",
+    "maxTokens": 65536,
+    "supportsStreaming": true,
+    "category": "Experimental",
+    "isLatest": true,
+    "isExperimental": true,
+    "description": "Preview release (Septempber 25th, 2025) of Gemini 2.5 Flash-Lite"
   },
   {
     "id": "gemini-2.5-pro-preview-06-05",
@@ -371,28 +393,6 @@ export const SUPPORTED_MODELS: ModelInfo[] = [
     "description": "Gemini 2.5 Pro Preview TTS"
   },
   {
-    "id": "gemini-embedding-exp",
-    "name": "Gemini Embedding Experimental",
-    "provider": "google",
-    "maxTokens": 1,
-    "supportsStreaming": true,
-    "category": "Experimental",
-    "isLatest": false,
-    "isExperimental": true,
-    "description": "Obtain a distributed representation of a text."
-  },
-  {
-    "id": "gemini-embedding-exp-03-07",
-    "name": "Gemini Embedding Experimental 03-07",
-    "provider": "google",
-    "maxTokens": 1,
-    "supportsStreaming": true,
-    "category": "Experimental",
-    "isLatest": false,
-    "isExperimental": true,
-    "description": "Obtain a distributed representation of a text."
-  },
-  {
     "id": "gemini-exp-1206",
     "name": "Gemini Experimental 1206",
     "provider": "google",
@@ -402,6 +402,17 @@ export const SUPPORTED_MODELS: ModelInfo[] = [
     "isLatest": false,
     "isExperimental": true,
     "description": "Experimental release (March 25th, 2025) of Gemini 2.5 Pro"
+  },
+  {
+    "id": "gemini-robotics-er-1.5-preview",
+    "name": "Gemini Robotics-ER 1.5 Preview",
+    "provider": "google",
+    "maxTokens": 65536,
+    "supportsStreaming": true,
+    "category": "Experimental",
+    "isLatest": false,
+    "isExperimental": true,
+    "description": "Gemini Robotics-ER 1.5 Preview"
   },
   {
     "id": "learnlm-2.0-flash-experimental",
@@ -547,15 +558,37 @@ export const SUPPORTED_MODELS: ModelInfo[] = [
     "description": "Alias that points to the most recent production (non-experimental) release of Gemini 1.5 Pro, our mid-size multimodal model that supports up to 2 million tokens."
   },
   {
-    "id": "gemini-embedding-001",
-    "name": "Gemini Embedding 001",
+    "id": "gemini-flash-latest",
+    "name": "Gemini Flash Latest",
     "provider": "google",
-    "maxTokens": 1,
+    "maxTokens": 65536,
     "supportsStreaming": true,
     "category": "Production",
     "isLatest": false,
     "isExperimental": false,
-    "description": "Obtain a distributed representation of a text."
+    "description": "Latest release of Gemini Flash"
+  },
+  {
+    "id": "gemini-flash-lite-latest",
+    "name": "Gemini Flash-Lite Latest",
+    "provider": "google",
+    "maxTokens": 65536,
+    "supportsStreaming": true,
+    "category": "Production",
+    "isLatest": false,
+    "isExperimental": false,
+    "description": "Latest release of Gemini Flash-Lite"
+  },
+  {
+    "id": "gemini-pro-latest",
+    "name": "Gemini Pro Latest",
+    "provider": "google",
+    "maxTokens": 65536,
+    "supportsStreaming": true,
+    "category": "Production",
+    "isLatest": false,
+    "isExperimental": false,
+    "description": "Latest release of Gemini Pro"
   },
   {
     "id": "gemma-3-12b-it",
@@ -622,39 +655,6 @@ export const SUPPORTED_MODELS: ModelInfo[] = [
     "isLatest": false,
     "isExperimental": false,
     "description": "Google Gemini model - gemma-3n-e4b-it"
-  },
-  {
-    "id": "imagen-3.0-generate-002",
-    "name": "Imagen 3.0",
-    "provider": "google",
-    "maxTokens": 8192,
-    "supportsStreaming": true,
-    "category": "Production",
-    "isLatest": false,
-    "isExperimental": false,
-    "description": "Vertex served Imagen 3.0 002 model"
-  },
-  {
-    "id": "aqa",
-    "name": "Model that performs Attributed Question Answering.",
-    "provider": "google",
-    "maxTokens": 1024,
-    "supportsStreaming": true,
-    "category": "Production",
-    "isLatest": false,
-    "isExperimental": false,
-    "description": "Model trained to return answers to questions that are grounded in provided sources, along with estimating answerable probability."
-  },
-  {
-    "id": "text-embedding-004",
-    "name": "Text Embedding 004",
-    "provider": "google",
-    "maxTokens": 1,
-    "supportsStreaming": true,
-    "category": "Production",
-    "isLatest": false,
-    "isExperimental": false,
-    "description": "Obtain a distributed representation of a text."
   }
 ];
 
