@@ -1,6 +1,6 @@
 // ⚠️  AUTO-GENERATED — DO NOT EDIT.
-// Last refresh: 2025-09-26T08:35:59.144Z
-// Total models: 59
+// Last refresh: 2025-09-27T08:30:17.433Z
+// Total models: 50
 // Sources: anthropic, google, openrouter APIs
 
 export interface ModelInfo {
@@ -16,96 +16,6 @@ export interface ModelInfo {
 }
 
 export const SUPPORTED_MODELS: ModelInfo[] = [
-  {
-    "id": "claude-3-5-haiku-20241022",
-    "name": "Claude Haiku 3.5",
-    "provider": "anthropic",
-    "maxTokens": 8192,
-    "supportsStreaming": true,
-    "category": "Latest",
-    "isLatest": true,
-    "description": "Claude model - claude-3-5-haiku-20241022"
-  },
-  {
-    "id": "claude-3-5-sonnet-20241022",
-    "name": "Claude Sonnet 3.5 (New)",
-    "provider": "anthropic",
-    "maxTokens": 8192,
-    "supportsStreaming": true,
-    "category": "Latest",
-    "isLatest": true,
-    "description": "Claude model - claude-3-5-sonnet-20241022"
-  },
-  {
-    "id": "claude-3-5-sonnet-20240620",
-    "name": "Claude Sonnet 3.5 (Old)",
-    "provider": "anthropic",
-    "maxTokens": 8192,
-    "supportsStreaming": true,
-    "category": "Latest",
-    "isLatest": true,
-    "description": "Claude model - claude-3-5-sonnet-20240620"
-  },
-  {
-    "id": "claude-3-haiku-20240307",
-    "name": "Claude Haiku 3",
-    "provider": "anthropic",
-    "maxTokens": 8192,
-    "supportsStreaming": true,
-    "category": "Legacy",
-    "isLatest": false,
-    "description": "Claude model - claude-3-haiku-20240307"
-  },
-  {
-    "id": "claude-3-opus-20240229",
-    "name": "Claude Opus 3",
-    "provider": "anthropic",
-    "maxTokens": 8192,
-    "supportsStreaming": true,
-    "category": "Legacy",
-    "isLatest": false,
-    "description": "Claude model - claude-3-opus-20240229"
-  },
-  {
-    "id": "claude-opus-4-20250514",
-    "name": "Claude Opus 4",
-    "provider": "anthropic",
-    "maxTokens": 8192,
-    "supportsStreaming": true,
-    "category": "Legacy",
-    "isLatest": false,
-    "description": "Claude model - claude-opus-4-20250514"
-  },
-  {
-    "id": "claude-opus-4-1-20250805",
-    "name": "Claude Opus 4.1",
-    "provider": "anthropic",
-    "maxTokens": 8192,
-    "supportsStreaming": true,
-    "category": "Legacy",
-    "isLatest": false,
-    "description": "Claude model - claude-opus-4-1-20250805"
-  },
-  {
-    "id": "claude-3-7-sonnet-20250219",
-    "name": "Claude Sonnet 3.7",
-    "provider": "anthropic",
-    "maxTokens": 8192,
-    "supportsStreaming": true,
-    "category": "Legacy",
-    "isLatest": false,
-    "description": "Claude model - claude-3-7-sonnet-20250219"
-  },
-  {
-    "id": "claude-sonnet-4-20250514",
-    "name": "Claude Sonnet 4",
-    "provider": "anthropic",
-    "maxTokens": 8192,
-    "supportsStreaming": true,
-    "category": "Legacy",
-    "isLatest": false,
-    "description": "Claude model - claude-sonnet-4-20250514"
-  },
   {
     "id": "gemini-2.0-flash",
     "name": "Gemini 2.0 Flash",
@@ -393,6 +303,28 @@ export const SUPPORTED_MODELS: ModelInfo[] = [
     "description": "Gemini 2.5 Pro Preview TTS"
   },
   {
+    "id": "gemini-embedding-exp",
+    "name": "Gemini Embedding Experimental",
+    "provider": "google",
+    "maxTokens": 1,
+    "supportsStreaming": true,
+    "category": "Experimental",
+    "isLatest": false,
+    "isExperimental": true,
+    "description": "Obtain a distributed representation of a text."
+  },
+  {
+    "id": "gemini-embedding-exp-03-07",
+    "name": "Gemini Embedding Experimental 03-07",
+    "provider": "google",
+    "maxTokens": 1,
+    "supportsStreaming": true,
+    "category": "Experimental",
+    "isLatest": false,
+    "isExperimental": true,
+    "description": "Obtain a distributed representation of a text."
+  },
+  {
     "id": "gemini-exp-1206",
     "name": "Gemini Experimental 1206",
     "provider": "google",
@@ -413,6 +345,28 @@ export const SUPPORTED_MODELS: ModelInfo[] = [
     "isLatest": false,
     "isExperimental": true,
     "description": "Gemini Robotics-ER 1.5 Preview"
+  },
+  {
+    "id": "imagen-4.0-generate-preview-06-06",
+    "name": "Imagen 4 (Preview)",
+    "provider": "google",
+    "maxTokens": 8192,
+    "supportsStreaming": true,
+    "category": "Experimental",
+    "isLatest": false,
+    "isExperimental": true,
+    "description": "Vertex served Imagen 4.0 model"
+  },
+  {
+    "id": "imagen-4.0-ultra-generate-preview-06-06",
+    "name": "Imagen 4 Ultra (Preview)",
+    "provider": "google",
+    "maxTokens": 8192,
+    "supportsStreaming": true,
+    "category": "Experimental",
+    "isLatest": false,
+    "isExperimental": true,
+    "description": "Vertex served Imagen 4.0 ultra model"
   },
   {
     "id": "learnlm-2.0-flash-experimental",
@@ -459,103 +413,15 @@ export const SUPPORTED_MODELS: ModelInfo[] = [
     "description": "Obtain a distributed representation of a text."
   },
   {
-    "id": "gemini-1.5-flash",
-    "name": "Gemini 1.5 Flash",
+    "id": "gemini-embedding-001",
+    "name": "Gemini Embedding 001",
     "provider": "google",
-    "maxTokens": 8192,
+    "maxTokens": 1,
     "supportsStreaming": true,
     "category": "Production",
     "isLatest": false,
     "isExperimental": false,
-    "description": "Alias that points to the most recent stable version of Gemini 1.5 Flash, our fast and versatile multimodal model for scaling across diverse tasks."
-  },
-  {
-    "id": "gemini-1.5-flash-002",
-    "name": "Gemini 1.5 Flash 002",
-    "provider": "google",
-    "maxTokens": 8192,
-    "supportsStreaming": true,
-    "category": "Production",
-    "isLatest": false,
-    "isExperimental": false,
-    "description": "Stable version of Gemini 1.5 Flash, our fast and versatile multimodal model for scaling across diverse tasks, released in September of 2024."
-  },
-  {
-    "id": "gemini-1.5-flash-latest",
-    "name": "Gemini 1.5 Flash Latest",
-    "provider": "google",
-    "maxTokens": 8192,
-    "supportsStreaming": true,
-    "category": "Production",
-    "isLatest": false,
-    "isExperimental": false,
-    "description": "Alias that points to the most recent production (non-experimental) release of Gemini 1.5 Flash, our fast and versatile multimodal model for scaling across diverse tasks."
-  },
-  {
-    "id": "gemini-1.5-flash-8b",
-    "name": "Gemini 1.5 Flash-8B",
-    "provider": "google",
-    "maxTokens": 8192,
-    "supportsStreaming": true,
-    "category": "Production",
-    "isLatest": false,
-    "isExperimental": false,
-    "description": "Stable version of Gemini 1.5 Flash-8B, our smallest and most cost effective Flash model, released in October of 2024."
-  },
-  {
-    "id": "gemini-1.5-flash-8b-001",
-    "name": "Gemini 1.5 Flash-8B 001",
-    "provider": "google",
-    "maxTokens": 8192,
-    "supportsStreaming": true,
-    "category": "Production",
-    "isLatest": false,
-    "isExperimental": false,
-    "description": "Stable version of Gemini 1.5 Flash-8B, our smallest and most cost effective Flash model, released in October of 2024."
-  },
-  {
-    "id": "gemini-1.5-flash-8b-latest",
-    "name": "Gemini 1.5 Flash-8B Latest",
-    "provider": "google",
-    "maxTokens": 8192,
-    "supportsStreaming": true,
-    "category": "Production",
-    "isLatest": false,
-    "isExperimental": false,
-    "description": "Alias that points to the most recent production (non-experimental) release of Gemini 1.5 Flash-8B, our smallest and most cost effective Flash model, released in October of 2024."
-  },
-  {
-    "id": "gemini-1.5-pro",
-    "name": "Gemini 1.5 Pro",
-    "provider": "google",
-    "maxTokens": 8192,
-    "supportsStreaming": true,
-    "category": "Production",
-    "isLatest": false,
-    "isExperimental": false,
-    "description": "Stable version of Gemini 1.5 Pro, our mid-size multimodal model that supports up to 2 million tokens, released in May of 2024."
-  },
-  {
-    "id": "gemini-1.5-pro-002",
-    "name": "Gemini 1.5 Pro 002",
-    "provider": "google",
-    "maxTokens": 8192,
-    "supportsStreaming": true,
-    "category": "Production",
-    "isLatest": false,
-    "isExperimental": false,
-    "description": "Stable version of Gemini 1.5 Pro, our mid-size multimodal model that supports up to 2 million tokens, released in September of 2024."
-  },
-  {
-    "id": "gemini-1.5-pro-latest",
-    "name": "Gemini 1.5 Pro Latest",
-    "provider": "google",
-    "maxTokens": 8192,
-    "supportsStreaming": true,
-    "category": "Production",
-    "isLatest": false,
-    "isExperimental": false,
-    "description": "Alias that points to the most recent production (non-experimental) release of Gemini 1.5 Pro, our mid-size multimodal model that supports up to 2 million tokens."
+    "description": "Obtain a distributed representation of a text."
   },
   {
     "id": "gemini-flash-latest",
@@ -655,6 +521,50 @@ export const SUPPORTED_MODELS: ModelInfo[] = [
     "isLatest": false,
     "isExperimental": false,
     "description": "Google Gemini model - gemma-3n-e4b-it"
+  },
+  {
+    "id": "imagen-3.0-generate-002",
+    "name": "Imagen 3.0",
+    "provider": "google",
+    "maxTokens": 8192,
+    "supportsStreaming": true,
+    "category": "Production",
+    "isLatest": false,
+    "isExperimental": false,
+    "description": "Vertex served Imagen 3.0 002 model"
+  },
+  {
+    "id": "imagen-4.0-generate-001",
+    "name": "Imagen 4",
+    "provider": "google",
+    "maxTokens": 8192,
+    "supportsStreaming": true,
+    "category": "Production",
+    "isLatest": false,
+    "isExperimental": false,
+    "description": "Vertex served Imagen 4.0 model"
+  },
+  {
+    "id": "aqa",
+    "name": "Model that performs Attributed Question Answering.",
+    "provider": "google",
+    "maxTokens": 1024,
+    "supportsStreaming": true,
+    "category": "Production",
+    "isLatest": false,
+    "isExperimental": false,
+    "description": "Model trained to return answers to questions that are grounded in provided sources, along with estimating answerable probability."
+  },
+  {
+    "id": "text-embedding-004",
+    "name": "Text Embedding 004",
+    "provider": "google",
+    "maxTokens": 1,
+    "supportsStreaming": true,
+    "category": "Production",
+    "isLatest": false,
+    "isExperimental": false,
+    "description": "Obtain a distributed representation of a text."
   }
 ];
 
