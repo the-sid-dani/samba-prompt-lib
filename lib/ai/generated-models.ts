@@ -1,5 +1,5 @@
 // ⚠️  AUTO-GENERATED — DO NOT EDIT.
-// Last refresh: 2025-10-01T08:36:04.923Z
+// Last refresh: 2025-10-02T08:35:01.709Z
 // Total models: 50
 // Sources: anthropic, google, openrouter APIs
 
@@ -92,6 +92,17 @@ export const SUPPORTED_MODELS: ModelInfo[] = [
     "isLatest": true,
     "isExperimental": false,
     "description": "Stable release (June 17th, 2025) of Gemini 2.5 Pro"
+  },
+  {
+    "id": "gemini-2.5-flash-image",
+    "name": "Nano Banana",
+    "provider": "google",
+    "maxTokens": 8192,
+    "supportsStreaming": true,
+    "category": "Latest",
+    "isLatest": true,
+    "isExperimental": false,
+    "description": "Gemini 2.5 Flash Preview Image"
   },
   {
     "id": "gemini-2.0-flash-exp-image-generation",
@@ -532,17 +543,6 @@ export const SUPPORTED_MODELS: ModelInfo[] = [
     "isLatest": false,
     "isExperimental": false,
     "description": "Vertex served Imagen 3.0 002 model"
-  },
-  {
-    "id": "imagen-4.0-generate-001",
-    "name": "Imagen 4",
-    "provider": "google",
-    "maxTokens": 8192,
-    "supportsStreaming": true,
-    "category": "Production",
-    "isLatest": false,
-    "isExperimental": false,
-    "description": "Vertex served Imagen 4.0 model"
   },
   {
     "id": "aqa",
