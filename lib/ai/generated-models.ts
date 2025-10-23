@@ -1,5 +1,5 @@
 // ⚠️  AUTO-GENERATED — DO NOT EDIT.
-// Last refresh: 2025-10-22T08:38:51.468Z
+// Last refresh: 2025-10-23T08:37:45.065Z
 // Total models: 50
 // Sources: anthropic, google, openrouter APIs
 
