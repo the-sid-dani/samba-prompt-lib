@@ -1,5 +1,5 @@
 // ⚠️  AUTO-GENERATED — DO NOT EDIT.
-// Last refresh: 2025-11-05T08:38:25.729Z
+// Last refresh: 2025-11-06T08:38:05.633Z
 // Total models: 50
 // Sources: anthropic, google, openrouter APIs
 
@@ -97,7 +97,7 @@ export const SUPPORTED_MODELS: ModelInfo[] = [
     "id": "gemini-2.5-flash-image",
     "name": "Nano Banana",
     "provider": "google",
-    "maxTokens": 8192,
+    "maxTokens": 32768,
     "supportsStreaming": true,
     "category": "Latest",
     "isLatest": true,
@@ -394,7 +394,7 @@ export const SUPPORTED_MODELS: ModelInfo[] = [
     "id": "gemini-2.5-flash-image-preview",
     "name": "Nano Banana",
     "provider": "google",
-    "maxTokens": 8192,
+    "maxTokens": 32768,
     "supportsStreaming": true,
     "category": "Experimental",
     "isLatest": true,
