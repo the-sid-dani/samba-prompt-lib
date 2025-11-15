@@ -1,5 +1,5 @@
 // ⚠️  AUTO-GENERATED — DO NOT EDIT.
-// Last refresh: 2025-11-14T08:37:27.684Z
+// Last refresh: 2025-11-15T08:33:37.656Z
 // Total models: 50
 // Sources: anthropic, google, openrouter APIs
 
@@ -125,17 +125,6 @@ export const SUPPORTED_MODELS: ModelInfo[] = [
     "isLatest": true,
     "isExperimental": true,
     "description": "Gemini 2.0 Flash Experimental"
-  },
-  {
-    "id": "gemini-2.0-flash-preview-image-generation",
-    "name": "Gemini 2.0 Flash Preview Image Generation",
-    "provider": "google",
-    "maxTokens": 8192,
-    "supportsStreaming": true,
-    "category": "Experimental",
-    "isLatest": true,
-    "isExperimental": true,
-    "description": "Gemini 2.0 Flash Preview Image Generation"
   },
   {
     "id": "gemini-2.0-flash-lite-preview",
@@ -543,6 +532,17 @@ export const SUPPORTED_MODELS: ModelInfo[] = [
     "isLatest": false,
     "isExperimental": false,
     "description": "Google Gemini model - gemma-3n-e4b-it"
+  },
+  {
+    "id": "imagen-4.0-generate-001",
+    "name": "Imagen 4",
+    "provider": "google",
+    "maxTokens": 8192,
+    "supportsStreaming": true,
+    "category": "Production",
+    "isLatest": false,
+    "isExperimental": false,
+    "description": "Vertex served Imagen 4.0 model"
   },
   {
     "id": "aqa",
